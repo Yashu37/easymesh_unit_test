@@ -48,6 +48,18 @@ typedef char    em_small_string_t[16];
 #define EM_LOG_LVL_ERROR 2
 #define EM_LOG_LVL_DEBUG 3
 #define EM_MAX_DB_CFG_CRITERIA  32
+typedef void (*tlv_constructor_t)(void);
+
+typedef struct {
+    const char* test_name;      // The name of the test (e.g., "pkt49_a_b_e1_rb")
+    const char* pcap_file;  // The pcap file (e.g., "pkt49.pcap")
+    tlv_constructor_t tlv_func; // The specific TLV constructor function
+    int expected_result;        // The value that means PASS (-1 or 0)
+} pkt_test_case_t;
+
+extern pkt_test_case_t test_suite[];
+extern void construct_common_headers(const char *pcap_file_name);
+extern int construct_pcap_and_test(void);
 
 
 // PCAP Global Header

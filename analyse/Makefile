@@ -1,6 +1,6 @@
 CXX = g++
 
-SRC = main.cpp bsta.cpp
+SRC = main.cpp bsta.cpp bsta_test.cpp
 OUT = main
 
 all: run wireshark
