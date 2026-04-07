@@ -1,0 +1,9 @@
+# build files
+*.o
+#main
+
+# test outputs
+#*.pcap
+
+# optional (good practice)
+*.out
