@@ -86,6 +86,10 @@ int test_handle_bsta_cap_report(void);
 int test_get_first_tlv(void);
 int test_get_next_tlv(void);
 
+void run_all_tests_handle_bsta_cap_report(void);
+void run_all_tests_get_first_tlv(void);
+void run_all_tests_get_next_tlv(void);
+
 extern pkt_test_case_t handle_bsta_cap_report_suite[];
 extern pkt_test_case_t get_first_tlv_suite[];
 extern pkt_test_case_t get_next_tlv_suite[];

@@ -1,6 +1,6 @@
 CXX = g++
 
-SRC = main.cpp bsta_test.cpp bsta.cpp get_first_tlv_test.cpp get_first_tlv.cpp get_next_tlv_test.cpp get_next_tlv.cpp
+SRC = main.cpp bsta_test.cpp bsta.cpp common_test.cpp construct_test.cpp get_first_tlv_test.cpp get_first_tlv.cpp get_next_tlv_test.cpp get_next_tlv.cpp
 
 OUT = main
 
