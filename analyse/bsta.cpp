@@ -33,7 +33,7 @@ int em_sm_t::set_state(em_state_t state)
 
 	return -1;
 }
-
+/*
 #define EM_ASSERT_MSG_FALSE(x, ret, errMsg, ...) \
     if(x) { \
         em_printfout(errMsg, ## __VA_ARGS__); \
@@ -89,6 +89,11 @@ em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned in
     size_t offset = static_cast<size_t>(signed_offset);
     EM_ASSERT_MSG_TRUE(offset < buff_len, NULL, "TLV offset exceeds buffer length");
 
+    if (buff_len < sizeof(em_tlv_t)) {
+            em_printfout("Truncated packet: not enough space for TLV length field\n");
+            return NULL;
+    }
+
     // Calculate the size of the current TLV (header + data)
     uint16_t current_tlv_size = sizeof(em_tlv_t) + ntohs(tlv->len);
 
@@ -105,7 +110,7 @@ em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned in
     // Use get_first_tlv to validate and return the next TLV
     return get_first_tlv(next_tlvs_buff, next_tlvs_buff_len);
 }
-
+*/
 
 extern char *__progname;
 #define em_printfout(format, ...)  em_util_print(EM_LOG_LVL_INFO, EM_STDOUT, __FILE__, __LINE__, format, ##__VA_ARGS__)// general log
@@ -262,58 +267,6 @@ int em_capability_t::handle_client_info(unsigned char *tlv_buff, unsigned int tl
     return 0;
 }
 
-/*int em_capability_t::process_1905_eth_message(unsigned char *pkt_buff, unsigned int pkt_len, em_tlv_type_t tlv_type,
-                                      int (em_capability_t::*handler)(unsigned char*, unsigned int))
-{
-    em_tlv_t *tlv;
-    unsigned int tmp_len;
-    unsigned int header_len = sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t);
-
-    if (!pkt_buff || !pkt_len || !handler)
-    {
-        return -1;
-    }
-
-    if (pkt_len <= header_len) {
-        return -1;
-    }
-
-    tlv = reinterpret_cast<em_tlv_t *>(pkt_buff + header_len);
-    tmp_len = pkt_len - header_len;
-
-    if (tmp_len < sizeof(em_tlv_t)) {
-        em_printfout("Error: Not enough data for TLV");
-        return -1;
-    }
-
-    while ((tmp_len >= sizeof(em_tlv_t)) && tlv) {
-
-        uint16_t tlv_len = ntohs(tlv->len);
-
-        if (tmp_len < sizeof(em_tlv_t) + tlv_len) {
-            em_printfout("Error: TLV length exceeds buffer");
-            return -1;
-        }
-
-        if (tlv->type == em_tlv_type_eom) {
-            break;
-        }
-
-        if (tlv->type == tlv_type) {
-
-            return (this->*handler)(tlv->value, tlv_len);
-        }
-
-        tmp_len -= sizeof(em_tlv_t) + tlv_len;
-
-        tlv = reinterpret_cast<em_tlv_t*>(
-                reinterpret_cast<unsigned char*>(tlv) +
-                sizeof(em_tlv_t) + tlv_len);
-    }
-
-    return 0;
-}*/
-
 int em_capability_t::process_1905_eth_message(unsigned char *pkt_buff, unsigned int pkt_len, em_tlv_type_t tlv_type,
                                              int (em_capability_t::*handler)(unsigned char*, unsigned int))
 {
@@ -336,14 +289,6 @@ int em_capability_t::process_1905_eth_message(unsigned char *pkt_buff, unsigned 
     if (tlvs_len >= sizeof(em_tlv_t) && tlvs_start->type == em_tlv_type_eom) {
 	    return 0;
     }
-
-   /* if (tlvs_len < sizeof(em_tlv_t)) {
-	    return -1;
-    }
-
-    if (tlvs_start->type == em_tlv_type_eom) {
-	    return 0;
-    }*/
 
     // Get the first TLV using the helper
     tlv = em_msg_t::get_first_tlv(tlvs_start, tlvs_len);

@@ -88,7 +88,6 @@ int test_handle_bsta_cap_report(void)
         return ret;
 }
 
-
 void construct_common_headers(const char *pcap_file_name)
 {
         fp = fopen(pcap_file_name, "wb");
@@ -98,16 +97,30 @@ void construct_common_headers(const char *pcap_file_name)
         construct_1905_header();
 }
 
-int construct_pcap_and_test(void)
+/*int construct_pcap_and_test(void)
 {
         int ret;
 
         packet_len = ptr - packet;
         construct_pcap_header();
         fclose(fp);
-        ret = test_handle_bsta_cap_report();
-        return ret;
+        ret = test_handle_bsta_cap_report();//change handler name
+	return ret;
 }
+*/
+
+int construct_pcap_and_test(int (*test_func)(void))
+{
+    int ret;
+
+    packet_len = ptr - packet;
+    construct_pcap_header();
+    fclose(fp);
+
+    ret = test_func();   // 👈 dynamic call
+    return ret;
+}
+
 
 void construct_pkt1_a_b_c10_d_e_rf_tlvs(void)
 {
@@ -1666,7 +1679,7 @@ void construct_pkt51_a_b_d1_rb_tlvs(void)
 }
 
 
-pkt_test_case_t test_suite[] = {
+pkt_test_case_t handle_bsta_cap_report_suite[] = {
     {"pkt1_a_b_c10_d_e_rf",             "pkt1.pcap",  construct_pkt1_a_b_c10_d_e_rf_tlvs,             0},
     {"pkt2_a_b_c16_d_e_rf",             "pkt2.pcap",  construct_pkt2_a_b_c16_d_e_rf_tlvs,             0},
     {"pkt4_a_b_c10_e_rf",              "pkt4.pcap",  construct_pkt4_a_b_c10_e_rf_tlvs,              0},

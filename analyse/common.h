@@ -48,6 +48,22 @@ typedef char    em_small_string_t[16];
 #define EM_LOG_LVL_ERROR 2
 #define EM_LOG_LVL_DEBUG 3
 #define EM_MAX_DB_CFG_CRITERIA  32
+
+#define EM_ASSERT_MSG_FALSE(x, ret, errMsg, ...) \
+        if(x) { \
+                em_printfout(errMsg, ## __VA_ARGS__); \
+                return ret; \
+        }
+
+#define EM_ASSERT_MSG_TRUE(x, ret, errMsg, ...) EM_ASSERT_MSG_FALSE(!(x), ret, errMsg, ## __VA_ARGS__)
+#define EM_ASSERT_NOT_NULL(x, ret, errMsg, ...) EM_ASSERT_MSG_FALSE(x == NULL, ret, errMsg, ## __VA_ARGS__)
+
+extern uint8_t packet[4096];
+extern uint8_t *ptr;
+extern uint32_t packet_len;
+extern FILE *fp;
+
+
 typedef void (*tlv_constructor_t)(void);
 
 typedef struct {
@@ -57,10 +73,22 @@ typedef struct {
     int expected_result;        // The value that means PASS (-1 or 0)
 } pkt_test_case_t;
 
-extern pkt_test_case_t test_suite[];
-extern void construct_common_headers(const char *pcap_file_name);
-extern int construct_pcap_and_test(void);
+void construct_global_header(void);
+void construct_ethernet_header(void);
+void construct_1905_header(void);
+void construct_pcap_header(void);
 
+extern void construct_common_headers(const char *pcap_file_name);
+int construct_pcap_and_test(int (*test_func)(void));
+
+// test function declarations
+int test_handle_bsta_cap_report(void);
+int test_get_first_tlv(void);
+int test_get_next_tlv(void);
+
+extern pkt_test_case_t handle_bsta_cap_report_suite[];
+extern pkt_test_case_t get_first_tlv_suite[];
+extern pkt_test_case_t get_next_tlv_suite[];
 
 // PCAP Global Header
 struct pcap_global_header {
@@ -80,6 +108,7 @@ struct pcap_packet_header {
     uint32_t incl_len;
     uint32_t orig_len;
 };
+
 
 typedef int easymesh_log_level_t;
 typedef int easymesh_dbg_type_t;
