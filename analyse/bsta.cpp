@@ -33,84 +33,6 @@ int em_sm_t::set_state(em_state_t state)
 
 	return -1;
 }
-/*
-#define EM_ASSERT_MSG_FALSE(x, ret, errMsg, ...) \
-    if(x) { \
-        em_printfout(errMsg, ## __VA_ARGS__); \
-        return ret; \
-    }
-
-#define EM_ASSERT_MSG_TRUE(x, ret, errMsg, ...) EM_ASSERT_MSG_FALSE(!(x), ret, errMsg, ## __VA_ARGS__)
-#define EM_ASSERT_NOT_NULL(x, ret, errMsg, ...) EM_ASSERT_MSG_FALSE(x == NULL, ret, errMsg, ## __VA_ARGS__)
-
-
-em_tlv_t *em_msg_t::get_first_tlv(em_tlv_t* tlvs_buff, unsigned int buff_len)
-{
-
-    if (tlvs_buff == NULL || buff_len == 0) {
-    em_printfout("%s:%d\n", __func__, __LINE__);
-        return NULL;
-    }
-
-    em_printfout("buff_len = %d", buff_len);
-   
-#if 1    
-    if (buff_len < sizeof(em_tlv_t)) {
-	    em_printfout("Truncated packet: not enough space for TLV length field\n");
-	    return NULL;
-    }
-#endif
-
-    em_printfout("%s:%d\n", __func__, __LINE__);
-    em_tlv_t *tlv = tlvs_buff;
-    uint16_t tlv_len = ntohs(tlv->len);
-
-    em_printfout("tlv->type = %x, %s:%d\n", tlv->type, __func__, __LINE__);
-    if (tlv_len == 0 || tlv_len + sizeof(em_tlv_t) > buff_len) {
-    em_printfout("%s:%d\n", __func__, __LINE__);
-        return NULL; // Invalid TLV length or buffer too small
-    }
-
-    em_printfout("%s:%d\n", __func__, __LINE__);
-    return tlv;
-}
-
-em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned int buff_len)
-{
-    EM_ASSERT_NOT_NULL(tlv, NULL, "TLV is NULL");
-    EM_ASSERT_NOT_NULL(tlvs_buff, NULL, "Buffer is NULL");
-    EM_ASSERT_MSG_TRUE(buff_len > 0, NULL, "Buffer length is zero");
-
-    uint8_t* main_tlvs_buff = reinterpret_cast<uint8_t*>(tlvs_buff);
-
-    // Calculate offset of current TLV from buffer start
-    long int signed_offset = reinterpret_cast<uint8_t*>(tlv) - main_tlvs_buff;
-    EM_ASSERT_MSG_TRUE(signed_offset >= 0, NULL, "TLV is before buffer start");
-    size_t offset = static_cast<size_t>(signed_offset);
-    EM_ASSERT_MSG_TRUE(offset < buff_len, NULL, "TLV offset exceeds buffer length");
-
-    if (buff_len < sizeof(em_tlv_t)) {
-            em_printfout("Truncated packet: not enough space for TLV length field\n");
-            return NULL;
-    }
-
-    // Calculate the size of the current TLV (header + data)
-    uint16_t current_tlv_size = sizeof(em_tlv_t) + ntohs(tlv->len);
-
-    // Shift the offset by the current TLV
-    offset += current_tlv_size;
-    if (offset >= buff_len) {
-        return NULL; // No more TLVs
-    }
-
-    // Position buffer pointer to start of next TLV
-    em_tlv_t* next_tlvs_buff = reinterpret_cast<em_tlv_t*>(main_tlvs_buff + offset);
-    unsigned int next_tlvs_buff_len = buff_len - static_cast<unsigned int>(offset);
-
-    // Use get_first_tlv to validate and return the next TLV
-    return get_first_tlv(next_tlvs_buff, next_tlvs_buff_len);
-}
-*/
 
 extern char *__progname;
 #define em_printfout(format, ...)  em_util_print(EM_LOG_LVL_INFO, EM_STDOUT, __FILE__, __LINE__, format, ##__VA_ARGS__)// general log
@@ -185,8 +107,10 @@ int em_capability_t::handle_bsta_radio_cap(unsigned char *tlv_buff, unsigned int
     if (!tlv_len || ((tlv_len != sizeof(em_bh_sta_radio_cap_t)) && (tlv_len != offsetof(em_bh_sta_radio_cap_t, bsta_addr))))
     {
         em_printfout("Invalid TLV length. Must be %d or %d for bsta radio cap TLV",
-                     (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr),
-                     (int)sizeof(em_bh_sta_radio_cap_t));
+		     static_cast<int>(offsetof(em_bh_sta_radio_cap_t, bsta_addr)),
+                     static_cast<int>(sizeof(em_bh_sta_radio_cap_t)));
+                    /* (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr),
+                     (int)sizeof(em_bh_sta_radio_cap_t));*/
         return -1;
     }
 
@@ -202,7 +126,8 @@ int em_capability_t::handle_bsta_radio_cap(unsigned char *tlv_buff, unsigned int
     {
         if (bsta_radio_cap->bsta_mac_present)
         {
-            em_printfout("Error: bsta_mac_present is 1 when tlv_len is %d", (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr));
+            em_printfout("Error: bsta_mac_present is 1 when tlv_len is %d", static_cast<int>(offsetof(em_bh_sta_radio_cap_t, bsta_addr)));
+	   // (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr));
             return -1;
         }
         return 0;
@@ -210,7 +135,8 @@ int em_capability_t::handle_bsta_radio_cap(unsigned char *tlv_buff, unsigned int
 
     if (!bsta_radio_cap->bsta_mac_present)
     {
-        em_printfout("Error: bsta_mac_present is 0 when tlv_len is %d", (int) sizeof(em_bh_sta_radio_cap_t));
+        em_printfout("Error: bsta_mac_present is 0 when tlv_len is %d", static_cast<int>(sizeof(em_bh_sta_radio_cap_t)));
+	//(int) sizeof(em_bh_sta_radio_cap_t));
         return -1;
     }
 
@@ -246,7 +172,8 @@ int em_capability_t::handle_client_info(unsigned char *tlv_buff, unsigned int tl
     }
 
     if (tlv_len != sizeof(em_client_info_t)) {
-        em_printfout("Invalid TLV length for client info TLV: received %u, expected %d", tlv_len, (int) sizeof(em_client_info_t));
+        em_printfout("Invalid TLV length for client info TLV: received %u, expected %d", tlv_len, static_cast<int>(sizeof(em_client_info_t)));
+	//(int) sizeof(em_client_info_t));
         return -1;
     }
 

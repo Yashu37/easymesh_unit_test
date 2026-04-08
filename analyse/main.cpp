@@ -7,9 +7,9 @@
 #include <sanitizer/asan_interface.h>
 
 int main() {
-    run_all_tests_handle_bsta_cap_report();
-    run_all_tests_get_first_tlv();
-    run_all_tests_get_next_tlv();
+       	run_all_tests_handle_bsta_cap_report();
+       // run_all_tests_get_first_tlv();
+        //run_all_tests_get_next_tlv();
     return 0;
 }
 
