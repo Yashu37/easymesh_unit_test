@@ -1,0 +1,75 @@
+//Steps to Create an Issue
+
+1.Go to your repository
+2.Click on "Issues" tab
+3.Click "New Issue" button
+4.Select a template (or blank issue)
+5.Enter Title (short problem summary)
+6.Write Description (details, steps, error, screenshots)
+7.Add labels / assignee (optional)
+8.Click "Submit new issue"
+
+//Clone code
+
+//branch creation
+git checkout -b issue_637_handle_bsta_cap_report
+
+//branch push
+git config core.sshCommand "ssh -i ~/.ssh/id_ed25519 -F /dev/null"
+git push -f origin issue_637_handle_bsta_cap_report
+
+//add changes
+
+git status
+
+git add .
+git commit -s
+" "
+
+//branch push
+git config core.sshCommand "ssh -i ~/.ssh/id_ed25519 -F /dev/null"
+git push -u origin issue_637_handle_bsta_cap_report
+
+
+
+//Once the pull request is created, any subsequent changes should be made by following the steps below
+
+Working : Address reviews
+----------------------------------
+
+git add .
+git commit -sm "addressed reviews"
+git push -f origin issue_637_handle_bsta_cap_report
+
+naveen@naveen:~/rdkcentral/unified-wifi-mesh$ git status
+On branch issue_637_handle_bsta_cap_report
+Your branch is up to date with 'origin/issue_637_handle_bsta_cap_report'.
+
+nothing to commit, working tree clean
+
+
+git rebase -i HEAD~4
+
+pick 8111495 Issue 637: Crash/Memory corruption in handle_bsta_cap_report
+pick 8514b26 addressed reviews
+pick 7057fc9 deleted tags
+pick ef0db5f addressed reviews
+
+change to
+
+pick 8111495 Issue 637: Crash/Memory corruption in handle_bsta_cap_report
+s 8514b26 addressed reviews
+s 7057fc9 deleted tags
+s ef0db5f addressed reviews
+
+Ctrl + O, Ctrl + X
+Ctrl + K to delete extra commit details
+
+Ctrl + O, Ctrl + X
+
+
+git log
+
+git push -f origin issue_637_handle_bsta_cap_report
+
+

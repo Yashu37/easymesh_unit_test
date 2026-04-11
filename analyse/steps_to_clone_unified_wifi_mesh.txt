@@ -1,0 +1,2 @@
+GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes" git clone git@github.com:Yashu37/unified-wifi-mesh.git
+

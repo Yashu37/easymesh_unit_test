@@ -1,0 +1,23 @@
+git add .
+git commit -sm "unit test"
+touch .gitignore
+vim .gitignore inside
+  # build files
+  *.o
+  main
+
+  # test outputs
+  *.pcap
+
+  # optional (good practice)
+  *.out
+
+git rm --cached *.o
+git rm --cached main
+git rm --cached *.pcap
+
+git add .gitignore
+
+git commit -m "Added gitignore and removed build/pcap files"
+
+GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519" git push -f origin main
