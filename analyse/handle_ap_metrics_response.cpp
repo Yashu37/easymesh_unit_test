@@ -26,8 +26,6 @@ dm_bss_t::~dm_bss_t()
 
 }
 
-
-
 unsigned int em_msg_t::validate(char *errors[])
 {
     em_tlv_t *tlv;
@@ -55,7 +53,7 @@ unsigned int em_msg_t::validate(char *errors[])
             tlv = reinterpret_cast<em_tlv_t *> ((reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + ntohs(tlv->len)));
         }
 
-	// 🔥 NEW CHECK: ensure safe access before using tlv->len
+	//  NEW CHECK: ensure safe access before using tlv->len
         unsigned int safe_len = 0;
         if (len >= sizeof(em_tlv_t)) {
             safe_len = ntohs(tlv->len);
@@ -99,166 +97,6 @@ unsigned int em_msg_t::validate(char *errors[])
     return validation;
 }
 
-/*
-unsigned int em_msg_t::validate(char *errors[])
-{
-    em_tlv_t *tlv;
-    unsigned int i, len;
-    bool validation = true;
-
-    for (i = 0; i < m_num_tlv; i++) {
-        tlv =  reinterpret_cast<em_tlv_t *> (m_buff + sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t));
-        len = m_len - static_cast<unsigned int> (sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t));
-
-
-        while ((tlv->type != em_tlv_type_eom) && (len > 0)) {
-            if (tlv->type == m_tlv_member[i].m_type) {
-                m_tlv_member[i].m_present = true;
-                break;
-            }
-
-	    printf("validate() = %u\n", validation);
-
-            len -= static_cast<unsigned int> (sizeof(em_tlv_t) + htons(tlv->len));
-            tlv = reinterpret_cast<em_tlv_t *> ((reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + htons(tlv->len)));
-        }
-
-        if ((m_tlv_member[i].m_requirement == mandatory) &&((m_tlv_member[i].m_present == false)||((sizeof(em_tlv_t) + htons(tlv->len)) < static_cast<size_t> (m_tlv_member[i].m_tlv_length)))) {
-            strncpy(m_errors[m_num_errors], m_tlv_member[i].m_spec, sizeof(m_errors[m_num_errors]));
-            m_num_errors++;
-            errors[m_num_errors - 1] = m_errors[m_num_errors - 1];
-            validation = false;
-            if (m_tlv_member[i].m_present == false) {
-                //printf("%s:%d; TLV not present\n", __func__, __LINE__);
-            }
-
-	    printf("DEBUG [%s:%d:%s] LOOP: tlv_ptr=%p len_remaining=%u\n", __FILE__, __LINE__, __func__, (void*)tlv, len);
-	    printf("validate() = %u\n", validation);
-
-            if (((sizeof(em_tlv_t) + htons(tlv->len)) < static_cast<size_t> (m_tlv_member[i].m_tlv_length))) {
-                //printf("%s:%d; TLV type: 0x%04x Length: %d, length validation error\n", __func__, __LINE__, tlv->type, htons(tlv->len));
-            }
-        }
-
-        if ((m_tlv_member[i].m_requirement == bad) && (m_tlv_member[i].m_present == true)) {
-            strncpy(m_errors[m_num_errors], m_tlv_member[i].m_spec, sizeof(m_errors[m_num_errors]));
-            m_num_errors++;
-            errors[m_num_errors - 1] = m_errors[m_num_errors - 1];
-            //printf("%s:%d; TLV type: 0x%04x Length: %d, presence validation error, profile: %d\n", __func__, __LINE__,
-            //tlv->type, htons(tlv->len), m_profile);
-            validation = false;
-        }
-    }
-
-           for (i = 0; i < EM_MAX_TLV_MEMBERS; i++) {
-            if (errors[i] != NULL) {
-                printf("Failed TLV [%d]: %s\n",(i+1),errors[i]);
-            }
-	   
-	   }
-        
-    
-
-//    printf("validate() = %u\n", validation);
-
-           return validation;
-}
-
-*/
-/*
-unsigned int em_msg_t::validate(char *errors[])
-{
-    em_tlv_t *tlv;
-    unsigned int i, len;
-    bool validation = true;
-
-    for (i = 0; i < m_num_tlv; i++) {
-
-        tlv = reinterpret_cast<em_tlv_t *>(
-            m_buff + sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t));
-
-        len = m_len - static_cast<unsigned int>(
-            sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t));
-
-        m_tlv_member[i].m_present = false;
-
-        while (len > 0) {
-
-            // 🔥 1. check header first
-            if (len < sizeof(em_tlv_t))
-                break;
-
-            unsigned int tlv_len = ntohs(tlv->len);
-
-            // 🔥 2. check full TLV fits
-            if (len < sizeof(em_tlv_t) + tlv_len)
-                break;
-
-            // 🔥 3. now safe to access type
-            if (tlv->type == em_tlv_type_eom)
-                break;
-
-            if (tlv->type == m_tlv_member[i].m_type) {
-                m_tlv_member[i].m_present = true;
-                break;
-            }
-
-            // move to next TLV
-            len -= sizeof(em_tlv_t) + tlv_len;
-
-            tlv = reinterpret_cast<em_tlv_t *>(
-                reinterpret_cast<unsigned char *>(tlv) +
-                sizeof(em_tlv_t) + tlv_len);
-        }
-
-        // 🔥 validation checks
-        unsigned int safe_len = 0;
-        if (len >= sizeof(em_tlv_t)) {
-            safe_len = ntohs(tlv->len);
-        }
-
-        if ((m_tlv_member[i].m_requirement == mandatory) &&
-            ((m_tlv_member[i].m_present == false) ||
-             ((sizeof(em_tlv_t) + safe_len) <
-              static_cast<size_t>(m_tlv_member[i].m_tlv_length)))) {
-
-            strncpy(m_errors[m_num_errors],
-                    m_tlv_member[i].m_spec,
-                    sizeof(m_errors[m_num_errors]));
-
-            m_num_errors++;
-            errors[m_num_errors - 1] = m_errors[m_num_errors - 1];
-            validation = false;
-        }
-	    
-
-        if ((m_tlv_member[i].m_requirement == bad) &&
-            (m_tlv_member[i].m_present == true)) {
-
-            strncpy(m_errors[m_num_errors],
-                    m_tlv_member[i].m_spec,
-                    sizeof(m_errors[m_num_errors]));
-
-            m_num_errors++;
-            errors[m_num_errors - 1] = m_errors[m_num_errors - 1];
-            validation = false;
-        }
-    }
-
-    if (validation == false) {
-        for (i = 0; i < EM_MAX_TLV_MEMBERS; i++) {
-            if (errors[i] != NULL) {
-                printf("Failed TLV [%d]: %s\n", (i + 1), errors[i]);
-            }
-        }
-    }
-
-    printf("validate() = %u\n", validation);
-
-    return validation;
-}
-
-*/
 dm_sta_t *dm_easy_mesh_t::find_sta(mac_address_t sta_mac, bssid_t bssid)
 {
     dm_sta_t *sta;
@@ -517,48 +355,3 @@ int em_metrics_t::handle_ap_metrics_response(unsigned char *buff, unsigned int l
     return 0;
 }
 
-/*
-int em_metrics_t::handle_ap_metrics_response(unsigned char *buff, unsigned int len)
-{
-    int ret = 0;
-    dm_easy_mesh_t *dm;
-    char *errors[EM_MAX_TLV_MEMBERS] = {0};
-
-    dm = get_data_model();
-
-    if (em_msg_t(em_msg_type_ap_metrics_rsp, get_profile_type(), buff, len).validate(errors) == 0) {
-        printf("%s:%d: AP Metrics metrics response msg validation failed\n", __func__, __LINE__);
-        return -1;
-    }
-
-    ret = process_tlv_bssid(buff, len,
-            em_tlv_type_ap_metrics,
-            &em_metrics_t::handle_ap_metrics_tlv);
-    if (ret < 0) return ret;
-
-    ret = process_tlv_bssid(buff, len,
-            em_tlv_type_assoc_sta_traffic_sts,
-            &em_metrics_t::handle_assoc_sta_traffic_stats);
-    if (ret < 0) return ret;
-
-    ret = process_tlv_data(buff, len,
-            em_tlv_type_assoc_sta_link_metric,
-            &em_metrics_t::handle_assoc_sta_link_metrics_tlv);
-    if (ret < 0) return ret;
-
-    ret = process_tlv_data(buff, len,
-            em_tlv_type_assoc_sta_ext_link_metric,
-            &em_metrics_t::handle_assoc_sta_ext_link_metrics_tlv);
-    if (ret < 0) return ret;
-
-    ret = process_tlv_data_len(buff, len,
-            em_tlv_type_vendor_specific,
-            &em_metrics_t::handle_assoc_sta_vendor_link_metrics_tlv);
-    if (ret < 0) return ret;
-
-    dm->set_db_cfg_param(db_cfg_type_sta_metrics_update, "");
-    set_state(em_state_ctrl_configured);
-
-    return 0;
-}
-*/

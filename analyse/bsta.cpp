@@ -193,65 +193,15 @@ int em_capability_t::handle_client_info(unsigned char *tlv_buff, unsigned int tl
 
     return 0;
 }
-/*
-int em_capability_t::process_1905_eth_message(unsigned char *pkt_buff, unsigned int pkt_len, em_tlv_type_t tlv_type,
-                                             int (em_capability_t::*handler)(unsigned char*, unsigned int))
-{
-    em_tlv_t *tlv = NULL;
-    unsigned int header_len = sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t);
 
-    if (!pkt_buff || !pkt_len || !handler) {
-        return -1;
-    }
 
-    if (pkt_len <= header_len) {
-        return -1;
-    }
-
-    // Define the start and total length of the TLV payload area
-    em_tlv_t* tlvs_start = reinterpret_cast<em_tlv_t *>(pkt_buff + header_len);
-    unsigned int tlvs_len = pkt_len - header_len;
-
- 
-    if (tlvs_len >= sizeof(em_tlv_t) && tlvs_start->type == em_tlv_type_eom) {
-	    return 0;
-    }
-
-    // Get the first TLV using the helper
-    tlv = em_msg_t::get_first_tlv(tlvs_start, tlvs_len);
-
-#if 1
-    if (!tlv) {
-	    return -1;
-    }
-#endif
-
-    while (tlv != NULL) {
-        // End of Message TLV check
-        if (tlv->type == em_tlv_type_eom) {
-            break;
-        }
-
-        // Check if this TLV matches the requested type
-        if (tlv->type == tlv_type) {
-            uint16_t tlv_len = ntohs(tlv->len);
-            return (this->*handler)(tlv->value, tlv_len);
-        }
-
-        // Advance to the next TLV using the helper
-        tlv = em_msg_t::get_next_tlv(tlv, tlvs_start, tlvs_len);
-    }
-
-    return 0;
-}
-*/
 int em_capability_t::handle_bsta_cap_report(unsigned char *pkt_buff, unsigned int pkt_len)
 {
     int ret = 0;
 
     em_printfout("Backhaul Sta Capability report message rcvd");
 
-    ret = process_1905_eth_message(pkt_buff, pkt_len,
+    ret = process_single_tlv_in_1905_message(pkt_buff, pkt_len,
             em_tlv_type_bh_sta_radio_cap,
             &em_capability_t::handle_bsta_radio_cap);
 
@@ -259,7 +209,7 @@ int em_capability_t::handle_bsta_cap_report(unsigned char *pkt_buff, unsigned in
 	    return ret;
         //em_printfout("Warning: failed to process bh_sta_radio_cap TLV, continuing");
 
-    ret = process_1905_eth_message(pkt_buff, pkt_len,
+    ret = process_single_tlv_in_1905_message(pkt_buff, pkt_len,
             em_tlv_type_client_info,
             &em_capability_t::handle_client_info);
 

@@ -5,25 +5,6 @@
 #include <arpa/inet.h>
 #include "common.h"
 #include <sanitizer/asan_interface.h>
-/*
-int test_get_first_tlv(void)//change the name
-{
-        //int ret;
-	em_tlv_t* ret = NULL;
-
-        printf("packet_len = %d\n", packet_len);
-        printf("PCAP file 'output.pcap' created successfully\n");
-        __asan_poison_memory_region(&packet[packet_len], 4096 - packet_len);
-        em_msg_t obj;
-       // ret = obj.get_first_tlv(packet, packet_len);
-	ret = obj.get_first_tlv(reinterpret_cast<em_tlv_t*>(packet), packet_len);
-        __asan_unpoison_memory_region(&packet[packet_len], 4096 - packet_len);
-       // return ret;
-       // If ret is NOT NULL, the test passed (return 0 or 1 based on your framework)
-       // If ret IS NULL, the test failed (return -1)
-	return (ret != NULL) ? 0 : -1;
-}
-*/
 
 int test_get_first_tlv(void)
 {

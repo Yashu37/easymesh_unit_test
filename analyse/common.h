@@ -370,21 +370,6 @@ typedef struct {
 	em_media_type_t media;
 } em_device_id_t;
 
-/*
-typedef enum {
-em_media_type_ieee8023ab = 0x01,
-em_media_type_ieee80211b_24 = 0x0100,
-em_media_type_ieee80211g_24,
-em_media_type_ieee80211a_5,
-em_media_type_ieee80211n_24,
-em_media_type_ieee80211n_5,
-em_media_type_ieee80211ac_5,
-em_media_type_ieee80211ad_60,
-em_media_type_ieee80211af,
-} em_media_type_t;
-
-*/
-
 typedef char    em_tiny_string_t[4];
 
 typedef struct {
@@ -872,7 +857,7 @@ public:
 	
 		int handle_client_info(unsigned char *buff, unsigned int len);
 	
-		int process_1905_eth_message(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_capability_t::*handler)(unsigned char*, unsigned int));
+		int process_single_tlv_in_1905_message(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_capability_t::*handler)(unsigned char*, unsigned int));
 		
 //		int handle_client_info_report(unsigned char *buff, unsigned int len);
 
@@ -1360,65 +1345,7 @@ inline void set_state(em_state_t state)
 }
 
 class dm_bss_t;
-/*
-typedef enum {
-	em_vap_mode_ap,
-	em_vap_mode_sta
-} em_vap_mode_t;
 
-typedef struct {
-	mac_address_t bssid;
-	unsigned char reserved1 : 2;
-	unsigned char group_addr_bu_ind_exp : 2;
-	unsigned char group_addr_bu_ind_limit : 1;
-	unsigned char default_pe_duration : 1;
-	unsigned char disabled_subchannel_valid : 1;
-	unsigned char op_info_valid : 1;
-	unsigned char eht_msc_nss_set[4];
-	unsigned char control;
-	unsigned char ccfs0;
-	unsigned char ccfs1;
-	unsigned char disabled_subchannel_bitmap[2];
-	unsigned char reserved2[16];
-} __attribute__((__packed__)) em_eht_operations_bss_t;
-*/
-
-/*
-class dm_bss_t {
-public:
-		em_bss_info_t    m_bss_info;
-
-public:
-
-		int init(void) { memset(&m_bss_info, 0, sizeof(em_bss_info_t)); return 0; }
-
-		em_bss_info_t *get_bss_info(void) { return &m_bss_info; }
-
-		int decode(const cJSON *obj, void *parent_id);
-
-		void encode(cJSON *obj, bool summary = false);
-
-		bool operator == (const dm_bss_t & obj);
-
-		void operator = (const dm_bss_t & obj);
-
-		bool match_criteria(char *criteria);
-
-		static int parse_bss_id_from_key(const char *key, em_bss_id_t *id);
-
-		bool add_vendor_ie(const struct ieee80211_vs_ie *vs_ie);
-
-		void remove_vendor_ie(const struct ieee80211_vs_ie *vs_ie);
-
-		dm_bss_t(em_bss_info_t *bss);
-
-		dm_bss_t(const dm_bss_t & bss);
-
-		dm_bss_t();
-
-		virtual ~dm_bss_t();
-};
-*/
 typedef struct {
     bssid_t bssid;
     unsigned char channel_util;
@@ -1447,19 +1374,10 @@ public:
 	int handle_assoc_sta_link_metrics_tlv(unsigned char *buff);
 	int handle_assoc_sta_ext_link_metrics_tlv(unsigned char *buff);
 	int handle_assoc_sta_vendor_link_metrics_tlv(unsigned char *buff, unsigned int len);
-	int process_tlv_data_len(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, unsigned int));
-	int process_tlv_data(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*));
-	int process_tlv_bssid(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, bssid_t));
+	//int process_tlv_data_len(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, unsigned int));
+	//int process_tlv_data(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*));
+	//int process_tlv_bssid(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, bssid_t));
 
 
 };	
 
-/*class dm_easy_mesh_list_t {
-
-	hash_map_t  *m_list;
-
-public: 
-	
-	dm_easy_mesh_t *get_first_dm() { return static_cast<dm_easy_mesh_t *>(hash_map_get_first(m_list)); }
-        dm_easy_mesh_t *get_next_dm(dm_easy_mesh_t *dm) { return static_cast<dm_easy_mesh_t *>(hash_map_get_next(m_list, dm)); }
-};*/
