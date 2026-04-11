@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <arpa/inet.h>
 #include "./common.h"
-/*
+
 em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned int buff_len)
 {
     EM_ASSERT_NOT_NULL(tlv, NULL, "TLV is NULL");
@@ -33,6 +33,7 @@ em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned in
         return NULL; // No more TLVs
     }
 
+#if 1    
     size_t remaining_len = buff_len - offset;
 
     em_printfout("buff_len = %u, offset = %zu, remaining_len = %zu\n",
@@ -41,6 +42,7 @@ em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned in
     if (remaining_len < sizeof(em_tlv_t)) {
 	    em_printfout("Truncated packet: not enough space for TLV header\n");
     }
+#endif
 
     // Position buffer pointer to start of next TLV
     em_tlv_t* next_tlvs_buff = reinterpret_cast<em_tlv_t*>(main_tlvs_buff + offset);
@@ -56,7 +58,7 @@ em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned in
        return get_first_tlv(next_tlvs_buff, next_tlvs_buff_len);
 }
 
-*/
+/*
  em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned int buff_len)
 {
     EM_ASSERT_NOT_NULL(tlv, NULL, "TLV is NULL");
@@ -103,11 +105,12 @@ em_tlv_t *em_msg_t::get_next_tlv(em_tlv_t* tlv, em_tlv_t* tlvs_buff, unsigned in
     em_tlv_t* next_tlvs_buff = reinterpret_cast<em_tlv_t*>(main_tlvs_buff + offset);
     unsigned int next_tlvs_buff_len = static_cast<unsigned int>(remaining_len);
 
-  /*  //  SAFETY before calling get_first_tlv (VERY IMPORTANT)
+    //  SAFETY before calling get_first_tlv (VERY IMPORTANT)
     if (next_tlvs_buff_len < sizeof(em_tlv_t)) {
         return NULL;
     }
-*/
+
     // Original logic (unchanged)
     return get_first_tlv(next_tlvs_buff, next_tlvs_buff_len);
 }
+*/

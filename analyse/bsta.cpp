@@ -193,7 +193,7 @@ int em_capability_t::handle_client_info(unsigned char *tlv_buff, unsigned int tl
 
     return 0;
 }
-
+/*
 int em_capability_t::process_1905_eth_message(unsigned char *pkt_buff, unsigned int pkt_len, em_tlv_type_t tlv_type,
                                              int (em_capability_t::*handler)(unsigned char*, unsigned int))
 {
@@ -244,7 +244,7 @@ int em_capability_t::process_1905_eth_message(unsigned char *pkt_buff, unsigned 
 
     return 0;
 }
-
+*/
 int em_capability_t::handle_bsta_cap_report(unsigned char *pkt_buff, unsigned int pkt_len)
 {
     int ret = 0;

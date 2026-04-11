@@ -20,6 +20,7 @@ namespace util {
 	}
 }
 
+
 typedef struct {
 	unsigned char   type;
 	unsigned short  len;
@@ -68,8 +69,6 @@ extern uint8_t packet[4096];
 extern uint8_t *ptr;
 extern uint32_t packet_len;
 extern FILE *fp;
-
-
 typedef void (*tlv_constructor_t)(void);
 
 typedef struct {
@@ -95,10 +94,12 @@ int test_get_next_tlv(void);
 void run_all_tests_handle_bsta_cap_report(void);
 void run_all_tests_get_first_tlv(void);
 void run_all_tests_get_next_tlv(void);
+void run_all_tests_handle_ap_metrics_response(void);
 
 extern pkt_test_case_t handle_bsta_cap_report_suite[];
 extern pkt_test_case_t get_first_tlv_suite[];
 extern pkt_test_case_t get_next_tlv_suite[];
+extern pkt_test_case_t handle_ap_metrics_response_suite[];
 
 // PCAP Global Header
 struct pcap_global_header {
@@ -1446,8 +1447,12 @@ public:
 	int handle_assoc_sta_link_metrics_tlv(unsigned char *buff);
 	int handle_assoc_sta_ext_link_metrics_tlv(unsigned char *buff);
 	int handle_assoc_sta_vendor_link_metrics_tlv(unsigned char *buff, unsigned int len);
+	int process_tlv_data_len(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, unsigned int));
+	int process_tlv_data(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*));
+	int process_tlv_bssid(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, bssid_t));
 
-};
+
+};	
 
 /*class dm_easy_mesh_list_t {
 
