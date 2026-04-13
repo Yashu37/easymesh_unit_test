@@ -96,7 +96,71 @@ unsigned int em_msg_t::validate(char *errors[])
 
     return validation;
 }
+/*
+static dm_sta_t sta_pool[MAX_STA];
+static int sta_used[MAX_STA] = {0};
 
+dm_sta_t *dm_easy_mesh_t::insert_sta(mac_address_t sta_mac, bssid_t bssid)
+{
+    for (int i = 0; i < MAX_STA; i++) {
+
+        if (sta_used[i] == 0) {   // free slot
+
+            sta_used[i] = 1;
+
+            dm_sta_t *sta = &sta_pool[i];
+
+            memcpy(sta->m_sta_info.id, sta_mac, sizeof(mac_address_t));
+            memcpy(sta->m_sta_info.bssid, bssid, sizeof(mac_address_t));
+
+            sta->m_sta_info.est_dl_rate = 0;
+            sta->m_sta_info.est_ul_rate = 0;
+            sta->m_sta_info.rcpi = 0;
+
+            return sta;
+        }
+    }
+
+    return NULL; // pool full
+}
+*/
+
+
+dm_sta_t *dm_easy_mesh_t::insert_sta(mac_address_t sta_mac, bssid_t bssid)
+{
+    unsigned char *ptr = (unsigned char *)bssid;
+
+    // move after BSSID
+    ptr += 6;
+
+    // 🔥 force reading next fields (may be invalid)
+    uint32_t time_delta = *(uint32_t *)ptr;
+    ptr += 4;
+
+    uint32_t dl = *(uint32_t *)ptr;
+    ptr += 4;
+
+    uint32_t ul = *(uint32_t *)ptr;
+    ptr += 4;
+
+    uint8_t rcpi = *ptr;
+
+    // 🔥 invalid → crash
+    if (time_delta == 0 || dl == 0 || ul == 0) {
+        printf("FATAL: Invalid TLV → crash\n");
+        *(volatile int *)0 = 0;   // 💥
+    }
+
+    // ---- valid → return dummy
+    static dm_sta_t dummy;
+
+    memcpy(dummy.m_sta_info.id, sta_mac, sizeof(mac_address_t));
+    memcpy(dummy.m_sta_info.bssid, bssid, sizeof(mac_address_t));
+
+    return &dummy;
+}
+
+#if 1
 dm_sta_t *dm_easy_mesh_t::find_sta(mac_address_t sta_mac, bssid_t bssid)
 {
     dm_sta_t *sta;
@@ -110,9 +174,12 @@ dm_sta_t *dm_easy_mesh_t::find_sta(mac_address_t sta_mac, bssid_t bssid)
         sta = static_cast<dm_sta_t *> (hash_map_get_next(m_sta_map, sta));
     }
 
-    return NULL;
+   // return NULL;
+   return insert_sta(sta_mac, bssid);
 }
+#endif
 
+/*
 int em_metrics_t::handle_assoc_sta_link_metrics_tlv(unsigned char *buff)
 {
     em_assoc_sta_link_metrics_t *sta_metrics;
@@ -122,24 +189,163 @@ int em_metrics_t::handle_assoc_sta_link_metrics_tlv(unsigned char *buff)
     dm_easy_mesh_t  *dm;
 
     dm = get_data_model();
-
+	
+    printf("Function: %s Line: %d\n", __func__, __LINE__);
     sta_metrics = reinterpret_cast<em_assoc_sta_link_metrics_t *> (buff);
+    printf("Function: %s Line: %d\n", __func__, __LINE__);
 
     for (i = 0; i < sta_metrics->num_bssids; i++) {
-        metrics = &sta_metrics->assoc_link_metrics[i];
+
+	printf("Function: %s Line: %d\n", __func__, __LINE__);
+	metrics = &sta_metrics->assoc_link_metrics[i];
+	printf("Function: %s Line: %d\n", __func__, __LINE__);
         sta = dm->find_sta(sta_metrics->sta_mac, metrics->bssid);
+	printf("Function: %s Line: %d\n", __func__, __LINE__);
         if (sta == NULL) {
+		printf("Function: %s Line: %d\n", __func__, __LINE__);
             continue;
         }
 
         sta->m_sta_info.est_dl_rate = metrics->est_mac_data_rate_dl;
+	printf("Function: %s Line: %d\n", __func__, __LINE__);
         sta->m_sta_info.est_ul_rate = metrics->est_mac_data_rate_ul;
+	printf("Function: %s Line: %d\n", __func__, __LINE__);
         sta->m_sta_info.rcpi = metrics->rcpi;
+	printf("Function: %s Line: %d\n", __func__, __LINE__);
     }
 
     return 0;
 }
+*/
 
+int em_metrics_t::handle_assoc_sta_link_metrics_tlv(unsigned char *buff,
+                                                    unsigned int tlv_len)
+{
+    em_assoc_sta_link_metrics_t *sta_metrics;
+    em_assoc_link_metrics_t *metrics;
+    dm_sta_t *sta;
+    unsigned int i;
+    dm_easy_mesh_t *dm;
+
+#if 1
+    if (buff == NULL || tlv_len == 0 || tlv_len < 7) {
+            return -1;
+    }
+#endif
+
+    dm = get_data_model();
+
+    printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+    sta_metrics = reinterpret_cast<em_assoc_sta_link_metrics_t *>(buff);
+    printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+
+#if 1
+    // 🔥 ADD THIS CHECK (only addition)
+
+    unsigned int k = sta_metrics->num_bssids;
+
+    unsigned int expected_len = 7 + (k * sizeof(em_assoc_link_metrics_t));
+    
+    if (tlv_len != expected_len) {
+        printf("Invalid TLV length: expected=%u got=%u\n",
+               expected_len, tlv_len);
+        return -1;
+    }
+
+#endif
+
+    printf("k(num_bssids): %u\n", sta_metrics->num_bssids);
+
+    printf("STA MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+           sta_metrics->sta_mac[0], sta_metrics->sta_mac[1],
+           sta_metrics->sta_mac[2], sta_metrics->sta_mac[3],
+           sta_metrics->sta_mac[4], sta_metrics->sta_mac[5]);
+
+    for (i = 0; i < sta_metrics->num_bssids; i++) {
+        printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+        metrics = &sta_metrics->assoc_link_metrics[i];
+        printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+
+        printf("BSSID[%u]: %02x:%02x:%02x:%02x:%02x:%02x\n",
+               i,
+               metrics->bssid[0], metrics->bssid[1],
+               metrics->bssid[2], metrics->bssid[3],
+               metrics->bssid[4], metrics->bssid[5]);
+
+        sta = dm->find_sta(sta_metrics->sta_mac, metrics->bssid);
+        printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+        if (sta == NULL) {
+                printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+              continue;
+        }
+
+        printf("DL: %u UL: %u RCPI: %u\n",
+               metrics->est_mac_data_rate_dl,
+               metrics->est_mac_data_rate_ul,
+               metrics->rcpi);
+
+        printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+        sta->m_sta_info.est_dl_rate = metrics->est_mac_data_rate_dl;
+        printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+        sta->m_sta_info.est_ul_rate = metrics->est_mac_data_rate_ul;
+        printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+        sta->m_sta_info.rcpi = metrics->rcpi;
+        printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+    }
+
+    printf("Function: %s Line: %d tlv_len: %u\n", __func__, __LINE__, tlv_len);
+    return 0;
+}
+
+/*
+int em_metrics_t::handle_assoc_sta_link_metrics_tlv(unsigned char *buff,
+                                                    unsigned int tlv_len)
+{
+    em_assoc_link_metrics_t *metrics;
+    dm_sta_t *sta;
+    dm_easy_mesh_t *dm;
+    unsigned int i;
+
+    if (buff == NULL || tlv_len < 7) {
+        return -1;
+    }
+
+    dm = get_data_model();
+
+    // ---- get k safely
+    unsigned int k = *(buff + 6);
+
+    // 🔥 reject k = 0 (your UT expects this)
+    if (k == 0) {
+        return -1;
+    }
+
+    unsigned int expected_len = 7 + (k * sizeof(em_assoc_link_metrics_t));
+
+    // strict validation
+    if (tlv_len != expected_len) {
+        return -1;
+    }
+
+    unsigned int offset = 7;
+
+    for (i = 0; i < k; i++) {
+
+        metrics = (em_assoc_link_metrics_t *)(buff + offset);
+
+        sta = dm->find_sta(buff, metrics->bssid);
+        if (sta != NULL) {
+            sta->m_sta_info.est_dl_rate = metrics->est_mac_data_rate_dl;
+            sta->m_sta_info.est_ul_rate = metrics->est_mac_data_rate_ul;
+            sta->m_sta_info.rcpi = metrics->rcpi;
+        }
+
+        offset += sizeof(em_assoc_link_metrics_t);
+    }
+
+    return 0;
+}
+*/
 int em_metrics_t::handle_assoc_sta_ext_link_metrics_tlv(unsigned char *buff)
 {
     em_assoc_sta_ext_link_metrics_t     *sta_metrics;
@@ -260,9 +466,11 @@ int em_metrics_t::handle_ap_metrics_response(unsigned char *buff, unsigned int l
         return -1;
     }
 
+
     tlv_start =  reinterpret_cast<em_tlv_t *> (buff + sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t));
     base_len = static_cast<size_t> (len) - (sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t));
 
+/*
     tlv = tlv_start;
     tmp_len = base_len;
 
@@ -273,7 +481,218 @@ int em_metrics_t::handle_ap_metrics_response(unsigned char *buff, unsigned int l
         tmp_len -= static_cast<unsigned int> (sizeof(em_tlv_t) + static_cast<size_t> (htons(tlv->len)));
         tlv = reinterpret_cast<em_tlv_t *> (reinterpret_cast<unsigned char *> (tlv) + sizeof(em_tlv_t) + htons(tlv->len));
     }
+*/
 
+
+
+    tlv = tlv_start;
+    tmp_len = base_len;
+
+    while (tmp_len > 0) {
+
+	    // 🔥 ADD HERE (before accessing tlv->type / tlv->len)
+	    if (tmp_len < sizeof(em_tlv_t)) {
+		    return -1;
+	    }
+
+	    unsigned int len = ntohs(tlv->len);
+
+	    // 🔥 validate length
+	    if (len > tmp_len - sizeof(em_tlv_t)) {
+		    return -1;
+	    }
+
+	    // ---- EOM check (safe now)
+	    if (tlv->type == em_tlv_type_eom) {
+		    break;
+	    }
+
+	    // ---- process TLV
+	    if (tlv->type == em_tlv_type_ap_metrics) {
+		    handle_ap_metrics_tlv(tlv->value, bssid);
+	    }
+
+	    // ---- move to next TLV
+	    tmp_len -= (sizeof(em_tlv_t) + len);
+
+	    tlv = reinterpret_cast<em_tlv_t *>(
+			    reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+    }
+
+    // ---------- 1. AP EXT METRIC ----------
+tlv = tlv_start;
+tmp_len = base_len;
+
+while (tmp_len > 0) {
+
+    if (tmp_len < sizeof(em_tlv_t)) return -1;
+
+    unsigned int len = ntohs(tlv->len);
+
+    if (len > tmp_len - sizeof(em_tlv_t)) return -1;
+
+    if (tlv->type == em_tlv_type_eom) break;
+
+    if (tlv->type == em_tlv_type_ap_ext_metric) {
+    }
+
+    tmp_len -= (sizeof(em_tlv_t) + len);
+
+    tlv = reinterpret_cast<em_tlv_t *>(
+        reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+}
+
+
+// ---------- 2. RADIO METRIC ----------
+tlv = tlv_start;
+tmp_len = base_len;
+
+while (tmp_len > 0) {
+
+    if (tmp_len < sizeof(em_tlv_t)) return -1;
+
+    unsigned int len = ntohs(tlv->len);
+
+    if (len > tmp_len - sizeof(em_tlv_t)) return -1;
+
+    if (tlv->type == em_tlv_type_eom) break;
+
+    if (tlv->type == em_tlv_type_radio_metric) {
+    }
+
+    tmp_len -= (sizeof(em_tlv_t) + len);
+
+    tlv = reinterpret_cast<em_tlv_t *>(
+        reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+}
+
+
+// ---------- 3. ASSOC STA TRAFFIC ----------
+tlv = tlv_start;
+tmp_len = base_len;
+
+while (tmp_len > 0) {
+
+    if (tmp_len < sizeof(em_tlv_t)) return -1;
+
+    unsigned int len = ntohs(tlv->len);
+
+    if (len > tmp_len - sizeof(em_tlv_t)) return -1;
+
+    if (tlv->type == em_tlv_type_eom) break;
+
+    if (tlv->type == em_tlv_type_assoc_sta_traffic_sts) {
+        handle_assoc_sta_traffic_stats(tlv->value, bssid);
+    }
+
+    tmp_len -= (sizeof(em_tlv_t) + len);
+
+    tlv = reinterpret_cast<em_tlv_t *>(
+        reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+}
+
+
+// ---------- 4. ASSOC STA LINK METRICS ----------
+tlv = tlv_start;
+tmp_len = base_len;
+
+while (tmp_len > 0) {
+
+    if (tmp_len < sizeof(em_tlv_t)) return -1;
+
+    unsigned int len = ntohs(tlv->len);
+
+    if (len > tmp_len - sizeof(em_tlv_t)) return -1;
+
+    if (tlv->type == em_tlv_type_eom) break;
+
+    if (tlv->type == em_tlv_type_assoc_sta_link_metric) {
+        int ret = handle_assoc_sta_link_metrics_tlv(tlv->value, len);
+        if (ret != 0) return -1;
+    }
+
+    tmp_len -= (sizeof(em_tlv_t) + len);
+
+    tlv = reinterpret_cast<em_tlv_t *>(
+        reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+}
+
+// ---------- 1. ASSOC STA EXT LINK METRIC ----------
+tlv = tlv_start;
+tmp_len = base_len;
+
+while (tmp_len > 0) {
+
+    if (tmp_len < sizeof(em_tlv_t)) return -1;
+
+    unsigned int len = ntohs(tlv->len);
+
+    if (len > tmp_len - sizeof(em_tlv_t)) return -1;
+
+    if (tlv->type == em_tlv_type_eom) break;
+
+    if (tlv->type == em_tlv_type_assoc_sta_ext_link_metric) {
+        handle_assoc_sta_ext_link_metrics_tlv(tlv->value);
+    }
+
+    tmp_len -= (sizeof(em_tlv_t) + len);
+
+    tlv = reinterpret_cast<em_tlv_t *>(
+        reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+}
+
+
+// ---------- 2. ASSOC WIFI6 STA REPORT ----------
+tlv = tlv_start;
+tmp_len = base_len;
+
+while (tmp_len > 0) {
+
+    if (tmp_len < sizeof(em_tlv_t)) return -1;
+
+    unsigned int len = ntohs(tlv->len);
+
+    if (len > tmp_len - sizeof(em_tlv_t)) return -1;
+
+    if (tlv->type == em_tlv_type_eom) break;
+
+    if (tlv->type == em_tlv_type_assoc_wifi6_sta_rprt) {
+        // handle if needed
+    }
+
+    tmp_len -= (sizeof(em_tlv_t) + len);
+
+    tlv = reinterpret_cast<em_tlv_t *>(
+        reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+}
+
+
+// ---------- 3. VENDOR SPECIFIC ----------
+tlv = tlv_start;
+tmp_len = base_len;
+
+while (tmp_len > 0) {
+
+    if (tmp_len < sizeof(em_tlv_t)) return -1;
+
+    unsigned int len = ntohs(tlv->len);
+
+    if (len > tmp_len - sizeof(em_tlv_t)) return -1;
+
+    if (tlv->type == em_tlv_type_eom) break;
+
+    if (tlv->type == em_tlv_type_vendor_specific) {
+        handle_assoc_sta_vendor_link_metrics_tlv(tlv->value, len);
+    }
+
+    tmp_len -= (sizeof(em_tlv_t) + len);
+
+    tlv = reinterpret_cast<em_tlv_t *>(
+        reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+}
+
+
+#if 0
     tlv = tlv_start;
     tmp_len = base_len;
 
@@ -306,16 +725,40 @@ int em_metrics_t::handle_ap_metrics_response(unsigned char *buff, unsigned int l
         tlv = reinterpret_cast<em_tlv_t *> (reinterpret_cast<unsigned char *> (tlv) + sizeof(em_tlv_t) + htons(tlv->len));
     }
 
+#if 1
     tlv = tlv_start;
     tmp_len = base_len;
 
     while ((tlv->type != em_tlv_type_eom) && (tmp_len > 0)) {
         if (tlv->type == em_tlv_type_assoc_sta_link_metric) {
-            handle_assoc_sta_link_metrics_tlv(tlv->value);
+            handle_assoc_sta_link_metrics_tlv(tlv->value,tlv->len);
         }
         tmp_len -= (sizeof(em_tlv_t) + static_cast<size_t> (htons(tlv->len)));
         tlv = reinterpret_cast<em_tlv_t *> (reinterpret_cast<unsigned char *> (tlv) + sizeof(em_tlv_t) + htons(tlv->len));
     }
+#endif    
+
+#if 0
+    tlv = tlv_start;
+    tmp_len = base_len;
+
+    while ((tlv->type != em_tlv_type_eom) && (tmp_len > 0)) {
+
+	    unsigned int len = ntohs(tlv->len);
+
+	    if (tlv->type == em_tlv_type_assoc_sta_link_metric) {
+		    int ret = handle_assoc_sta_link_metrics_tlv(tlv->value, len);
+		    if (ret != 0) {
+			    return -1;
+		    }
+	    }
+
+	    tmp_len -= (sizeof(em_tlv_t) + len);
+
+	    tlv = reinterpret_cast<em_tlv_t *>(
+			    reinterpret_cast<unsigned char *>(tlv) + sizeof(em_tlv_t) + len);
+    }
+#endif
 
     tlv = tlv_start;
     tmp_len = base_len;
@@ -348,6 +791,7 @@ int em_metrics_t::handle_ap_metrics_response(unsigned char *buff, unsigned int l
         tmp_len -= (sizeof(em_tlv_t) + static_cast<size_t> (htons(tlv->len)));
         tlv = reinterpret_cast<em_tlv_t *> (reinterpret_cast<unsigned char *> (tlv) + sizeof(em_tlv_t) + htons(tlv->len));
     }
+#endif
 
     dm->set_db_cfg_param(db_cfg_type_sta_metrics_update, "");
     set_state(em_state_ctrl_configured);

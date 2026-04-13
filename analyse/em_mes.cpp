@@ -6,6 +6,7 @@
 #include "common.h"
 #include <sanitizer/asan_interface.h>
 
+
 void em_msg_t::autoconfig_search()
 {
     m_tlv_member[m_num_tlv++] = em_tlv_member_t(em_tlv_type_al_mac_address, mandatory, "table 6-8 of IEEE-1905-1", 9);
@@ -828,3 +829,4 @@ void *hash_map_get_next(hash_map_t *map, void *data)
     }
     return NULL;
 }
+

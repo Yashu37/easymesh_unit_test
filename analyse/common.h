@@ -144,6 +144,11 @@ typedef struct {
 	element_t    *itr;
 } hash_map_t;
 
+#define MAX_STA 32
+
+//static dm_sta_t sta_pool[MAX_STA];
+//static int sta_used[MAX_STA] = {0};
+
 int8_t     queue_push(queue_t *q, void *data);
 int8_t hash_map_put(hash_map_t *map, char *key, void *data);
 void *hash_map_get(hash_map_t *map, const char *key);
@@ -313,7 +318,9 @@ public:
 
 		dm_sta_t(const dm_sta_t & sta);
 
-		dm_sta_t();
+	//	dm_sta_t();
+
+		dm_sta_t() {}
 
 		virtual ~dm_sta_t() = default;
 };
@@ -819,6 +826,9 @@ public:
 		bool get_colocated(void) { return m_colocated; }
 
 		dm_sta_t *find_sta(mac_address_t sta_mac, bssid_t bssid);
+
+		//  ADD THIS LINE
+		dm_sta_t *insert_sta(mac_address_t sta_mac, bssid_t bssid);
 
 		em_bss_info_t *get_bss_info_with_mac(mac_address_t mac);
 
@@ -1371,7 +1381,7 @@ public:
 	int handle_assoc_sta_traffic_stats(unsigned char *buff, bssid_t bssid);
 	int handle_ap_metrics_response(unsigned char *buff, unsigned int len);
 	int handle_ap_metrics_tlv(unsigned char *buff, bssid_t bssid);
-	int handle_assoc_sta_link_metrics_tlv(unsigned char *buff);
+	int handle_assoc_sta_link_metrics_tlv(unsigned char *buff,unsigned int tlv_len);
 	int handle_assoc_sta_ext_link_metrics_tlv(unsigned char *buff);
 	int handle_assoc_sta_vendor_link_metrics_tlv(unsigned char *buff, unsigned int len);
 	//int process_tlv_data_len(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, unsigned int));
