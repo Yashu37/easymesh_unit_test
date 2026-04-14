@@ -20,7 +20,6 @@ namespace util {
 	}
 }
 
-
 typedef struct {
 	unsigned char   type;
 	unsigned short  len;
@@ -29,6 +28,7 @@ typedef struct {
 
 #define EM_VENDOR_OUI_SIZE 3
 #define MAC_ADDRESS_LEN 6
+typedef char    em_2xlong_string_t[256];
 typedef uint8_t mac_address_t[MAC_ADDRESS_LEN];
 typedef char    em_string_t[32];
 typedef char    em_short_string_t[64];
@@ -52,19 +52,19 @@ typedef char    em_small_string_t[16];
 #define EM_LOG_LVL_ERROR 2
 #define EM_LOG_LVL_DEBUG 3
 #define EM_MAX_DB_CFG_CRITERIA  32
-
-static     const unsigned char em_vendor_oui[EM_VENDOR_OUI_SIZE] = {0xd8, 0x9c, 0x8e};
-
-
+#define EM_MAX_NEIGHBORS        16
+#define EM_MSCS_DISALLOWED_STA      10
+#define EM_SCS_DISALLOWED_STA       10
 #define EM_ASSERT_MSG_FALSE(x, ret, errMsg, ...) \
-        if(x) { \
-                em_printfout(errMsg, ## __VA_ARGS__); \
-                return ret; \
-        }
+	if(x) { \
+		em_printfout(errMsg, ## __VA_ARGS__); \
+		return ret; \
+	}
 
 #define EM_ASSERT_MSG_TRUE(x, ret, errMsg, ...) EM_ASSERT_MSG_FALSE(!(x), ret, errMsg, ## __VA_ARGS__)
 #define EM_ASSERT_NOT_NULL(x, ret, errMsg, ...) EM_ASSERT_MSG_FALSE(x == NULL, ret, errMsg, ## __VA_ARGS__)
 
+static     const unsigned char em_vendor_oui[EM_VENDOR_OUI_SIZE] = {0xd8, 0x9c, 0x8e};
 extern uint8_t packet[4096];
 extern uint8_t *ptr;
 extern uint32_t packet_len;
@@ -72,10 +72,10 @@ extern FILE *fp;
 typedef void (*tlv_constructor_t)(void);
 
 typedef struct {
-    const char* test_name;      // The name of the test (e.g., "pkt49_a_b_e1_rb")
-    const char* pcap_file;  // The pcap file (e.g., "pkt49.pcap")
-    tlv_constructor_t tlv_func; // The specific TLV constructor function
-    int expected_result;        // The value that means PASS (-1 or 0)
+	const char* test_name;      // The name of the test (e.g., "pkt49_a_b_e1_rb")
+	const char* pcap_file;  // The pcap file (e.g., "pkt49.pcap")
+	tlv_constructor_t tlv_func; // The specific TLV constructor function
+	int expected_result;        // The value that means PASS (-1 or 0)
 } pkt_test_case_t;
 
 void construct_global_header(void);
@@ -90,36 +90,39 @@ int construct_pcap_and_test(int (*test_func)(void));
 int test_handle_bsta_cap_report(void);
 int test_get_first_tlv(void);
 int test_get_next_tlv(void);
+int test_handle_ap_metrics_response(void);
+int test_handle_channel_scan_rprt(void);
 
 void run_all_tests_handle_bsta_cap_report(void);
 void run_all_tests_get_first_tlv(void);
 void run_all_tests_get_next_tlv(void);
 void run_all_tests_handle_ap_metrics_response(void);
+void run_all_tests_handle_channel_scan_rprt(void);
 
 extern pkt_test_case_t handle_bsta_cap_report_suite[];
 extern pkt_test_case_t get_first_tlv_suite[];
 extern pkt_test_case_t get_next_tlv_suite[];
 extern pkt_test_case_t handle_ap_metrics_response_suite[];
+extern pkt_test_case_t handle_channel_scan_rprt_suite[];
 
 // PCAP Global Header
 struct pcap_global_header {
-    uint32_t magic_number;
-    uint16_t version_major;
-    uint16_t version_minor;
-    int32_t  thiszone;
-    uint32_t sigfigs;
-    uint32_t snaplen;
-    uint32_t network;
+	uint32_t magic_number;
+	uint16_t version_major;
+	uint16_t version_minor;
+	int32_t  thiszone;
+	uint32_t sigfigs;
+	uint32_t snaplen;
+	uint32_t network;
 };
 
 // PCAP Packet Header
 struct pcap_packet_header {
-    uint32_t ts_sec;
-    uint32_t ts_usec;
-    uint32_t incl_len;
-    uint32_t orig_len;
+	uint32_t ts_sec;
+	uint32_t ts_usec;
+	uint32_t incl_len;
+	uint32_t orig_len;
 };
-
 
 typedef int easymesh_log_level_t;
 typedef int easymesh_dbg_type_t;
@@ -152,8 +155,6 @@ typedef struct {
 int8_t     queue_push(queue_t *q, void *data);
 int8_t hash_map_put(hash_map_t *map, char *key, void *data);
 void *hash_map_get(hash_map_t *map, const char *key);
-
-
 void *hash_map_get_first(hash_map_t *map);
 void *hash_map_get_next(hash_map_t *map, void *data);
 
@@ -287,10 +288,10 @@ typedef char    em_string_t[32];
 typedef mac_address_t bssid_t;
 
 class dm_sta_t {
-public:
+	public:
 		em_sta_info_t    m_sta_info;
 
-public:
+	public:
 		int init(void) { memset(&m_sta_info, 0, sizeof(em_sta_info_t)); return 0; }
 
 		em_sta_info_t *get_sta_info(void) { return &m_sta_info; }
@@ -318,7 +319,7 @@ public:
 
 		dm_sta_t(const dm_sta_t & sta);
 
-	//	dm_sta_t();
+		//	dm_sta_t();
 
 		dm_sta_t() {}
 
@@ -467,355 +468,419 @@ typedef struct {
 } __attribute__((__packed__)) em_bh_sta_radio_cap_t;
 
 typedef enum {
-    em_tlv_type_eom = 0,
-    em_tlv_type_al_mac_address = 1,
-    em_tlv_type_mac_address = 2,
-    em_tlv_type_device_info = 3,
-    em_tlv_type_device_bridging_cap = 4,
-    em_tlv_type_non1905_neigh_list = 6,
-    em_tlv_type_1905_neigh_list = 7,
-    em_tlv_type_link_metric = 8,
-    em_tlv_type_transmitter_link_metric = 9,
-    em_tlv_type_receiver_link_metric = 0x0a,
-    em_tlv_type_vendor_specific = 0x0b,
-    em_tlv_type_link_metric_result_code = 0x0c,
-    em_tlv_type_searched_role = 0x0d,
-    em_tlv_type_autoconf_freq_band = 0x0e,
-    em_tlv_type_supported_role = 0x0f,
-    em_tlv_type_supported_freq_band = 0x10,
-    em_tlv_type_wsc = 0x11,
-    em_tlv_type_supported_service = 0x80,
-    em_tlv_type_searched_service = 0x81,
-    em_tlv_type_radio_id = 0x82,
-    em_tlv_type_operational_bss = 0x83,
-    em_tlv_type_associated_clients = 0x84,
-    em_tlv_type_ap_radio_basic_cap = 0x85,
-    em_tlv_type_ht_cap = 0x86,
-    em_tlv_type_vht_cap = 0x87,
-    em_tlv_type_he_cap = 0x88,
-    em_tlv_type_steering_policy = 0x89,
-    em_tlv_type_metric_reporting_policy = 0x8a,
-    em_tlv_type_channel_pref = 0x8b,
-    em_tlv_type_radio_op_restriction = 0x8c,
-    em_tlv_type_tx_power = 0x8d,
-    em_tlv_type_channel_sel_resp = 0x8e,
-    em_tlv_type_op_channel_report = 0x8f,
-    em_tlv_type_client_info = 0x90,
-    em_tlv_type_client_cap_report = 0x91,
-    em_tlv_type_client_assoc_event = 0x92,
-    em_tlv_type_ap_metrics_query = 0x93,
-    em_tlv_type_ap_metrics = 0x94,
-    em_tlv_type_sta_mac_addr = 0x95,
-    em_tlv_type_assoc_sta_link_metric = 0x96,
-    em_tlv_type_unassoc_sta_link_metric_query = 0x97,
-    em_tlv_type_unassoc_sta_link_metric_rsp = 0x98,
-    em_tlv_type_bcon_metric_query = 0x99,
-    em_tlv_type_bcon_metric_rsp = 0x9a,
-    em_tlv_type_steering_request = 0x9b,
-    em_tlv_type_steering_btm_rprt = 0x9c,
-    em_tlv_type_client_assoc_ctrl_req = 0x9d,
-    em_tlv_type_bh_steering_req = 0x9e,
-    em_tlv_type_bh_steering_rsp = 0x9f,
-    em_tlv_type_higher_layer_data = 0xa0,
-    em_tlv_type_ap_cap = 0xa1,
-    em_tlv_type_assoc_sta_traffic_sts = 0xa2,
-    em_tlv_type_error_code = 0xa3,
-    em_tlv_type_channel_scan_rprt_policy = 0xa4,
-    em_tlv_type_channel_scan_cap = 0xa5,
-    em_tlv_type_channel_scan_req = 0xa6,
-    em_tlv_type_channel_scan_rslt = 0xa7,
-    em_tlv_type_timestamp = 0xa8,
-    em_tlv_type_1905_layer_security_cap = 0xa9,
-    em_tlv_type_ap_wifi6_cap = 0xaa,
-    em_tlv_type_mic = 0xab,
-    em_tlv_type_encrypt_payload = 0xac,
-    em_tlv_type_cac_req = 0xad,
-    em_tlv_type_cac_term = 0xae,
-    em_tlv_type_cac_cmpltn_rprt = 0xaf,
-    em_tlv_type_assoc_wifi6_sta_rprt = 0xb0,
-    em_tlv_type_cac_sts_rprt = 0xb1,
-    em_tlv_type_cac_cap = 0xb2,
-    em_tlv_type_profile = 0xb3,
-    em_tlv_type_profile_2_ap_cap = 0xb4,
-    em_tlv_type_dflt_8021q_settings = 0xb5,
-    em_tlv_type_traffic_separation_policy = 0xb6,
-    em_tlv_type_bss_conf_rep = 0xb7,
-    em_tlv_type_bssid = 0xb8,
-    em_tlv_type_svc_prio_rule = 0xb9,
-    em_tlv_type_dscp_map_tbl = 0xba,
-    em_tlv_type_bss_conf_req = 0xbb,
-    em_tlv_type_profile_2_error_code = 0xbc,
-    em_tlv_type_bss_conf_rsp = 0xbd,
-    em_tlv_type_ap_radio_advanced_cap = 0xbe,
-    em_tlv_type_assoc_sts_notif = 0xbf,
-    em_tlv_type_src_info = 0xc0,
-    em_tlv_type_tunneled_msg_type = 0xc1,
-    em_tlv_type_tunneled = 0xc2,
-    em_tlv_type_profile2_steering_request = 0xc3,
-    em_tlv_type_unsucc_assoc_policy = 0xc4,
-    em_tlv_type_metric_cltn_interval = 0xc5,
-    em_tlv_type_radio_metric = 0xc6,
-    em_tlv_type_ap_ext_metric = 0xc7,
-    em_tlv_type_assoc_sta_ext_link_metric = 0xc8,
-    em_tlv_type_status_code = 0xc9,
-    em_tlv_type_reason_code = 0xca,
-    em_tlv_type_bh_sta_radio_cap = 0xcb,
-    em_tlv_type_akm_suite = 0xcc,
-    em_tlv_type_1905_encap_dpp = 0xcd,
-    em_tlv_type_1905_encap_eapol = 0xce,
-    em_tlv_type_dpp_bootstrap_uri_notification = 0xcf,
-    em_tlv_type_backhaul_bss_conf = 0xd0,
-    em_tlv_type_dpp_msg = 0xd1,
-    em_tlv_type_dpp_cce_indication = 0xd2,
-    em_tlv_type_dpp_chirp_value = 0xd3,
-    em_tlv_type_device_inventory = 0xd4,
-    em_tlv_type_agent_list = 0xd5,
-    em_tlv_type_anticipated_channel_pref = 0xd6,
-    em_tlv_type_channel_usage = 0xd7,
-    em_tlv_type_spatial_reuse_req = 0xd8,
-    em_tlv_type_spatial_reuse_rep = 0xd9,
-    em_tlv_type_spatial_reuse_cfg_rsp = 0xda,
-    em_tlv_type_qos_mgmt_policy = 0xdb,
-    em_tlv_type_qos_mgmt_desc = 0xdc,
-    em_tlv_type_ctrl_cap = 0xdd,
-    em_tlv_type_wifi7_agent_cap = 0xdf,
-    em_tlv_type_ap_mld_config = 0xe0,
-    em_tlv_type_bsta_mld_config = 0xe1,
-    em_tlv_type_assoc_sta_mld_conf_rep = 0xe2,
-    em_tlv_type_tid_to_link_map_policy = 0xe6,
-    em_tlv_eht_operations = 0xe7,
-    em_tlv_type_avail_spectrum_inquiry_reg = 0xe8,
-    em_tlv_type_avail_spectrum_inquiry_rsp = 0xe9,
-    em_tlv_type_vendor_operational_bss = 0xf2,
+	em_tlv_type_eom = 0,
+	em_tlv_type_al_mac_address = 1,
+	em_tlv_type_mac_address = 2,
+	em_tlv_type_device_info = 3,
+	em_tlv_type_device_bridging_cap = 4,
+	em_tlv_type_non1905_neigh_list = 6,
+	em_tlv_type_1905_neigh_list = 7,
+	em_tlv_type_link_metric = 8,
+	em_tlv_type_transmitter_link_metric = 9,
+	em_tlv_type_receiver_link_metric = 0x0a,
+	em_tlv_type_vendor_specific = 0x0b,
+	em_tlv_type_link_metric_result_code = 0x0c,
+	em_tlv_type_searched_role = 0x0d,
+	em_tlv_type_autoconf_freq_band = 0x0e,
+	em_tlv_type_supported_role = 0x0f,
+	em_tlv_type_supported_freq_band = 0x10,
+	em_tlv_type_wsc = 0x11,
+	em_tlv_type_supported_service = 0x80,
+	em_tlv_type_searched_service = 0x81,
+	em_tlv_type_radio_id = 0x82,
+	em_tlv_type_operational_bss = 0x83,
+	em_tlv_type_associated_clients = 0x84,
+	em_tlv_type_ap_radio_basic_cap = 0x85,
+	em_tlv_type_ht_cap = 0x86,
+	em_tlv_type_vht_cap = 0x87,
+	em_tlv_type_he_cap = 0x88,
+	em_tlv_type_steering_policy = 0x89,
+	em_tlv_type_metric_reporting_policy = 0x8a,
+	em_tlv_type_channel_pref = 0x8b,
+	em_tlv_type_radio_op_restriction = 0x8c,
+	em_tlv_type_tx_power = 0x8d,
+	em_tlv_type_channel_sel_resp = 0x8e,
+	em_tlv_type_op_channel_report = 0x8f,
+	em_tlv_type_client_info = 0x90,
+	em_tlv_type_client_cap_report = 0x91,
+	em_tlv_type_client_assoc_event = 0x92,
+	em_tlv_type_ap_metrics_query = 0x93,
+	em_tlv_type_ap_metrics = 0x94,
+	em_tlv_type_sta_mac_addr = 0x95,
+	em_tlv_type_assoc_sta_link_metric = 0x96,
+	em_tlv_type_unassoc_sta_link_metric_query = 0x97,
+	em_tlv_type_unassoc_sta_link_metric_rsp = 0x98,
+	em_tlv_type_bcon_metric_query = 0x99,
+	em_tlv_type_bcon_metric_rsp = 0x9a,
+	em_tlv_type_steering_request = 0x9b,
+	em_tlv_type_steering_btm_rprt = 0x9c,
+	em_tlv_type_client_assoc_ctrl_req = 0x9d,
+	em_tlv_type_bh_steering_req = 0x9e,
+	em_tlv_type_bh_steering_rsp = 0x9f,
+	em_tlv_type_higher_layer_data = 0xa0,
+	em_tlv_type_ap_cap = 0xa1,
+	em_tlv_type_assoc_sta_traffic_sts = 0xa2,
+	em_tlv_type_error_code = 0xa3,
+	em_tlv_type_channel_scan_rprt_policy = 0xa4,
+	em_tlv_type_channel_scan_cap = 0xa5,
+	em_tlv_type_channel_scan_req = 0xa6,
+	em_tlv_type_channel_scan_rslt = 0xa7,
+	em_tlv_type_timestamp = 0xa8,
+	em_tlv_type_1905_layer_security_cap = 0xa9,
+	em_tlv_type_ap_wifi6_cap = 0xaa,
+	em_tlv_type_mic = 0xab,
+	em_tlv_type_encrypt_payload = 0xac,
+	em_tlv_type_cac_req = 0xad,
+	em_tlv_type_cac_term = 0xae,
+	em_tlv_type_cac_cmpltn_rprt = 0xaf,
+	em_tlv_type_assoc_wifi6_sta_rprt = 0xb0,
+	em_tlv_type_cac_sts_rprt = 0xb1,
+	em_tlv_type_cac_cap = 0xb2,
+	em_tlv_type_profile = 0xb3,
+	em_tlv_type_profile_2_ap_cap = 0xb4,
+	em_tlv_type_dflt_8021q_settings = 0xb5,
+	em_tlv_type_traffic_separation_policy = 0xb6,
+	em_tlv_type_bss_conf_rep = 0xb7,
+	em_tlv_type_bssid = 0xb8,
+	em_tlv_type_svc_prio_rule = 0xb9,
+	em_tlv_type_dscp_map_tbl = 0xba,
+	em_tlv_type_bss_conf_req = 0xbb,
+	em_tlv_type_profile_2_error_code = 0xbc,
+	em_tlv_type_bss_conf_rsp = 0xbd,
+	em_tlv_type_ap_radio_advanced_cap = 0xbe,
+	em_tlv_type_assoc_sts_notif = 0xbf,
+	em_tlv_type_src_info = 0xc0,
+	em_tlv_type_tunneled_msg_type = 0xc1,
+	em_tlv_type_tunneled = 0xc2,
+	em_tlv_type_profile2_steering_request = 0xc3,
+	em_tlv_type_unsucc_assoc_policy = 0xc4,
+	em_tlv_type_metric_cltn_interval = 0xc5,
+	em_tlv_type_radio_metric = 0xc6,
+	em_tlv_type_ap_ext_metric = 0xc7,
+	em_tlv_type_assoc_sta_ext_link_metric = 0xc8,
+	em_tlv_type_status_code = 0xc9,
+	em_tlv_type_reason_code = 0xca,
+	em_tlv_type_bh_sta_radio_cap = 0xcb,
+	em_tlv_type_akm_suite = 0xcc,
+	em_tlv_type_1905_encap_dpp = 0xcd,
+	em_tlv_type_1905_encap_eapol = 0xce,
+	em_tlv_type_dpp_bootstrap_uri_notification = 0xcf,
+	em_tlv_type_backhaul_bss_conf = 0xd0,
+	em_tlv_type_dpp_msg = 0xd1,
+	em_tlv_type_dpp_cce_indication = 0xd2,
+	em_tlv_type_dpp_chirp_value = 0xd3,
+	em_tlv_type_device_inventory = 0xd4,
+	em_tlv_type_agent_list = 0xd5,
+	em_tlv_type_anticipated_channel_pref = 0xd6,
+	em_tlv_type_channel_usage = 0xd7,
+	em_tlv_type_spatial_reuse_req = 0xd8,
+	em_tlv_type_spatial_reuse_rep = 0xd9,
+	em_tlv_type_spatial_reuse_cfg_rsp = 0xda,
+	em_tlv_type_qos_mgmt_policy = 0xdb,
+	em_tlv_type_qos_mgmt_desc = 0xdc,
+	em_tlv_type_ctrl_cap = 0xdd,
+	em_tlv_type_wifi7_agent_cap = 0xdf,
+	em_tlv_type_ap_mld_config = 0xe0,
+	em_tlv_type_bsta_mld_config = 0xe1,
+	em_tlv_type_assoc_sta_mld_conf_rep = 0xe2,
+	em_tlv_type_tid_to_link_map_policy = 0xe6,
+	em_tlv_eht_operations = 0xe7,
+	em_tlv_type_avail_spectrum_inquiry_reg = 0xe8,
+	em_tlv_type_avail_spectrum_inquiry_rsp = 0xe9,
+	em_tlv_type_vendor_operational_bss = 0xf2,
 
-    em_tlv_type_max
+	em_tlv_type_max
 } em_tlv_type_t;
 
 typedef struct {
-    mac_address_t client_mac_addr;
-    unsigned char bssid[6];
+	mac_address_t client_mac_addr;
+	unsigned char bssid[6];
 } __attribute__((__packed__)) em_client_info_t;
 
 typedef struct  {
-    mac_address_t sta_mac;
-    unsigned int tx_bytes;
-    unsigned int rx_bytes;
-    unsigned int tx_pkts;
-    unsigned int rx_pkts;
-    unsigned int tx_pkt_errors;
-    unsigned int rx_pkt_errors;
-    unsigned int retx_cnt;
+	mac_address_t sta_mac;
+	unsigned int tx_bytes;
+	unsigned int rx_bytes;
+	unsigned int tx_pkts;
+	unsigned int rx_pkts;
+	unsigned int tx_pkt_errors;
+	unsigned int rx_pkt_errors;
+	unsigned int retx_cnt;
 } __attribute__((__packed__)) em_assoc_sta_traffic_stats_t;
 
 
 typedef struct {
-    // this is of type vendor_ext_attr_id_t for vendor specific attributes
-    unsigned char attr_id;
-    unsigned char  vendor_data[0];
+	// this is of type vendor_ext_attr_id_t for vendor specific attributes
+	unsigned char attr_id;
+	unsigned char  vendor_data[0];
 } __attribute__((__packed__)) em_vendor_data_t;
 
 typedef struct {
-    unsigned char  vendor_oui[3];
-    unsigned char num;
-    em_vendor_data_t  data[0];
+	unsigned char  vendor_oui[3];
+	unsigned char num;
+	em_vendor_data_t  data[0];
 } __attribute__((__packed__)) em_vendor_specific_t;
 
 typedef struct {
-    bssid_t     bssid;
-    unsigned int  time_delta_ms;
-    unsigned int  est_mac_data_rate_dl;
-    unsigned int  est_mac_data_rate_ul;
-    unsigned char rcpi;
+	bssid_t     bssid;
+	unsigned int  time_delta_ms;
+	unsigned int  est_mac_data_rate_dl;
+	unsigned int  est_mac_data_rate_ul;
+	unsigned char rcpi;
 }__attribute__((__packed__)) em_assoc_link_metrics_t;
 
-
 typedef struct {
-    mac_address_t sta_mac;
-    unsigned char num_bssids;
-    em_assoc_link_metrics_t     assoc_link_metrics[0];
+	mac_address_t sta_mac;
+	unsigned char num_bssids;
+	em_assoc_link_metrics_t     assoc_link_metrics[0];
 }__attribute__((__packed__)) em_assoc_sta_link_metrics_t;
 
 typedef struct {
-    bssid_t     bssid;
-    unsigned int  last_data_dl_rate;
-    unsigned int  last_data_ul_rate;
-    unsigned int  util_receive;
-    unsigned int  util_transmit;
+	bssid_t     bssid;
+	unsigned int  last_data_dl_rate;
+	unsigned int  last_data_ul_rate;
+	unsigned int  util_receive;
+	unsigned int  util_transmit;
 }__attribute__((__packed__)) em_assoc_ext_link_metrics_t;
 
 typedef struct {
-    mac_address_t sta_mac;
-    unsigned char num_bssids;
-    em_assoc_ext_link_metrics_t assoc_ext_link_metrics[0];
+	mac_address_t sta_mac;
+	unsigned char num_bssids;
+	em_assoc_ext_link_metrics_t assoc_ext_link_metrics[0];
 }__attribute__((__packed__)) em_assoc_sta_ext_link_metrics_t;
 
 typedef struct {
-    mac_address_t sta_mac;
-    bssid_t bssid;
-    em_string_t sta_client_type;
-    //unsigned char num_bssids;
-    //em_assoc_vendor_link_metrics_t assoc_vendor_link_metrics[0];
+	mac_address_t sta_mac;
+	bssid_t bssid;
+	em_string_t sta_client_type;
+	//unsigned char num_bssids;
+	//em_assoc_vendor_link_metrics_t assoc_vendor_link_metrics[0];
 }__attribute__((__packed__)) em_assoc_sta_vendor_link_metrics_t;
 
 typedef enum {
-        em_vap_mode_ap,
-        em_vap_mode_sta
+	em_vap_mode_ap,
+	em_vap_mode_sta
 } em_vap_mode_t;
 
 typedef struct {
-        mac_address_t bssid;
-        unsigned char reserved1 : 2;
-        unsigned char group_addr_bu_ind_exp : 2;
-        unsigned char group_addr_bu_ind_limit : 1;
-        unsigned char default_pe_duration : 1;
-        unsigned char disabled_subchannel_valid : 1;
-        unsigned char op_info_valid : 1;
-        unsigned char eht_msc_nss_set[4];
-        unsigned char control;
-        unsigned char ccfs0;
-        unsigned char ccfs1;
-        unsigned char disabled_subchannel_bitmap[2];
-        unsigned char reserved2[16];
+	mac_address_t bssid;
+	unsigned char reserved1 : 2;
+	unsigned char group_addr_bu_ind_exp : 2;
+	unsigned char group_addr_bu_ind_limit : 1;
+	unsigned char default_pe_duration : 1;
+	unsigned char disabled_subchannel_valid : 1;
+	unsigned char op_info_valid : 1;
+	unsigned char eht_msc_nss_set[4];
+	unsigned char control;
+	unsigned char ccfs0;
+	unsigned char ccfs1;
+	unsigned char disabled_subchannel_bitmap[2];
+	unsigned char reserved2[16];
 } __attribute__((__packed__)) em_eht_operations_bss_t;
 
 typedef enum {
-        em_haul_type_fronthaul,
-        em_haul_type_backhaul,
-        em_haul_type_iot,
-        em_haul_type_configurator,
-        em_haul_type_hotspot,
-        em_haul_type_max,
+	em_haul_type_fronthaul,
+	em_haul_type_backhaul,
+	em_haul_type_iot,
+	em_haul_type_configurator,
+	em_haul_type_hotspot,
+	em_haul_type_max,
 } em_haul_type_t;
 
 typedef struct {
-        em_long_string_t        net_id;
-        mac_address_t   dev_mac;
-    mac_address_t  ruid;
-    mac_address_t  bssid;
-        em_haul_type_t  haul_type;
+	em_long_string_t        net_id;
+	mac_address_t   dev_mac;
+	mac_address_t  ruid;
+	mac_address_t  bssid;
+	em_haul_type_t  haul_type;
 } em_bss_id_t;
 
 typedef enum
 {
-    WIFI_CHANNELBANDWIDTH_20MHZ = 0x1, /**< 20MHz. */
-    WIFI_CHANNELBANDWIDTH_40MHZ = 0x2, /**< 40MHz. */
-    WIFI_CHANNELBANDWIDTH_80MHZ = 0x4, /**< 80MHz. */
-    WIFI_CHANNELBANDWIDTH_160MHZ = 0x8, /**< 160MHz. */
-    WIFI_CHANNELBANDWIDTH_80_80MHZ = 0x10, /**< 80+80MHz. */
-    WIFI_CHANNELBANDWIDTH_320MHZ = 0x20 /**< 320MHz. */
+	WIFI_CHANNELBANDWIDTH_20MHZ = 0x1, /**< 20MHz. */
+	WIFI_CHANNELBANDWIDTH_40MHZ = 0x2, /**< 40MHz. */
+	WIFI_CHANNELBANDWIDTH_80MHZ = 0x4, /**< 80MHz. */
+	WIFI_CHANNELBANDWIDTH_160MHZ = 0x8, /**< 160MHz. */
+	WIFI_CHANNELBANDWIDTH_80_80MHZ = 0x10, /**< 80+80MHz. */
+	WIFI_CHANNELBANDWIDTH_320MHZ = 0x20 /**< 320MHz. */
 } wifi_channelBandwidth_t;
 
 typedef char ssid_t[32];
 
 typedef struct {
-        bssid_t bssid;
-        ssid_t  ssid;
-    signed char signal_strength;
-        wifi_channelBandwidth_t bandwidth;
-    unsigned char bss_color;
-    unsigned char channel_util;
-    unsigned short sta_count;
+	bssid_t bssid;
+	ssid_t  ssid;
+	signed char signal_strength;
+	wifi_channelBandwidth_t bandwidth;
+	unsigned char bss_color;
+	unsigned char channel_util;
+	unsigned short sta_count;
 } em_neighbor_t;
 
 typedef struct {
-    // Vap Index is constant. Any modification will not be reflected in OneWifi.
-    unsigned int vap_index;
-    // Vap Mode is constant. Any modification will not be reflected in OneWifi.
-    em_vap_mode_t vap_mode;
-        em_bss_id_t     id;
-        em_interface_t  bssid;
-        em_interface_t  ruid;
-    ssid_t  ssid;
-    bool    enabled;
-    unsigned int last_change;
-    em_long_string_t     timestamp;
-    unsigned int unicast_bytes_sent;
-    unsigned int    unicast_bytes_rcvd;
-    unsigned int    numberofsta;
-    em_string_t     est_svc_params_be;
-    em_string_t     est_svc_params_bk;
-    em_string_t     est_svc_params_vi;
-    em_string_t     est_svc_params_vo;
-    unsigned int    byte_counter_units;
-    unsigned char   num_fronthaul_akms;
-    em_short_string_t     fronthaul_akm[EM_MAX_AKMS];
-    unsigned char   num_backhaul_akms;
-    em_short_string_t     backhaul_akm[EM_MAX_AKMS];
-    bool    profile_1b_sta_allowed;
-    bool    profile_2b_sta_allowed;
-    unsigned int    assoc_allowed_status;
-    bool    backhaul_use;
-    bool    fronthaul_use;
-    bool    r1_disallowed;
-    bool    r2_disallowed;
-    bool    multi_bssid;
-    bool    transmitted_bssid;
-    em_eht_operations_bss_t eht_ops;
-    em_short_string_t mesh_sta_passphrase;
-    unsigned int vlan_id;
-    mac_address_t   mld_mac;
-    mac_address_t   sta_mac;
+	// Vap Index is constant. Any modification will not be reflected in OneWifi.
+	unsigned int vap_index;
+	// Vap Mode is constant. Any modification will not be reflected in OneWifi.
+	em_vap_mode_t vap_mode;
+	em_bss_id_t     id;
+	em_interface_t  bssid;
+	em_interface_t  ruid;
+	ssid_t  ssid;
+	bool    enabled;
+	unsigned int last_change;
+	em_long_string_t     timestamp;
+	unsigned int unicast_bytes_sent;
+	unsigned int    unicast_bytes_rcvd;
+	unsigned int    numberofsta;
+	em_string_t     est_svc_params_be;
+	em_string_t     est_svc_params_bk;
+	em_string_t     est_svc_params_vi;
+	em_string_t     est_svc_params_vo;
+	unsigned int    byte_counter_units;
+	unsigned char   num_fronthaul_akms;
+	em_short_string_t     fronthaul_akm[EM_MAX_AKMS];
+	unsigned char   num_backhaul_akms;
+	em_short_string_t     backhaul_akm[EM_MAX_AKMS];
+	bool    profile_1b_sta_allowed;
+	bool    profile_2b_sta_allowed;
+	unsigned int    assoc_allowed_status;
+	bool    backhaul_use;
+	bool    fronthaul_use;
+	bool    r1_disallowed;
+	bool    r2_disallowed;
+	bool    multi_bssid;
+	bool    transmitted_bssid;
+	em_eht_operations_bss_t eht_ops;
+	em_short_string_t mesh_sta_passphrase;
+	unsigned int vlan_id;
+	mac_address_t   mld_mac;
+	mac_address_t   sta_mac;
 
-    // Extra vendor information elements for the BSS
-    // @note Don't manually allocate, use the helper functions to add/remove elements
-    unsigned char vendor_elements[WIFI_AP_MAX_VENDOR_IE_LEN];
-    size_t vendor_elements_len;
-    bool    connect_status;
+	// Extra vendor information elements for the BSS
+	// @note Don't manually allocate, use the helper functions to add/remove elements
+	unsigned char vendor_elements[WIFI_AP_MAX_VENDOR_IE_LEN];
+	size_t vendor_elements_len;
+	bool    connect_status;
 } em_bss_info_t;
 
 // Forward declaration
 class dm_sta_t;
 class dm_device_t{
-public:
+	public:
 		em_device_info_t    m_device_info;
 		em_device_info_t *get_device_info(void) { return &m_device_info; }
 };
 
 class dm_bss_t {
+	public:
+		em_bss_info_t    m_bss_info;
+
+	public:
+
+		int init(void) { memset(&m_bss_info, 0, sizeof(em_bss_info_t)); return 0; }
+
+		em_bss_info_t *get_bss_info(void) { return &m_bss_info; }
+
+		int decode(const cJSON *obj, void *parent_id);
+
+		void encode(cJSON *obj, bool summary = false);
+
+		bool operator == (const dm_bss_t & obj);
+
+		void operator = (const dm_bss_t & obj);
+
+		bool match_criteria(char *criteria);
+
+		static int parse_bss_id_from_key(const char *key, em_bss_id_t *id);
+
+		bool add_vendor_ie(const struct ieee80211_vs_ie *vs_ie);
+
+		void remove_vendor_ie(const struct ieee80211_vs_ie *vs_ie);
+
+		dm_bss_t(em_bss_info_t *bss);
+
+		dm_bss_t(const dm_bss_t & bss);
+
+		dm_bss_t();
+
+		virtual ~dm_bss_t();
+};
+
+//struct dm_scan_result;              // forward declaration
+//typedef struct dm_scan_result dm_scan_result_t;
+
+typedef struct {
+    em_long_string_t    id;
+    unsigned short    num_of_devices;
+    em_long_string_t    timestamp;
+    em_interface_t    ctrl_id; // CM MAC
+    unsigned char    num_mscs_disallowed_sta;
+    em_string_t     mscs_disallowed_sta[EM_MSCS_DISALLOWED_STA];
+    unsigned char    num_scs_disallowed_sta;
+    em_string_t     scs_disallowed_sta[EM_SCS_DISALLOWED_STA];
+    em_interface_t    colocated_agent_id; // Colocated Agent AL MAC
+        em_media_type_t media;
+} em_network_info_t;
+
+typedef enum {
+        em_scanner_type_radio = 1,
+        em_scanner_type_sta,
+} em_scanner_type_t;
+
+typedef struct {
+    em_long_string_t    net_id;
+        mac_address_t   dev_mac;
+        mac_address_t scanner_mac;
+    unsigned char op_class;
+    unsigned char channel;
+        em_scanner_type_t       scanner_type;
+} em_scan_result_id_t;
+
+typedef struct {
+        em_scan_result_id_t     id;
+        unsigned char scan_status;
+        em_long_string_t timestamp;
+    unsigned char util;
+    unsigned char noise;
+        unsigned short num_neighbors;
+        em_neighbor_t   neighbor[EM_MAX_NEIGHBORS];
+    unsigned int  aggr_scan_duration;
+    unsigned char scan_type;
+} em_scan_result_t;
+
+class dm_scan_result_t {
 public:
-                em_bss_info_t    m_bss_info;
+    em_scan_result_t    m_scan_result;
+};
+
+typedef struct {
+    mac_address_t ruid;
+    unsigned char op_class;
+    unsigned char channel;
+    unsigned char scan_status;
+    unsigned char timestamp_len;
+    char timestamp[0];
+}__attribute__((__packed__)) em_channel_scan_result_t;
+
+class dm_network_t {
+public:
+    em_network_info_t   m_net_info;
 
 public:
-
-                int init(void) { memset(&m_bss_info, 0, sizeof(em_bss_info_t)); return 0; }
-
-                em_bss_info_t *get_bss_info(void) { return &m_bss_info; }
-
-                int decode(const cJSON *obj, void *parent_id);
-
-                void encode(cJSON *obj, bool summary = false);
-
-                bool operator == (const dm_bss_t & obj);
-
-                void operator = (const dm_bss_t & obj);
-
-                bool match_criteria(char *criteria);
-
-                static int parse_bss_id_from_key(const char *key, em_bss_id_t *id);
-
-                bool add_vendor_ie(const struct ieee80211_vs_ie *vs_ie);
-
-                void remove_vendor_ie(const struct ieee80211_vs_ie *vs_ie);
-
-                dm_bss_t(em_bss_info_t *bss);
-
-                dm_bss_t(const dm_bss_t & bss);
-
-                dm_bss_t();
-
-                virtual ~dm_bss_t();
+        int init();
 };
 
 class dm_easy_mesh_t {
-public:
-	        hash_map_t          *m_sta_map = NULL;
-	        unsigned int    m_num_bss;
+	public:
+		dm_network_t    m_network;
+		hash_map_t          *m_sta_map = NULL;
+		unsigned int    m_num_bss;
 		dm_bss_t    m_bss[EM_MAX_BSSS];
-public:
+		hash_map_t              *m_scan_result_map = NULL;
+	public:
 		static char *macbytes_to_string(mac_address_t mac, char *string);
 
 		void set_db_cfg_param(db_cfg_type_t cfg_type, const char *criteria);
-		
 
 		dm_device_t m_device;
 
@@ -835,6 +900,10 @@ public:
 		// REQUIRED MEMBER
 		hash_map_t *m_sta_assoc_map;
 		em_db_cfg_param_t   m_db_cfg_param;
+	        
+		dm_scan_result_t *find_matching_scan_result(em_scan_result_id_t *id);
+	
+		dm_scan_result_t *create_new_scan_result(em_scan_result_id_t *id);
 
 		/*dm_easy_mesh_t*  m_data_model;*/
 		// Constructor
@@ -858,26 +927,19 @@ inline char *dm_easy_mesh_t::macbytes_to_string(mac_address_t mac, char *string)
 }
 
 class em_capability_t {
-public:
-	//	int handle_client_cap_report(unsigned char *buff, unsigned int len);
-		
-		int handle_bsta_cap_report(unsigned char *buff, unsigned int len);
-	
-		int handle_bsta_radio_cap(unsigned char *buff, unsigned int len);
-	
-		int handle_client_info(unsigned char *buff, unsigned int len);
-	
-		int process_single_tlv_in_1905_message(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_capability_t::*handler)(unsigned char*, unsigned int));
-		
-//		int handle_client_info_report(unsigned char *buff, unsigned int len);
+	public:
 
-		//int parse_tlvs(unsigned char *buff, unsigned int len);
+		int handle_bsta_cap_report(unsigned char *buff, unsigned int len);
+
+		int handle_bsta_radio_cap(unsigned char *buff, unsigned int len);
+
+		int handle_client_info(unsigned char *buff, unsigned int len);
+
+		int process_single_tlv_in_1905_message(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_capability_t::*handler)(unsigned char*, unsigned int));
 
 		dm_easy_mesh_t dm;
 
 		virtual dm_easy_mesh_t *get_data_model(void) { return &dm; }
-
-//		virtual em_profile_type_t   get_profile_type() = 0;
 
 		em_capability_t();
 
@@ -967,7 +1029,7 @@ typedef enum {
 } em_tlv_requirement_t;
 
 class em_tlv_member_t {
-public:
+	public:
 		em_tlv_type_t m_type;
 
 		em_tlv_requirement_t m_requirement;
@@ -977,7 +1039,7 @@ public:
 		bool m_present;
 
 		int m_tlv_length;
-public:
+	public:
 
 		em_tlv_member_t(em_tlv_type_t type, em_tlv_requirement_t requirement, const char *spec, int tlv_length) {
 			m_type = type;
@@ -1012,7 +1074,7 @@ class em_msg_t {
 	em_short_string_t m_errors[EM_MAX_TLV_MEMBERS];
 	unsigned char *m_buff;
 	unsigned int m_len;
-public:
+	public:
 
 	static unsigned char *add_buff_element(unsigned char *buff, unsigned int *len, unsigned char *element, unsigned int element_len);
 
@@ -1238,8 +1300,8 @@ typedef enum {
 /*static em_wsc_msg_type_t get_wsc_msg_type(unsigned char *buff, unsigned int len); */
 
 class em_configuration_t {
-public:
-	static em_wsc_msg_type_t get_wsc_msg_type(unsigned char *tlvs, unsigned int len) { return em_wsc_msg_type_m1; }
+	public:
+		static em_wsc_msg_type_t get_wsc_msg_type(unsigned char *tlvs, unsigned int len) { return em_wsc_msg_type_m1; }
 
 };
 
@@ -1317,7 +1379,7 @@ typedef enum {
 class em_sm_t {
 	em_state_t      m_state;
 
-public:
+	public:
 
 	int set_state(em_state_t state);
 
@@ -1334,16 +1396,18 @@ public:
 };
 
 class em_t {
-public:
+	public:
+		dm_easy_mesh_t*  m_data_model;
 
 		em_sm_t  m_sm;
 
 		void set_state(em_state_t state) {  m_sm.set_state(state); }
-		
+
 		em_profile_type_t   m_profile_type;
 
 		em_profile_type_t   get_profile_type() { return m_profile_type; }
 
+		dm_easy_mesh_t *get_data_model() { return m_data_model; }
 
 };
 
@@ -1357,37 +1421,47 @@ inline void set_state(em_state_t state)
 class dm_bss_t;
 
 typedef struct {
-    bssid_t bssid;
-    unsigned char channel_util;
-    unsigned short num_sta;
-    unsigned char reserved : 4;
-    unsigned char est_service_params_VI_bit : 1;
-    unsigned char est_service_params_VO_bit : 1;
-    unsigned char est_service_params_BK_bit : 1;
-    unsigned char est_service_params_BE_bit : 1;
-    unsigned char est_service_params_BE[3];
-    unsigned char est_service_params_BK[3];
-    unsigned char est_service_params_VO[3];
-    unsigned char est_service_params_VI[3];
+	bssid_t bssid;
+	unsigned char channel_util;
+	unsigned short num_sta;
+	unsigned char reserved : 4;
+	unsigned char est_service_params_VI_bit : 1;
+	unsigned char est_service_params_VO_bit : 1;
+	unsigned char est_service_params_BK_bit : 1;
+	unsigned char est_service_params_BE_bit : 1;
+	unsigned char est_service_params_BE[3];
+	unsigned char est_service_params_BK[3];
+	unsigned char est_service_params_VO[3];
+	unsigned char est_service_params_VI[3];
 } __attribute__((__packed__)) em_ap_metric_t;
-
 
 class em_metrics_t {
 
 	virtual dm_easy_mesh_t *get_data_model() = 0;
 	virtual em_profile_type_t get_profile_type() = 0;
 
-public:
+	public:
 	int handle_assoc_sta_traffic_stats(unsigned char *buff, bssid_t bssid);
 	int handle_ap_metrics_response(unsigned char *buff, unsigned int len);
 	int handle_ap_metrics_tlv(unsigned char *buff, bssid_t bssid);
-	int handle_assoc_sta_link_metrics_tlv(unsigned char *buff,unsigned int tlv_len);
-	int handle_assoc_sta_ext_link_metrics_tlv(unsigned char *buff);
+	int handle_assoc_sta_link_metrics_tlv(unsigned char *buff, unsigned int tlv_len);
+	int handle_assoc_sta_ext_link_metrics_tlv(unsigned char *buff, unsigned int tlv_len);
 	int handle_assoc_sta_vendor_link_metrics_tlv(unsigned char *buff, unsigned int len);
-	//int process_tlv_data_len(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, unsigned int));
-	//int process_tlv_data(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*));
-	//int process_tlv_bssid(unsigned char *buff, unsigned int len, em_tlv_type_t tlv_type, int (em_metrics_t::*handler)(unsigned char*, bssid_t));
-
-
 };	
 
+class em_channel_t {
+public:
+	int handle_channel_scan_rprt(unsigned char *buff, unsigned int len);
+	//dm_scan_result_t *find_matching_scan_result(em_scan_result_id_t *id);
+	virtual dm_easy_mesh_t *get_data_model() = 0;
+
+	void fill_scan_result(dm_scan_result_t *scan_res, em_channel_scan_result_t *res);
+
+};
+/*
+class dm_scan_result_t {
+public:
+    em_scan_result_t    m_scan_result;
+
+};
+*/    

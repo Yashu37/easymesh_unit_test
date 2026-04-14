@@ -13,12 +13,10 @@ em_tlv_t *em_msg_t::get_first_tlv(em_tlv_t* tlvs_buff, unsigned int buff_len)
 
 #if 1
 	if (buff_len < sizeof(em_tlv_t)) {
-//		em_printfout("Truncated packet: not enough space for TLV length field\n");
 		printf("Truncated packet: not enough space for TLV length field\n");
 		return NULL;
 	}
 #endif
-
 	em_tlv_t *tlv = tlvs_buff;
 	uint16_t tlv_len = ntohs(tlv->len);
 

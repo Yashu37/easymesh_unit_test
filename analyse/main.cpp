@@ -7,10 +7,10 @@
 #include <sanitizer/asan_interface.h>
 
 int main() {
-	//run_all_tests_handle_bsta_cap_report();
-	//run_all_tests_get_first_tlv();
-	//run_all_tests_get_next_tlv();
-	run_all_tests_handle_ap_metrics_response();
-    return 0;
+//	run_all_tests_handle_bsta_cap_report();
+//	run_all_tests_get_first_tlv();
+//	run_all_tests_get_next_tlv();
+	//run_all_tests_handle_ap_metrics_response();
+	run_all_tests_handle_channel_scan_rprt();
+	return 0;
 }
-

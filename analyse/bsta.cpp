@@ -99,126 +99,126 @@ void dm_easy_mesh_t::set_db_cfg_param(db_cfg_type_t cfg_type, const char *criter
 
 int em_capability_t::handle_bsta_radio_cap(unsigned char *tlv_buff, unsigned int tlv_len)
 {
-    if (!tlv_buff)
-    {
-        return -1;
-    }
+	if (!tlv_buff)
+	{
+		return -1;
+	}
 
-    if (!tlv_len || ((tlv_len != sizeof(em_bh_sta_radio_cap_t)) && (tlv_len != offsetof(em_bh_sta_radio_cap_t, bsta_addr))))
-    {
-        em_printfout("Invalid TLV length. Must be %d or %d for bsta radio cap TLV",
-		     static_cast<int>(offsetof(em_bh_sta_radio_cap_t, bsta_addr)),
-                     static_cast<int>(sizeof(em_bh_sta_radio_cap_t)));
-                    /* (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr),
-                     (int)sizeof(em_bh_sta_radio_cap_t));*/
-        return -1;
-    }
+	if (!tlv_len || ((tlv_len != sizeof(em_bh_sta_radio_cap_t)) && (tlv_len != offsetof(em_bh_sta_radio_cap_t, bsta_addr))))
+	{
+		em_printfout("Invalid TLV length. Must be %d or %d for bsta radio cap TLV",
+				static_cast<int>(offsetof(em_bh_sta_radio_cap_t, bsta_addr)),
+				static_cast<int>(sizeof(em_bh_sta_radio_cap_t)));
+		/* (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr),
+		   (int)sizeof(em_bh_sta_radio_cap_t));*/
+		return -1;
+	}
 
-//    const em_bh_sta_radio_cap_t *bsta_radio_cap = reinterpret_cast<const em_bh_sta_radio_cap_t*>(tlv_buff);
+	//    const em_bh_sta_radio_cap_t *bsta_radio_cap = reinterpret_cast<const em_bh_sta_radio_cap_t*>(tlv_buff);
 
-    em_bh_sta_radio_cap_t *bsta_radio_cap = reinterpret_cast<em_bh_sta_radio_cap_t*>(tlv_buff);
-    std::string ruid_str = util::mac_to_string(bsta_radio_cap->ruid);
-    em_printfout("Rcvd BSTA Cap, for radio: %s, mac present: %d",
-            ruid_str.c_str(),
-            bsta_radio_cap->bsta_mac_present);
+	em_bh_sta_radio_cap_t *bsta_radio_cap = reinterpret_cast<em_bh_sta_radio_cap_t*>(tlv_buff);
+	std::string ruid_str = util::mac_to_string(bsta_radio_cap->ruid);
+	em_printfout("Rcvd BSTA Cap, for radio: %s, mac present: %d",
+			ruid_str.c_str(),
+			bsta_radio_cap->bsta_mac_present);
 
-    if (tlv_len == offsetof(em_bh_sta_radio_cap_t, bsta_addr))
-    {
-        if (bsta_radio_cap->bsta_mac_present)
-        {
-            em_printfout("Error: bsta_mac_present is 1 when tlv_len is %d", static_cast<int>(offsetof(em_bh_sta_radio_cap_t, bsta_addr)));
-	   // (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr));
-            return -1;
-        }
-        return 0;
-    }
+	if (tlv_len == offsetof(em_bh_sta_radio_cap_t, bsta_addr))
+	{
+		if (bsta_radio_cap->bsta_mac_present)
+		{
+			em_printfout("Error: bsta_mac_present is 1 when tlv_len is %d", static_cast<int>(offsetof(em_bh_sta_radio_cap_t, bsta_addr)));
+			// (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr));
+			return -1;
+		}
+		return 0;
+	}
 
-    if (!bsta_radio_cap->bsta_mac_present)
-    {
-        em_printfout("Error: bsta_mac_present is 0 when tlv_len is %d", static_cast<int>(sizeof(em_bh_sta_radio_cap_t)));
-	//(int) sizeof(em_bh_sta_radio_cap_t));
-        return -1;
-    }
+	if (!bsta_radio_cap->bsta_mac_present)
+	{
+		em_printfout("Error: bsta_mac_present is 0 when tlv_len is %d", static_cast<int>(sizeof(em_bh_sta_radio_cap_t)));
+		//(int) sizeof(em_bh_sta_radio_cap_t));
+		return -1;
+	}
 
-    dm_easy_mesh_t *dm = get_data_model();
+	dm_easy_mesh_t *dm = get_data_model();
 
-    if (!dm) {
-        em_printfout("Could not find data model");
-        return -1;
-    }
+	if (!dm) {
+		em_printfout("Could not find data model");
+		return -1;
+	}
 
-    em_device_info_t *dev = dm->get_device_info();
-    if (!dev)
-    {
-            em_printfout("Could not find device in data model");
-            return -1;
-    }
+	em_device_info_t *dev = dm->get_device_info();
+	if (!dev)
+	{
+		em_printfout("Could not find device in data model");
+		return -1;
+	}
 
-    em_printfout("Update BSTA Cap for Device id: %s",
-                    util::mac_to_string(dev->id.dev_mac).c_str());
+	em_printfout("Update BSTA Cap for Device id: %s",
+			util::mac_to_string(dev->id.dev_mac).c_str());
 
-    memcpy(dm->m_device.m_device_info.backhaul_sta,
-                    bsta_radio_cap->bsta_addr,
-                    sizeof(mac_address_t));
+	memcpy(dm->m_device.m_device_info.backhaul_sta,
+			bsta_radio_cap->bsta_addr,
+			sizeof(mac_address_t));
 
-    dm->set_db_cfg_param(db_cfg_type_device_list_update, "");
+	dm->set_db_cfg_param(db_cfg_type_device_list_update, "");
 
-    return 0;
+	return 0;
 }
 int em_capability_t::handle_client_info(unsigned char *tlv_buff, unsigned int tlv_len)
 {
-    if (!tlv_buff) {
-        return -1;
-    }
+	if (!tlv_buff) {
+		return -1;
+	}
 
-    if (tlv_len != sizeof(em_client_info_t)) {
-        em_printfout("Invalid TLV length for client info TLV: received %u, expected %d", tlv_len, static_cast<int>(sizeof(em_client_info_t)));
-	//(int) sizeof(em_client_info_t));
-        return -1;
-    }
+	if (tlv_len != sizeof(em_client_info_t)) {
+		em_printfout("Invalid TLV length for client info TLV: received %u, expected %d", tlv_len, static_cast<int>(sizeof(em_client_info_t)));
+		//(int) sizeof(em_client_info_t));
+		return -1;
+	}
 
-    const em_client_info_t *client_info = reinterpret_cast<const em_client_info_t *>(tlv_buff);
+	const em_client_info_t *client_info = reinterpret_cast<const em_client_info_t *>(tlv_buff);
 
-    dm_easy_mesh_t *dm = get_data_model();
+	dm_easy_mesh_t *dm = get_data_model();
 
-    if (!dm) {
-        em_printfout("Could not find data model");
-        return -1;
-    }
+	if (!dm) {
+		em_printfout("Could not find data model");
+		return -1;
+	}
 
-    if (dm->get_colocated() != true) {
-        memcpy(dm->m_device.m_device_info.backhaul_mac.mac, client_info->client_mac_addr, sizeof(mac_address_t));
-        dm->set_db_cfg_param(db_cfg_type_device_list_update, "");
-    }
+	if (dm->get_colocated() != true) {
+		memcpy(dm->m_device.m_device_info.backhaul_mac.mac, client_info->client_mac_addr, sizeof(mac_address_t));
+		dm->set_db_cfg_param(db_cfg_type_device_list_update, "");
+	}
 
-    return 0;
+	return 0;
 }
 
 
 int em_capability_t::handle_bsta_cap_report(unsigned char *pkt_buff, unsigned int pkt_len)
 {
-    int ret = 0;
+	int ret = 0;
 
-    em_printfout("Backhaul Sta Capability report message rcvd");
+	em_printfout("Backhaul Sta Capability report message rcvd");
 
-    ret = process_single_tlv_in_1905_message(pkt_buff, pkt_len,
-            em_tlv_type_bh_sta_radio_cap,
-            &em_capability_t::handle_bsta_radio_cap);
+	ret = process_single_tlv_in_1905_message(pkt_buff, pkt_len,
+			em_tlv_type_bh_sta_radio_cap,
+			&em_capability_t::handle_bsta_radio_cap);
 
-    if (ret < 0)
-	    return ret;
-        //em_printfout("Warning: failed to process bh_sta_radio_cap TLV, continuing");
+	if (ret < 0)
+		return ret;
+	//em_printfout("Warning: failed to process bh_sta_radio_cap TLV, continuing");
 
-    ret = process_single_tlv_in_1905_message(pkt_buff, pkt_len,
-            em_tlv_type_client_info,
-            &em_capability_t::handle_client_info);
+	ret = process_single_tlv_in_1905_message(pkt_buff, pkt_len,
+			em_tlv_type_client_info,
+			&em_capability_t::handle_client_info);
 
-    if (ret < 0)
-        return ret;
+	if (ret < 0)
+		return ret;
 
-    set_state(em_state_ctrl_configured);
-    em_printfout("Cap: Bsta Capability report processed, ctrl configured");
+	set_state(em_state_ctrl_configured);
+	em_printfout("Cap: Bsta Capability report processed, ctrl configured");
 
-    return ret;
+	return ret;
 }
 
