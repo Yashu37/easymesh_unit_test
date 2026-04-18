@@ -1,6 +1,9 @@
 # build files
 *.o
-#main
+main
+tags
+cscope.out
+.*.sw*
 
 # test outputs
 #*.pcap

@@ -8,13 +8,12 @@
 
 class test_em_channel_t : public em_channel_t {
 public:
-    // expose private/protected function
+    dm_easy_mesh_t dm;   // 🔥 local data model
 
     dm_easy_mesh_t *get_data_model() override {
-        return nullptr;
+        return &dm;      // ✔ return valid object
     }
 };
-
 
 int test_handle_channel_scan_rprt(void)
 {
@@ -28,10 +27,14 @@ int test_handle_channel_scan_rprt(void)
         test_em_channel_t obj;
         ret = obj.handle_channel_scan_rprt(packet, packet_len);
 
+	// 🔥 ADD THIS LINE
+	obj.get_data_model()->clear_scan_results();
+
         __asan_unpoison_memory_region(&packet[packet_len], 4096 - packet_len);
 
         return ret;
 }
+
 
 void run_all_tests_handle_channel_scan_rprt()
 {

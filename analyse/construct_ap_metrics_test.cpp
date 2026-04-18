@@ -6200,7 +6200,7 @@ pkt_test_case_t handle_ap_metrics_response_suite[] = {
 	{NULL, NULL, NULL, 0}
 };
 
-#if 1
+#if 0
    pkt_test_case_t handle_ap_metrics_response_suite[] = {
 
    {"handle_bsta_cap_report_pkt1_a_b_c10_d_e",             "pkt1.pcap",  construct_handle_bsta_cap_report_pkt1_a_b_c10_d_e_rf_tlvs,             -1},

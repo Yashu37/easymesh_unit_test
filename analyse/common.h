@@ -8,6 +8,7 @@
 #include <cjson/cJSON.h>
 #include <iostream>
 #include <atomic>
+#include <vector>
 
 namespace util {
 	inline std::string mac_to_string(const uint8_t mac[6], const std::string & delim = ":") {
@@ -851,6 +852,8 @@ typedef struct {
 class dm_scan_result_t {
 public:
     em_scan_result_t    m_scan_result;
+
+    char *map_key;   // 🔥 ADD THIS
 };
 
 typedef struct {
@@ -905,6 +908,11 @@ class dm_easy_mesh_t {
 	
 		dm_scan_result_t *create_new_scan_result(em_scan_result_id_t *id);
 
+		std::vector<dm_scan_result_t*> m_scan_result_list;
+
+		void clear_scan_results();
+ 
+		~dm_easy_mesh_t();
 		/*dm_easy_mesh_t*  m_data_model;*/
 		// Constructor
 		dm_easy_mesh_t() {
@@ -1408,7 +1416,7 @@ class em_t {
 		em_profile_type_t   get_profile_type() { return m_profile_type; }
 
 		dm_easy_mesh_t *get_data_model() { return m_data_model; }
-
+	       
 };
 
 static em_t m_sm;
@@ -1455,13 +1463,6 @@ public:
 	//dm_scan_result_t *find_matching_scan_result(em_scan_result_id_t *id);
 	virtual dm_easy_mesh_t *get_data_model() = 0;
 
-	void fill_scan_result(dm_scan_result_t *scan_res, em_channel_scan_result_t *res);
+	void fill_scan_result(dm_scan_result_t *scan_res, em_channel_scan_result_t *res, unsigned char *start, unsigned char *end);
 
 };
-/*
-class dm_scan_result_t {
-public:
-    em_scan_result_t    m_scan_result;
-
-};
-*/    

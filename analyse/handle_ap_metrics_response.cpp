@@ -106,7 +106,7 @@ unsigned int em_msg_t::validate(char *errors[])
 #endif
 
 //wanted 
-#if 1
+#if 0
 dm_sta_t *dm_easy_mesh_t::insert_sta(mac_address_t sta_mac, bssid_t bssid)
 {
 	unsigned char *ptr = (unsigned char *)bssid;
