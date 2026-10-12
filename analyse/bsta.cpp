@@ -109,12 +109,8 @@ int em_capability_t::handle_bsta_radio_cap(unsigned char *tlv_buff, unsigned int
 		em_printfout("Invalid TLV length. Must be %d or %d for bsta radio cap TLV",
 				static_cast<int>(offsetof(em_bh_sta_radio_cap_t, bsta_addr)),
 				static_cast<int>(sizeof(em_bh_sta_radio_cap_t)));
-		/* (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr),
-		   (int)sizeof(em_bh_sta_radio_cap_t));*/
 		return -1;
 	}
-
-	//    const em_bh_sta_radio_cap_t *bsta_radio_cap = reinterpret_cast<const em_bh_sta_radio_cap_t*>(tlv_buff);
 
 	em_bh_sta_radio_cap_t *bsta_radio_cap = reinterpret_cast<em_bh_sta_radio_cap_t*>(tlv_buff);
 	std::string ruid_str = util::mac_to_string(bsta_radio_cap->ruid);
@@ -127,7 +123,6 @@ int em_capability_t::handle_bsta_radio_cap(unsigned char *tlv_buff, unsigned int
 		if (bsta_radio_cap->bsta_mac_present)
 		{
 			em_printfout("Error: bsta_mac_present is 1 when tlv_len is %d", static_cast<int>(offsetof(em_bh_sta_radio_cap_t, bsta_addr)));
-			// (int) offsetof(em_bh_sta_radio_cap_t, bsta_addr));
 			return -1;
 		}
 		return 0;
@@ -136,7 +131,6 @@ int em_capability_t::handle_bsta_radio_cap(unsigned char *tlv_buff, unsigned int
 	if (!bsta_radio_cap->bsta_mac_present)
 	{
 		em_printfout("Error: bsta_mac_present is 0 when tlv_len is %d", static_cast<int>(sizeof(em_bh_sta_radio_cap_t)));
-		//(int) sizeof(em_bh_sta_radio_cap_t));
 		return -1;
 	}
 
@@ -173,7 +167,6 @@ int em_capability_t::handle_client_info(unsigned char *tlv_buff, unsigned int tl
 
 	if (tlv_len != sizeof(em_client_info_t)) {
 		em_printfout("Invalid TLV length for client info TLV: received %u, expected %d", tlv_len, static_cast<int>(sizeof(em_client_info_t)));
-		//(int) sizeof(em_client_info_t));
 		return -1;
 	}
 
@@ -194,7 +187,6 @@ int em_capability_t::handle_client_info(unsigned char *tlv_buff, unsigned int tl
 	return 0;
 }
 
-
 int em_capability_t::handle_bsta_cap_report(unsigned char *pkt_buff, unsigned int pkt_len)
 {
 	int ret = 0;
@@ -207,8 +199,6 @@ int em_capability_t::handle_bsta_cap_report(unsigned char *pkt_buff, unsigned in
 
 	if (ret < 0)
 		return ret;
-	//em_printfout("Warning: failed to process bh_sta_radio_cap TLV, continuing");
-
 	ret = process_single_tlv_in_1905_message(pkt_buff, pkt_len,
 			em_tlv_type_client_info,
 			&em_capability_t::handle_client_info);

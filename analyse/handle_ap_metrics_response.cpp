@@ -284,9 +284,6 @@ int em_metrics_t::handle_assoc_sta_ext_link_metrics_tlv(unsigned char *buff, uns
 
 	sta_metrics = reinterpret_cast<em_assoc_sta_ext_link_metrics_t *> (buff);
 
-/*	unsigned int k = sta_metrics->num_bssids;
-	unsigned int expected_len = 7 + (k * sizeof(em_assoc_ext_link_metrics_t));
-*/
 	unsigned int k = sta_metrics->num_bssids;
 
 	unsigned int expected_len =

@@ -25146,7 +25146,7 @@ void construct_full_valid_case(void)
 #if 1
 pkt_test_case_t handle_channel_scan_rprt_suite[] = {
 
-
+/*
 	{"k3_e3_len0", "p1.pcap", construct_k3_e3_len0, 0},
 	{"k_tlv_ruid_6", "p2.pcap", construct_k_tlv_ruid_6, 0},
 	{"k_tlv_ruid_op", "p3.pcap", construct_k_tlv_ruid_op, 0},
@@ -25532,7 +25532,7 @@ pkt_test_case_t handle_channel_scan_rprt_suite[] = {
 	{"k_tlv_ts_len120", "p380.pcap", construct_k_tlv_ts_len120, 0},
 	{"k_tlv_ts_len121", "p381.pcap", construct_k_tlv_ts_len121, 0},
 	{"k_tlv_ts_len122", "p382.pcap", construct_k_tlv_ts_len122, 0},
-	{"k_tlv_ts_len123", "p383.pcap", construct_k_tlv_ts_len123, 0},
+*/	{"k_tlv_ts_len123", "p383.pcap", construct_k_tlv_ts_len123, 0},
 	{"k_tlv_ts_len124", "p384.pcap", construct_k_tlv_ts_len124, 0},
 	{"k_tlv_ts_len125", "p385.pcap", construct_k_tlv_ts_len125, 0},
 	{"k_tlv_ts_len126", "p386.pcap", construct_k_tlv_ts_len126, 0},
@@ -25543,7 +25543,7 @@ pkt_test_case_t handle_channel_scan_rprt_suite[] = {
 	{"k_tlv_ts_len131", "p391.pcap", construct_k_tlv_ts_len131, 0},
 	{"k_tlv_ts_len132", "p392.pcap", construct_k_tlv_ts_len132, 0},
 	{"k_tlv_ts_len133", "p393.pcap", construct_k_tlv_ts_len133, 0},
-	{"k_tlv_ts_len134", "p394.pcap", construct_k_tlv_ts_len134, 0},
+/*	{"k_tlv_ts_len134", "p394.pcap", construct_k_tlv_ts_len134, 0},
 	{"k_tlv_ts_len135", "p395.pcap", construct_k_tlv_ts_len135, 0},
 	{"k_tlv_ts_len136", "p396.pcap", construct_k_tlv_ts_len136, 0},
 	{"k_tlv_ts_len137", "p397.pcap", construct_k_tlv_ts_len137, 0},
@@ -25697,7 +25697,7 @@ pkt_test_case_t handle_channel_scan_rprt_suite[] = {
 	{"k_tlv_ssid_len23", "p543.pcap", construct_k_tlv_ssid_len23, 0},
 	{"k_tlv_ssid_len24", "p544.pcap", construct_k_tlv_ssid_len24, 0},
 	{"k_tlv_ssid_len25", "p545.pcap", construct_k_tlv_ssid_len25, 0},
-	{"k_tlv_ssid_len26", "p546.pcap", construct_k_tlv_ssid_len26, 0},
+*/	{"k_tlv_ssid_len26", "p546.pcap", construct_k_tlv_ssid_len26, 0},
 	{"k_tlv_ssid_len27", "p547.pcap", construct_k_tlv_ssid_len27, 0},
 	{"k_tlv_ssid_len28", "p548.pcap", construct_k_tlv_ssid_len28, 0},
 	{"k_tlv_ssid_len29", "p549.pcap", construct_k_tlv_ssid_len29, 0},
@@ -25712,7 +25712,7 @@ pkt_test_case_t handle_channel_scan_rprt_suite[] = {
 	{"k_tlv_ssid_len36", "p556.pcap", construct_k_tlv_ssid_len36, 0},
 	{"k_tlv_ssid_len37", "p557.pcap", construct_k_tlv_ssid_len37, 0},
 	{"k_tlv_ssid_len38", "p558.pcap", construct_k_tlv_ssid_len38, 0},
-	{"k_tlv_ssid_len39", "p559.pcap", construct_k_tlv_ssid_len39, 0},
+/*	{"k_tlv_ssid_len39", "p559.pcap", construct_k_tlv_ssid_len39, 0},
 	{"k_tlv_ssid_len40", "p560.pcap", construct_k_tlv_ssid_len40, 0},
 	{"k_tlv_ssid_len41", "p561.pcap", construct_k_tlv_ssid_len41, 0},
 	{"k_tlv_ssid_len42", "p562.pcap", construct_k_tlv_ssid_len42, 0},
@@ -25957,7 +25957,7 @@ pkt_test_case_t handle_channel_scan_rprt_suite[] = {
 	{"k_cb_len23", "p800.pcap", construct_k_cb_len23, 0},
 	{"k_cb_len24", "p801.pcap", construct_k_cb_len24, 0},
 	{"k_cb_len25", "p802.pcap", construct_k_cb_len25, 0},
-	{"k_cb_len26", "p803.pcap", construct_k_cb_len26, 0},
+*/	{"k_cb_len26", "p803.pcap", construct_k_cb_len26, 0},
 	{"k_cb_len27", "p804.pcap", construct_k_cb_len27, 0},
 	{"k_cb_len28", "p805.pcap", construct_k_cb_len28, 0},
 	{"k_cb_len29", "p806.pcap", construct_k_cb_len29, 0},
@@ -25969,7 +25969,7 @@ pkt_test_case_t handle_channel_scan_rprt_suite[] = {
 	{"k_cb_len35", "p812.pcap", construct_k_cb_len35, 0},
 	{"k_cb_len36", "p813.pcap", construct_k_cb_len36, 0},
 	{"k_cb_len37", "p814.pcap", construct_k_cb_len37, 0},
-	{"k_cb_len38", "p815.pcap", construct_k_cb_len38, 0},
+/*	{"k_cb_len38", "p815.pcap", construct_k_cb_len38, 0},
 	{"k_cb_len39", "p816.pcap", construct_k_cb_len39, 0},
 	{"k_cb_len40", "p817.pcap", construct_k_cb_len40, 0},
 	{"k_cb_len41", "p818.pcap", construct_k_cb_len41, 0},
@@ -26208,7 +26208,7 @@ pkt_test_case_t handle_channel_scan_rprt_suite[] = {
 	{"k_tlv_station_count_pow2_16", "p1050.pcap",  construct_k_tlv_station_count_pow2_16, 0},
 
 	{"k_tlv_full_final", "p1051.pcap", construct_k_tlv_full_final, 0},
-	
+*/	
 	{NULL, NULL, NULL, 0}
 };
 

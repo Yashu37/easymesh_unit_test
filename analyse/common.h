@@ -9,6 +9,8 @@
 #include <iostream>
 #include <atomic>
 #include <vector>
+#include <functional>
+#include <memory>
 
 namespace util {
 	inline std::string mac_to_string(const uint8_t mac[6], const std::string & delim = ":") {
@@ -19,6 +21,8 @@ namespace util {
 				mac[4], delim.c_str(), mac[5]);
 		return std::string(mac_str);
 	}
+
+	char *get_date_time_rfc3399(char *buff, unsigned int len);
 }
 
 typedef struct {
@@ -27,6 +31,15 @@ typedef struct {
 	unsigned char   value[0];
 } __attribute__((__packed__)) em_tlv_t;
 
+#define EM_MAX_NET_SSIDS 5
+#define EM_MAX_HAUL_TYPES   8
+#define EM_DATE_TIME_BUFF_SZ    64
+#define EM_MAX_SERVICE          8
+#define EM_MAX_UNASSOC_STA 64
+#define EM_MAX_DM_CHILDREN      64
+#define EM_MAX_RADIO_PER_AGENT         4
+#define MAX_STA_TO_DISASSOC             32
+#define EM_CLI_MAX_ARGS 5
 #define EM_VENDOR_OUI_SIZE 3
 #define MAC_ADDRESS_LEN 6
 typedef char    em_2xlong_string_t[256];
@@ -64,6 +77,26 @@ typedef char    em_small_string_t[16];
 
 #define EM_ASSERT_MSG_TRUE(x, ret, errMsg, ...) EM_ASSERT_MSG_FALSE(!(x), ret, errMsg, ## __VA_ARGS__)
 #define EM_ASSERT_NOT_NULL(x, ret, errMsg, ...) EM_ASSERT_MSG_FALSE(x == NULL, ret, errMsg, ## __VA_ARGS__)
+#define EM_MAX_CHANNELS_IN_LIST  64
+#define EM_MAX_OP_CLASS    48
+#define ACK_FROM_AGENT 0
+#define ACK_FROM_CTRL  1
+#define MAX_EM_BUFF_SZ  1024
+#define ETH_P_1905      0x893a
+#define ETH_ALEN 6
+using handshake_completed_handler = std::function<void(uint8_t[ETH_ALEN], bool)>;
+#define ETH_P_ALL       0x0003
+#define IF_NAMESIZE     16
+# define IFNAMSIZ       IF_NAMESIZE
+#define         BPF_LD          0x00
+#define         BPF_H           0x08 /* 16-bit */
+#define         BPF_JMP         0x05
+//#define         BPF_ABS         0x20i
+#define         BPF_JEQ         0x10
+#define         BPF_K           0x00
+#define         BPF_RET         0x06
+#define PACKET_MR_PROMISC       1
+#define PACKET_ADD_MEMBERSHIP           1
 
 static     const unsigned char em_vendor_oui[EM_VENDOR_OUI_SIZE] = {0xd8, 0x9c, 0x8e};
 extern uint8_t packet[4096];
@@ -71,7 +104,6 @@ extern uint8_t *ptr;
 extern uint32_t packet_len;
 extern FILE *fp;
 typedef void (*tlv_constructor_t)(void);
-
 typedef struct {
 	const char* test_name;      // The name of the test (e.g., "pkt49_a_b_e1_rb")
 	const char* pcap_file;  // The pcap file (e.g., "pkt49.pcap")
@@ -93,18 +125,33 @@ int test_get_first_tlv(void);
 int test_get_next_tlv(void);
 int test_handle_ap_metrics_response(void);
 int test_handle_channel_scan_rprt(void);
+int test_handle_channel_scan_req(void);
+int test_handle_unassoc_sta_link_metrics_tlv(void);
+int test_get_supported_service(void);
+int test_handle_ap_operational_bss(void);
+int test_handle_beacon_metrics_query(void);
 
 void run_all_tests_handle_bsta_cap_report(void);
 void run_all_tests_get_first_tlv(void);
 void run_all_tests_get_next_tlv(void);
 void run_all_tests_handle_ap_metrics_response(void);
 void run_all_tests_handle_channel_scan_rprt(void);
+void run_all_tests_handle_channel_scan_req(void);
+void run_all_tests_handle_unassoc_sta_link_metrics_tlv(void);
+void run_all_tests_get_supported_service(void);
+void run_all_tests_handle_ap_operational_bss(void);
+void run_all_tests_handle_beacon_metrics_query(void);
 
 extern pkt_test_case_t handle_bsta_cap_report_suite[];
 extern pkt_test_case_t get_first_tlv_suite[];
 extern pkt_test_case_t get_next_tlv_suite[];
 extern pkt_test_case_t handle_ap_metrics_response_suite[];
 extern pkt_test_case_t handle_channel_scan_rprt_suite[];
+extern pkt_test_case_t handle_channel_scan_req_suite[];
+extern pkt_test_case_t handle_unassoc_sta_link_metrics_suite[];
+extern pkt_test_case_t get_supported_service_suite[];
+extern pkt_test_case_t handle_ap_operational_bss_suite[];
+extern pkt_test_case_t handle_beacon_metrics_query_suite[];
 
 // PCAP Global Header
 struct pcap_global_header {
@@ -149,10 +196,6 @@ typedef struct {
 } hash_map_t;
 
 #define MAX_STA 32
-
-//static dm_sta_t sta_pool[MAX_STA];
-//static int sta_used[MAX_STA] = {0};
-
 int8_t     queue_push(queue_t *q, void *data);
 int8_t hash_map_put(hash_map_t *map, char *key, void *data);
 void *hash_map_get(hash_map_t *map, const char *key);
@@ -160,14 +203,9 @@ void *hash_map_get_first(hash_map_t *map);
 void *hash_map_get_next(hash_map_t *map, void *data);
 
 extern unsigned char vendor_elements[];
-
 typedef char em_interface_name_t[32];
-
-extern inline unsigned char *get_radio_interface_mac(void);
-
 std::pair < FILE *, std::string >
 get_module_log_fd_name(int module, int level);
-
 void get_formatted_time_em(char *time_buff);
 
 #define em_printfout(format, ...)  em_util_print(EM_LOG_LVL_INFO, EM_STDOUT, __FILE__, __LINE__, format, ##__VA_ARGS__)// general log
@@ -609,7 +647,6 @@ typedef struct  {
 	unsigned int retx_cnt;
 } __attribute__((__packed__)) em_assoc_sta_traffic_stats_t;
 
-
 typedef struct {
 	// this is of type vendor_ext_attr_id_t for vendor specific attributes
 	unsigned char attr_id;
@@ -768,6 +805,7 @@ typedef struct {
 class dm_sta_t;
 class dm_device_t{
 	public:
+		unsigned char *get_dev_interface_mac() { return m_device_info.intf.mac; }
 		em_device_info_t    m_device_info;
 		em_device_info_t *get_device_info(void) { return &m_device_info; }
 };
@@ -806,9 +844,6 @@ class dm_bss_t {
 
 		virtual ~dm_bss_t();
 };
-
-//struct dm_scan_result;              // forward declaration
-//typedef struct dm_scan_result dm_scan_result_t;
 
 typedef struct {
     em_long_string_t    id;
@@ -853,7 +888,7 @@ class dm_scan_result_t {
 public:
     em_scan_result_t    m_scan_result;
 
-    char *map_key;   // 🔥 ADD THIS
+    char *map_key;
 };
 
 typedef struct {
@@ -865,12 +900,52 @@ typedef struct {
     char timestamp[0];
 }__attribute__((__packed__)) em_channel_scan_result_t;
 
+typedef struct {
+    mac_address_t sta_mac;
+    unsigned char channel;
+    unsigned char op_class;
+    unsigned char rcpi;
+    unsigned int  time_delta;
+} em_unassoc_sta_metric_entry_t;
+
+typedef struct {
+    mac_address_t sta_mac;
+    unsigned char channel;
+    unsigned int  time_delta;
+    unsigned char rcpi;
+}__attribute__((__packed__)) em_unassoc_sta_metric_t;
+
 class dm_network_t {
 public:
     em_network_info_t   m_net_info;
 
 public:
         int init();
+	unsigned char *get_controller_interface_mac() { return m_net_info.ctrl_id.mac; }
+};
+
+typedef struct {
+    em_long_string_t    id;
+    ssid_t  ssid;
+    em_long_string_t    pass_phrase;
+    unsigned char   num_bands;
+    em_short_string_t    band[EM_MAX_BANDS];
+    bool    enable;
+    unsigned char   num_akms;
+    em_short_string_t akm[EM_MAX_AKMS];
+    em_string_t suite_select;
+    bool    advertisement;
+    em_string_t mfp;
+    mac_address_t   mobility_domain;
+    unsigned char   num_hauls;
+    em_haul_type_t haul_type[EM_MAX_HAUL_TYPES];
+    em_string_t auth_type;
+    unsigned short vlan_id;
+} em_network_ssid_info_t;
+
+class dm_network_ssid_t{
+	public:
+                em_network_ssid_info_t    m_network_ssid_info;
 };
 
 class dm_easy_mesh_t {
@@ -878,8 +953,12 @@ class dm_easy_mesh_t {
 		dm_network_t    m_network;
 		hash_map_t          *m_sta_map = NULL;
 		unsigned int    m_num_bss;
+		unsigned int        m_num_net_ssids;
+		dm_network_ssid_t   m_network_ssid[EM_MAX_NET_SSIDS];
 		dm_bss_t    m_bss[EM_MAX_BSSS];
 		hash_map_t              *m_scan_result_map = NULL;
+		unsigned int m_num_unassoc_sta_metrics;
+		em_unassoc_sta_metric_entry_t  m_unassoc_sta_metrics[EM_MAX_UNASSOC_STA];
 	public:
 		static char *macbytes_to_string(mac_address_t mac, char *string);
 
@@ -900,6 +979,30 @@ class dm_easy_mesh_t {
 
 		em_bss_info_t *get_bss_info_with_mac(mac_address_t mac);
 
+		dm_sta_t *get_first_sta(mac_address_t sta_mac);
+
+		dm_sta_t *get_next_sta(mac_address_t sta_mac, dm_sta_t *psta);
+
+		unsigned char *get_controller_interface_mac() { return m_network.get_controller_interface_mac(); }
+
+		unsigned char *get_agent_al_interface_mac() { return m_device.get_dev_interface_mac(); }
+
+		unsigned char *get_ctrl_al_interface_mac() { return m_network.get_controller_interface_mac(); }
+
+		static int get_interfaces_list(em_interface_t interfaces[], unsigned int *num_interfaces);
+
+		static int name_from_mac_address(const mac_address_t *mac, char *ifname);
+
+		bool is_ssid_match(const ssid_t  &ssid);
+
+		unsigned int get_num_bss() { return m_num_bss; }
+
+		void set_num_bss(unsigned int num) { m_num_bss = num; }
+
+		dm_bss_t *get_bss(unsigned int index) { return &m_bss[index]; }
+
+		dm_bss_t *get_bss(mac_address_t radio, mac_address_t bss);
+
 		// REQUIRED MEMBER
 		hash_map_t *m_sta_assoc_map;
 		em_db_cfg_param_t   m_db_cfg_param;
@@ -913,7 +1016,6 @@ class dm_easy_mesh_t {
 		void clear_scan_results();
  
 		~dm_easy_mesh_t();
-		/*dm_easy_mesh_t*  m_data_model;*/
 		// Constructor
 		dm_easy_mesh_t() {
 			m_sta_assoc_map = NULL;
@@ -1065,6 +1167,11 @@ class em_tlv_member_t {
 		~em_tlv_member_t() { }
 };
 
+typedef struct {
+    unsigned char   num;
+    unsigned char   service[EM_MAX_SERVICE];
+} __attribute__((__packed__)) em_supported_service_t;
+
 typedef enum {
 	em_freq_band_24,    //IEEE-1905-1-2013 table 6-23
 	em_freq_band_5,
@@ -1103,6 +1210,8 @@ class em_msg_t {
 	unsigned int validate(char *errors[]);
 
 	bool get_radio_id(mac_address_t *mac);
+
+	bool get_supported_service(em_supported_service_t *svc);
 
 	bool get_bss_id(mac_address_t *mac);
 
@@ -1305,11 +1414,30 @@ typedef enum {
 	em_wsc_msg_type_done,
 } em_wsc_msg_type_t;
 
-/*static em_wsc_msg_type_t get_wsc_msg_type(unsigned char *buff, unsigned int len); */
+typedef struct {
+    mac_address_t bssid;
+    unsigned char  ssid_len;
+    char  ssid[0];
+} __attribute__((__packed__)) em_ap_operational_bss_t;
+
+typedef struct {
+    mac_address_t ruid;
+    unsigned char     bss_num;
+    em_ap_operational_bss_t  bss[0];
+} __attribute__((__packed__)) em_ap_op_bss_radio_t;
+
+typedef struct {
+    unsigned char    radios_num;
+    em_ap_op_bss_radio_t   radios[0];
+} __attribute__((__packed__)) em_ap_op_bss_t;
 
 class em_configuration_t {
+	friend class test_em_configuration_t;
+
+	        int handle_ap_operational_bss(unsigned char *buff, unsigned int len);
 	public:
 		static em_wsc_msg_type_t get_wsc_msg_type(unsigned char *tlvs, unsigned int len) { return em_wsc_msg_type_m1; }
+		virtual dm_easy_mesh_t *get_data_model() = 0;
 
 };
 
@@ -1403,13 +1531,262 @@ class em_sm_t {
 
 };
 
-class em_t {
+typedef enum {
+    em_bus_event_type_none,
+    em_bus_event_type_chirp,
+    em_bus_event_type_reset,
+    em_bus_event_type_dev_test,
+    em_bus_event_type_set_dev_test,
+    em_bus_event_type_get_network,
+    em_bus_event_type_get_device,
+    em_bus_event_type_remove_device,
+    em_bus_event_type_get_radio,
+    em_bus_event_type_get_ssid,
+    em_bus_event_type_set_ssid,
+    em_bus_event_type_get_channel,
+    em_bus_event_type_set_channel,
+    em_bus_event_type_scan_channel,
+    em_bus_event_type_scan_result,
+    em_bus_event_type_channel_select,
+    em_bus_event_type_get_bss,
+    em_bus_event_type_get_sta,
+    em_bus_event_type_steer_sta,
+    em_bus_event_type_disassoc_sta,
+    em_bus_event_type_get_policy,
+    em_bus_event_type_set_policy,
+    em_bus_event_type_btm_sta,
+    em_bus_event_type_start_dpp,
+    em_bus_event_type_dev_init,
+    em_bus_event_type_cfg_renew,
+    em_bus_event_type_radio_config,
+    em_bus_event_type_vap_config,
+    em_bus_event_type_sta_list,
+    em_bus_event_type_ap_cap_query,
+    em_bus_event_type_client_cap_query,
+    em_bus_event_type_listener_stop,
+    em_bus_event_type_dm_commit,
+    em_bus_event_type_m2_tx,
+    em_bus_event_type_topo_sync,
+    em_bus_event_type_onewifi_private_cb,
+    em_bus_event_type_onewifi_mesh_sta_cb,
+    em_bus_event_type_onewifi_radio_cb,
+    em_bus_event_type_m2ctrl_configuration,
+    em_bus_event_type_sta_assoc,
+    em_bus_event_type_channel_pref_query,
+    em_bus_event_type_channel_sel_req,
+    em_bus_event_type_sta_link_metrics,
+    em_bus_event_type_set_radio,
+    em_bus_event_type_bss_tm_req,
+    em_bus_event_type_btm_response,
+        em_bus_event_type_channel_scan_params,
+    em_bus_event_type_get_mld_config,
+    em_bus_event_type_mld_reconfig,
+    em_bus_event_type_beacon_query,
+    em_bus_event_type_beacon_report,
+    em_bus_event_type_recv_wfa_action_frame,
+    em_bus_event_type_recv_gas_frame,
+    em_bus_event_type_get_sta_client_type,
+    em_bus_event_type_assoc_status,
+    em_bus_event_type_ap_metrics_report,
+    em_bus_event_type_bss_info,
+    em_bus_event_type_get_reset,
+    em_bus_event_type_recv_csa_beacon_frame,
+    em_bus_event_type_bsta_cap_req,
+    em_bus_event_type_link_quality_report,
+    em_bus_event_type_client_assoc_ctrl_req,
+    em_bus_event_type_unassoc_sta_query,
+    em_bus_event_type_unassoc_sta_link_metrics_query,
+    em_bus_event_type_unassoc_sta_result,
+    em_bus_event_type_failed_conn,
+
+    em_bus_event_type_max
+} em_bus_event_type_t;
+
+typedef struct {
+        mac_address_t ruid;
+        unsigned int num_op_classes;
+        struct {
+                unsigned char op_class;
+                unsigned int num_channels;
+                unsigned char   channels[EM_MAX_CHANNELS_IN_LIST];
+        } op_class[EM_MAX_OP_CLASS];
+} em_scan_params_t;
+
+typedef struct {
+    mac_address_t al_mac;
+} em_cmd_unassoc_sta_query_params_t;
+
+typedef enum {
+    em_network_node_data_type_invalid,
+    em_network_node_data_type_false,
+    em_network_node_data_type_true,
+    em_network_node_data_type_null,
+    em_network_node_data_type_number,
+    em_network_node_data_type_string,
+    em_network_node_data_type_obj,
+    em_network_node_data_type_array_obj,
+    em_network_node_data_type_array_str,
+    em_network_node_data_type_array_num,
+    em_network_node_data_type_raw,
+} em_network_node_data_type_t;
+
+typedef struct {
+    bool collapsed;
+    unsigned int orig_node_ctr;
+    unsigned int node_ctr;
+    unsigned int node_pos;
+} em_node_display_info_t;
+
+typedef struct em_network_node {
+    em_long_string_t   key;
+    em_node_display_info_t      display_info;
+    em_network_node_data_type_t type;
+    em_long_string_t    value_str;
+    unsigned int        value_int;
+    unsigned int        num_children;
+    struct em_network_node     *child[EM_MAX_DM_CHILDREN];
+} em_network_node_t;
+
+typedef struct {
+    unsigned char num_element_id;
+    unsigned char element_list[6];
+}__attribute__((__packed__)) em_beacon_element_list_t;
+
+typedef struct {
+    unsigned char ap_channel_rprt_len;
+    unsigned char ap_channel_op_class;
+    unsigned char ap_channel_list[EM_MAX_CHANNELS_IN_LIST];
+}__attribute__((__packed__)) em_beacon_ap_channel_rprt_t;
+
+typedef struct {
+    mac_address_t sta_mac_addr;
+    unsigned char op_class;
+    unsigned char channel_num;
+    bssid_t bssid;
+    unsigned char rprt_detail;
+    unsigned char ssid_len;
+    ssid_t ssid;
+    unsigned char num_ap_channel_rprt;
+    em_beacon_ap_channel_rprt_t ap_channel_rprt[EM_MAX_NEIGHBORS];
+    em_beacon_element_list_t element_list;
+}__attribute__((__packed__)) em_beacon_metrics_query_t;
+
+typedef em_scan_params_t em_cmd_scan_params_t;
+typedef em_beacon_metrics_query_t em_cmd_beacon_metrics_param_t;
+
+typedef struct {
+    unsigned int num_args;
+    em_long_string_t args[EM_CLI_MAX_ARGS];
+    em_long_string_t fixed_args;
+} em_cmd_args_t;
+
+typedef struct {
+    mac_address_t       sta_mac;
+    bssid_t     source;
+    bssid_t     target;
+    unsigned int        request_mode;
+    bool        disassoc_imminent;
+    bool        btm_abridged;
+    bool        link_removal_imminent;
+    unsigned int        steer_opportunity_win;
+    unsigned int    btm_disassociation_timer;
+    unsigned int        target_op_class;
+    unsigned int        target_channel;
+} em_cmd_steer_params_t;
+
+typedef struct {
+    bssid_t     source;
+    mac_address_t       sta_mac;
+    unsigned char status_code;
+    bssid_t     target;
+} em_cmd_btm_report_params_t;
+
+typedef struct {
+    mac_address_t       sta_mac;
+    bssid_t     bssid;
+    unsigned int disassoc_time;
+    unsigned int reason;
+    bool        silent;
+} em_disassoc_params_t;
+
+typedef struct {
+    unsigned int num;
+    em_disassoc_params_t        params[MAX_STA_TO_DISASSOC];
+} em_cmd_disassoc_params_t;
+
+typedef struct {
+    int num_radios;
+    mac_address_t   ruid[EM_MAX_RADIO_PER_AGENT];
+    bool sta_link_metrics_include;
+    bool sta_traffic_stats_include;
+    bool wifi6_status_report_include;
+} __attribute__((__packed__)) em_cmd_ap_metrics_rprt_params_t;
+
+typedef struct {
+    union {
+        em_cmd_args_t   args;
+        em_cmd_steer_params_t   steer_params;
+        em_cmd_btm_report_params_t  btm_report_params;
+        em_cmd_disassoc_params_t        disassoc_params;
+                em_cmd_scan_params_t    scan_params;
+        em_cmd_ap_metrics_rprt_params_t ap_metrics_params;
+        em_cmd_unassoc_sta_query_params_t unassoc_sta_query_params;
+        em_cmd_beacon_metrics_param_t beacon_metrics_params;
+    } u;
+        em_network_node_t *net_node;
+} em_cmd_params_t;
+
+class em_mgr_t {
 	public:
+		void io_process(em_bus_event_type_t type, unsigned char *data, unsigned int len, em_cmd_params_t *params = NULL);
+};
+
+inline void em_mgr_t::io_process(em_bus_event_type_t type,
+                                 unsigned char *data,
+                                 unsigned int len,
+                                 em_cmd_params_t *params)
+{
+    (void)type;
+    (void)data;
+    (void)len;
+    (void)params;
+}
+
+inline unsigned char *get_radio_interface_mac()
+{
+    static unsigned char mac[sizeof(mac_address_t)] = {0};
+    return mac;
+}
+
+class em_t { 
+	public:
+		em_service_type_t   m_service_type;
 		dm_easy_mesh_t*  m_data_model;
+
+		int m_fd;
+
+		em_interface_t  m_ruid;
 
 		em_sm_t  m_sm;
 
+		em_mgr_t        *m_mgr;
+
+		em_mgr_t *get_mgr() { return m_mgr; }
+
+		em_service_type_t   get_service_type() { return m_service_type; }
+
 		void set_state(em_state_t state) {  m_sm.set_state(state); }
+
+		int set_bp_filter();
+
+		int send_frame(unsigned char *buff, unsigned int len, bool multicast = false);
+
+		unsigned char   *get_radio_interface_mac() { return m_ruid.mac; }
+
+		unsigned char *get_al_interface_mac() { return (m_service_type == em_service_type_agent) ?
+            m_data_model->get_agent_al_interface_mac():m_data_model->get_ctrl_al_interface_mac(); }
+
+		unsigned char *get_peer_mac() { return (m_service_type == em_service_type_ctrl) ? m_data_model->get_agent_al_interface_mac():m_data_model->get_controller_interface_mac(); }
 
 		em_profile_type_t   m_profile_type;
 
@@ -1443,6 +1820,21 @@ typedef struct {
 	unsigned char est_service_params_VI[3];
 } __attribute__((__packed__)) em_ap_metric_t;
 
+typedef struct {
+    unsigned char op_class;
+    unsigned char num_channels;
+    unsigned char channel_list[0];
+} __attribute__((__packed__)) em_channel_scan_req_op_class_t;
+
+typedef struct {
+    unsigned char reserved : 7;
+    unsigned char perform_fresh_scan : 1;
+    unsigned char num_radios;
+    mac_address_t ruid;
+    unsigned char num_op_classes;
+        em_channel_scan_req_op_class_t op_class[0];
+}__attribute__((__packed__)) em_channel_scan_req_t;
+
 class em_metrics_t {
 
 	virtual dm_easy_mesh_t *get_data_model() = 0;
@@ -1455,14 +1847,23 @@ class em_metrics_t {
 	int handle_assoc_sta_link_metrics_tlv(unsigned char *buff, unsigned int tlv_len);
 	int handle_assoc_sta_ext_link_metrics_tlv(unsigned char *buff, unsigned int tlv_len);
 	int handle_assoc_sta_vendor_link_metrics_tlv(unsigned char *buff, unsigned int len);
+	int handle_beacon_metrics_query(unsigned char *buff, unsigned int len);
+	virtual int send_frame(unsigned char *buff, unsigned int len, bool multicast = false) = 0;
+	int send_beacon_metrics_query_ack(mac_address_t sta_mac, unsigned short msg_id, unsigned char reason);
+	int handle_unassoc_sta_link_metrics_tlv(unsigned char *buff, unsigned int tlv_len);
+	virtual em_mgr_t *get_mgr() = 0;
 };	
 
 class em_channel_t {
+	std::unique_ptr<em_scan_params_t> m_last_scan_req;
+	bool                              m_last_scan_req_valid;
 public:
+	int send_1905_ack_message(unsigned short msg_id, bool ack_from);
+	int handle_channel_scan_req(unsigned char *buff, unsigned int len);
 	int handle_channel_scan_rprt(unsigned char *buff, unsigned int len);
-	//dm_scan_result_t *find_matching_scan_result(em_scan_result_id_t *id);
 	virtual dm_easy_mesh_t *get_data_model() = 0;
-
+	virtual em_mgr_t *get_mgr() = 0;
+	virtual int send_frame(unsigned char *buff, unsigned int len, bool multicast = false) = 0;
 	void fill_scan_result(dm_scan_result_t *scan_res, em_channel_scan_result_t *res, unsigned char *start, unsigned char *end);
 
 };
