@@ -19,6 +19,7 @@ int main() {
         run_all_tests_handle_beacon_metrics_query();
 #endif
 	//run_all_tests_get_supported_service();
-	run_all_tests_handle_ap_operational_bss();
+	run_all_tests_handle_channel_scan_req();
+	run_all_tests_get_radio_id_channel_scan_req();
 	return 0;
 }

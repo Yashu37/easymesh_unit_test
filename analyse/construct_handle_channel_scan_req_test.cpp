@@ -2139,6 +2139,82 @@ void construct_handle_channel_scan_req_pkt_fresh_scan_1(void)
     ptr += 2;
 }
 
+/* ============================================================
+ * Requests built by create_channel_scan_req_tlv(), the way
+ * send_channel_scan_request_msg() does it: the TLV is written into
+ * an uninitialized stack buffer, simulated here by filling with 0xFF.
+ * ============================================================ */
+
+class scan_req_builder_t : public em_channel_t {
+public:
+    dm_easy_mesh_t m_dm;
+
+    dm_easy_mesh_t *get_data_model() override { return &m_dm; }
+    em_mgr_t *get_mgr() override { return nullptr; }
+    int send_frame(unsigned char *buff, unsigned int len, bool multicast = false) override { return 0; }
+};
+
+static void add_scan_param_op_class(dm_easy_mesh_t *dm, unsigned int op_class, unsigned int num_channels, const unsigned int *channels)
+{
+        dm_op_class_t *opclass = &dm->m_op_class[dm->m_num_opclass++];
+
+        memset(opclass, 0, sizeof(dm_op_class_t));
+        opclass->m_op_class_info.id.type = em_op_class_type_scan_param;
+        opclass->m_op_class_info.op_class = op_class;
+        opclass->m_op_class_info.num_channels = num_channels;
+        memcpy(opclass->m_op_class_info.channels, channels, num_channels * sizeof(unsigned int));
+}
+
+static void construct_scan_req_from_producer(scan_req_builder_t *builder)
+{
+        short sz;
+
+        /* dirty buffer, like the uninitialized stack in send_channel_scan_request_msg() */
+        memset(ptr, 0xFF, 64);
+
+        *ptr++ = 0xA6;
+        sz = builder->create_channel_scan_req_tlv(ptr + 2);
+        *(uint16_t*)ptr = htons(static_cast<uint16_t>(sz)); ptr += 2;
+        printf("generated flags byte = 0x%02x\n", ptr[0]);
+        ptr += sz;
+
+        // ---- EOM TLV
+        *ptr++ = 0x00;
+        *(uint16_t*)ptr = htons(0);
+        ptr += 2;
+}
+
+/* No scan-param op class: Fresh Scan = 0, m = 0 */
+void construct_create_channel_scan_req_no_op_class_tlvs(void)
+{
+        static scan_req_builder_t builder;
+
+        builder.m_dm.m_num_opclass = 0;
+        construct_scan_req_from_producer(&builder);
+}
+
+/* One 2.4 GHz scan-param op class: Fresh Scan = 1, m = 1 */
+void construct_create_channel_scan_req_one_op_class_tlvs(void)
+{
+        static scan_req_builder_t builder;
+        const unsigned int channels[] = {1, 6, 11};
+
+        builder.m_dm.m_num_opclass = 0;
+        add_scan_param_op_class(&builder.m_dm, 81, 3, channels);
+        construct_scan_req_from_producer(&builder);
+}
+
+/* Scan-param op class on another band (5 GHz) is skipped: Fresh Scan = 0, m = 0 */
+void construct_create_channel_scan_req_other_band_tlvs(void)
+{
+        static scan_req_builder_t builder;
+        const unsigned int channels[] = {36};
+
+        builder.m_dm.m_num_opclass = 0;
+        add_scan_param_op_class(&builder.m_dm, 115, 1, channels);
+        construct_scan_req_from_producer(&builder);
+}
+
 pkt_test_case_t handle_channel_scan_req_suite[] = {
 
         /* ============================================================
@@ -2274,6 +2350,89 @@ pkt_test_case_t handle_channel_scan_req_suite[] = {
         {"handle_channel_scan_req_pkt69", "pkt69rb.pcap", construct_handle_channel_scan_req_pkt69_rb_tlvs, -1},
         {"handle_channel_scan_req_pkt70", "pkt70rb.pcap", construct_handle_channel_scan_req_pkt70_rb_tlvs, -1},
 
+        /* ============================================================
+         * 8. Requests built by create_channel_scan_req_tlv()
+         * ============================================================ */
+
+        {"create_channel_scan_req_no_op_class", "pkt71gen.pcap", construct_create_channel_scan_req_no_op_class_tlvs, 0},
+        {"create_channel_scan_req_one_op_class", "pkt72gen.pcap", construct_create_channel_scan_req_one_op_class_tlvs, 0},
+        {"create_channel_scan_req_other_band", "pkt73gen.pcap", construct_create_channel_scan_req_other_band_tlvs, 0},
+
 	{NULL, NULL, NULL, 0} // Null terminator to mark the end of the array
 };
 
+
+/* ============================================================
+ * get_radio_id() on Channel Scan Request (pre-routing parser)
+ * ============================================================ */
+
+/* Payload {0x80, 0x01}: r = 1 but no RUID, frame ends after EOM */
+void construct_get_radio_id_scan_req_len2_tlvs(void)
+{
+        *ptr++ = 0xA6;
+        *(uint16_t*)ptr = htons(2); ptr += 2;
+        *ptr++ = 0x80;
+        *ptr++ = 0x01;
+
+        // ---- EOM TLV
+        *ptr++ = 0x00;
+        *(uint16_t*)ptr = htons(0);
+        ptr += 2;
+}
+
+/* Payload {0x80}: no radio count */
+void construct_get_radio_id_scan_req_len1_tlvs(void)
+{
+        *ptr++ = 0xA6;
+        *(uint16_t*)ptr = htons(1); ptr += 2;
+        *ptr++ = 0x80;
+
+        // ---- EOM TLV
+        *ptr++ = 0x00;
+        *(uint16_t*)ptr = htons(0);
+        ptr += 2;
+}
+
+/* Payload 8 bytes: one byte short of the fixed header */
+void construct_get_radio_id_scan_req_len8_tlvs(void)
+{
+        uint8_t ruid[6] = {0x10,0x20,0x30,0x40,0x50,0x60};
+
+        *ptr++ = 0xA6;
+        *(uint16_t*)ptr = htons(8); ptr += 2;
+        *ptr++ = 0x00;
+        *ptr++ = 0x01;
+        memcpy(ptr, ruid, 6); ptr += 6;
+
+        // ---- EOM TLV
+        *ptr++ = 0x00;
+        *(uint16_t*)ptr = htons(0);
+        ptr += 2;
+}
+
+/* Valid fixed header: Fresh Scan = 0, r = 1, m = 0 */
+void construct_get_radio_id_scan_req_valid_tlvs(void)
+{
+        uint8_t ruid[6] = {0x10,0x20,0x30,0x40,0x50,0x60};
+
+        *ptr++ = 0xA6;
+        *(uint16_t*)ptr = htons(9); ptr += 2;
+        *ptr++ = 0x00;
+        *ptr++ = 0x01;
+        memcpy(ptr, ruid, 6); ptr += 6;
+        *ptr++ = 0x00;
+
+        // ---- EOM TLV
+        *ptr++ = 0x00;
+        *(uint16_t*)ptr = htons(0);
+        ptr += 2;
+}
+
+pkt_test_case_t get_radio_id_channel_scan_req_suite[] = {
+        {"get_radio_id_scan_req_len2", "pkt74rid.pcap", construct_get_radio_id_scan_req_len2_tlvs, -1},
+        {"get_radio_id_scan_req_len1", "pkt75rid.pcap", construct_get_radio_id_scan_req_len1_tlvs, -1},
+        {"get_radio_id_scan_req_len8", "pkt76rid.pcap", construct_get_radio_id_scan_req_len8_tlvs, -1},
+        {"get_radio_id_scan_req_valid", "pkt77rid.pcap", construct_get_radio_id_scan_req_valid_tlvs, 0},
+
+	{NULL, NULL, NULL, 0} // Null terminator to mark the end of the array
+};

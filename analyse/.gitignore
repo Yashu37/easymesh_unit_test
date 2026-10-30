@@ -11,3 +11,4 @@ cscope.out
 # optional (good practice)
 *.out
 gtest_main
+gtest_em_msg

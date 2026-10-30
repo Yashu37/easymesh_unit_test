@@ -1,6 +1,6 @@
 CXX = g++
 
-SRC = main.cpp handle_topology_response.cpp handle_channel_scan_req.cpp handle_channel_scan_req_test.cpp  supported_service.cpp supported_service_test.cpp construct_supported_service.cpp handle_ap_operational_bss.cpp construct_ap_operational_bss.cpp ap_operational_bss_test.cpp handle_unassoc_sta_link_metrics_tlv.cpp construct_unassoc_sta_link_metrics_tlv.cpp construct_handle_channel_scan_req_test.cpp bsta_test.cpp bsta.cpp common_test.cpp construct_test.cpp get_first_tlv_test.cpp get_first_tlv.cpp get_next_tlv_test.cpp get_next_tlv.cpp handle_ap_metrics_response.cpp em_mes.cpp process.cpp bsta_gft_gnt_construct.cpp construct_ap_metrics_test.cpp handle_channel_scan_rprt.cpp   
+SRC = main.cpp handle_topology_response.cpp handle_channel_scan_req.cpp handle_channel_scan_req_em_mes.cpp handle_channel_scan_req_test.cpp  supported_service.cpp supported_service_test.cpp construct_supported_service.cpp handle_ap_operational_bss.cpp construct_ap_operational_bss.cpp ap_operational_bss_test.cpp handle_unassoc_sta_link_metrics_tlv.cpp construct_unassoc_sta_link_metrics_tlv.cpp construct_handle_channel_scan_req_test.cpp bsta_test.cpp bsta.cpp common_test.cpp construct_test.cpp get_first_tlv_test.cpp get_first_tlv.cpp get_next_tlv_test.cpp get_next_tlv.cpp handle_ap_metrics_response.cpp em_mes.cpp process.cpp bsta_gft_gnt_construct.cpp construct_ap_metrics_test.cpp handle_channel_scan_rprt.cpp   
 #SRC = handle_ap_metrics_response.cpp handle_ap_metrics_response_test.cpp
 OUT = main
 
@@ -26,6 +26,15 @@ gtest: $(GTEST_SRC)
 	$(CXX) -Igtest_shim $(GTEST_SRC) -o $(GTEST_OUT) -fsanitize=address -g -O0 -Wall -lgtest -lgtest_main -pthread
 	./$(GTEST_OUT)
 
+# New get_radio_id() gtest cases for upstream tests/test_l1_em_msg.cpp (PR #818)
+GTEST_MSG_SRC = test_l1_em_msg.cpp $(filter-out main.cpp,$(SRC))
+GTEST_MSG_OUT = gtest_em_msg
+
+gtest_em_msg: $(GTEST_MSG_SRC)
+
+	$(CXX) -Igtest_shim $(GTEST_MSG_SRC) -o $(GTEST_MSG_OUT) -fsanitize=address -g -O0 -Wall -lgtest -lgtest_main -pthread
+	./$(GTEST_MSG_OUT)
+
 clean:
 
-	rm -f $(OUT) $(GTEST_OUT) a.out
+	rm -f $(OUT) $(GTEST_OUT) $(GTEST_MSG_OUT) a.out

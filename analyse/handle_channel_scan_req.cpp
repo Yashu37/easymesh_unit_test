@@ -211,6 +211,80 @@ int em_channel_t::send_1905_ack_message(unsigned short msg_id, bool ack_from)
     return static_cast<int> (len);
 }
 
+/* Band lookup from upstream m_e4_table (op class -> band only) */
+em_freq_band_t dm_easy_mesh_t::get_freq_band_by_op_class(int op_class)
+{
+	if (op_class >= 81 && op_class <= 84) {
+		return em_freq_band_24;
+	}
+	if (op_class >= 115 && op_class <= 130) {
+		return em_freq_band_5;
+	}
+	if (op_class >= 131 && op_class <= 137) {
+		return em_freq_band_6;
+	}
+	return em_freq_band_unknown;
+}
+
+/* Copied from upstream em_channel.cpp (PR #818 head 884192c) */
+short em_channel_t::create_channel_scan_req_tlv(unsigned char *buff)
+{
+    short len = 0;
+	em_channel_scan_req_t *req;
+	em_channel_scan_req_op_class_t *req_op_class;
+	dm_op_class_t *opclass;
+	dm_easy_mesh_t *dm;
+	unsigned int i, j;
+
+	dm = get_data_model();
+
+	req = reinterpret_cast<em_channel_scan_req_t *> (buff);
+	req->reserved = 0;
+	req->perform_fresh_scan = 0;
+
+	req->num_radios = 1;
+	req->num_op_classes = 0;
+	memcpy(req->ruid, get_radio_interface_mac(), sizeof(mac_address_t));
+	len += static_cast<short unsigned int> (sizeof(em_channel_scan_req_t));
+
+	req_op_class = req->op_class;
+	for (i = 0; i < dm->get_num_op_class(); i++) {
+		opclass = &dm->m_op_class[i];
+		if (opclass->m_op_class_info.id.type != em_op_class_type_scan_param) {
+			continue;
+		}
+
+		req_op_class->op_class = static_cast<unsigned char> (opclass->m_op_class_info.op_class);
+		req_op_class->num_channels = static_cast<unsigned char> (opclass->m_op_class_info.num_channels);
+		em_freq_band_t band = dm_easy_mesh_t::get_freq_band_by_op_class(static_cast<int>(opclass->m_op_class_info.op_class));
+		em_freq_band_t cur_band = get_band();
+
+		if (cur_band == band) {
+		    req_op_class->op_class = static_cast<unsigned char> (opclass->m_op_class_info.op_class);
+		    req_op_class->num_channels = static_cast<unsigned char> (opclass->m_op_class_info.num_channels);
+		} else {
+		    continue;
+		}
+
+		for (j = 0; j < req_op_class->num_channels; j++) {
+			req_op_class->channel_list[j] = static_cast<unsigned char> (opclass->m_op_class_info.channels[j]);
+		}
+	
+		len += static_cast<short> (sizeof(em_channel_scan_req_op_class_t) + static_cast<size_t> (req_op_class->num_channels*sizeof(unsigned char)));
+		
+		req->num_op_classes++;
+		req_op_class = reinterpret_cast<em_channel_scan_req_op_class_t *> (reinterpret_cast<unsigned char *> (req_op_class) + sizeof(em_channel_scan_req_op_class_t) + req_op_class->num_channels*sizeof(unsigned char));
+		//Do not loop if we get the current radio
+		break;
+	}
+
+        if (req->num_op_classes > 0) {
+            req->perform_fresh_scan = 1;
+        }
+
+	return len;
+}
+
 #if 1
 int em_channel_t::handle_channel_scan_req(unsigned char *buff, unsigned int len)
 {

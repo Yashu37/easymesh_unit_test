@@ -137,6 +137,7 @@ void run_all_tests_get_next_tlv(void);
 void run_all_tests_handle_ap_metrics_response(void);
 void run_all_tests_handle_channel_scan_rprt(void);
 void run_all_tests_handle_channel_scan_req(void);
+void run_all_tests_get_radio_id_channel_scan_req(void);
 void run_all_tests_handle_unassoc_sta_link_metrics_tlv(void);
 void run_all_tests_get_supported_service(void);
 void run_all_tests_handle_ap_operational_bss(void);
@@ -148,6 +149,7 @@ extern pkt_test_case_t get_next_tlv_suite[];
 extern pkt_test_case_t handle_ap_metrics_response_suite[];
 extern pkt_test_case_t handle_channel_scan_rprt_suite[];
 extern pkt_test_case_t handle_channel_scan_req_suite[];
+extern pkt_test_case_t get_radio_id_channel_scan_req_suite[];
 extern pkt_test_case_t handle_unassoc_sta_link_metrics_suite[];
 extern pkt_test_case_t get_supported_service_suite[];
 extern pkt_test_case_t handle_ap_operational_bss_suite[];
@@ -949,6 +951,47 @@ typedef struct {
     unsigned short vlan_id;
 } em_network_ssid_info_t;
 
+typedef enum {
+	em_freq_band_24,    //IEEE-1905-1-2013 table 6-23
+	em_freq_band_5,
+	em_freq_band_60,
+	em_freq_band_6,     // Extended for 6GHz Band
+	em_freq_band_unknown
+} em_freq_band_t;
+
+#define EM_MAX_OPCLASS 64
+
+typedef enum {
+    em_op_class_type_none,
+    em_op_class_type_current,
+    em_op_class_type_capability,
+    em_op_class_type_cac_available,
+    em_op_class_type_cac_non_occ,
+    em_op_class_type_cac_active,
+    em_op_class_type_preference,
+    em_op_class_type_anticipated,
+    em_op_class_type_scan_param,
+    em_op_class_type_selection,
+} em_op_class_type_t;
+
+typedef struct {
+    mac_address_t  ruid;
+    em_op_class_type_t  type;
+    unsigned int 	op_class;
+} em_op_class_id_t;
+
+typedef struct {
+    em_op_class_id_t    id;
+    unsigned int op_class;
+    unsigned int    num_channels;
+    unsigned int    channels[EM_MAX_CHANNELS_IN_LIST];
+} em_op_class_info_t;
+
+class dm_op_class_t {
+	public:
+		em_op_class_info_t m_op_class_info;
+};
+
 class dm_network_ssid_t{
 	public:
                 em_network_ssid_info_t    m_network_ssid_info;
@@ -965,7 +1008,11 @@ class dm_easy_mesh_t {
 		hash_map_t              *m_scan_result_map = NULL;
 		unsigned int m_num_unassoc_sta_metrics;
 		em_unassoc_sta_metric_entry_t  m_unassoc_sta_metrics[EM_MAX_UNASSOC_STA];
+		unsigned int 	m_num_opclass = 0;
+		dm_op_class_t m_op_class[EM_MAX_OPCLASS];
 	public:
+		unsigned int get_num_op_class() { return m_num_opclass; }
+		static em_freq_band_t get_freq_band_by_op_class(int op_class);
 		static char *macbytes_to_string(mac_address_t mac, char *string);
 
 		void set_db_cfg_param(db_cfg_type_t cfg_type, const char *criteria);
@@ -1189,14 +1236,6 @@ typedef struct {
     unsigned char   num;
     unsigned char   service[EM_MAX_SERVICE];
 } __attribute__((__packed__)) em_supported_service_t;
-
-typedef enum {
-	em_freq_band_24,    //IEEE-1905-1-2013 table 6-23
-	em_freq_band_5,
-	em_freq_band_60,
-	em_freq_band_6,     // Extended for 6GHz Band
-	em_freq_band_unknown
-} em_freq_band_t;
 
 class em_msg_t {
 	em_msg_type_t m_type;
@@ -1445,6 +1484,27 @@ typedef struct {
     unsigned char     bss_num;
     em_ap_operational_bss_t  bss[0];
 } __attribute__((__packed__)) em_ap_op_bss_radio_t;
+
+/* Only ruid (first field upstream) is read by em_msg_t::get_radio_id() */
+typedef struct {
+    mac_address_t   ruid;
+} __attribute__((__packed__)) em_ap_radio_basic_cap_t;
+
+typedef struct {
+    mac_address_t   ruid;
+} __attribute__((__packed__)) em_ap_radio_advanced_cap_t;
+
+typedef struct {
+    mac_address_t  ruid;
+} __attribute__((__packed__)) em_ap_ht_cap_t;
+
+typedef struct {
+    mac_address_t  ruid;
+} __attribute__((__packed__)) em_ap_vht_cap_t;
+
+typedef struct {
+    mac_address_t  ruid;
+} __attribute__((__packed__)) em_ap_he_cap_t;
 
 typedef struct {
     unsigned char    radios_num;
@@ -1912,6 +1972,8 @@ class em_channel_t {
 public:
 	int send_1905_ack_message(unsigned short msg_id, bool ack_from);
 	int handle_channel_scan_req(unsigned char *buff, unsigned int len);
+	short create_channel_scan_req_tlv(unsigned char *buff);
+	virtual em_freq_band_t get_band() { return em_freq_band_24; }
 	int handle_channel_scan_rprt(unsigned char *buff, unsigned int len);
 	virtual dm_easy_mesh_t *get_data_model() = 0;
 	virtual em_mgr_t *get_mgr() = 0;
