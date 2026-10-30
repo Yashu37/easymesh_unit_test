@@ -430,6 +430,7 @@ typedef enum {
 	em_profile_type_1,
 	em_profile_type_2,
 	em_profile_type_3,
+	em_profile_type_max,
 } em_profile_type_t;
 
 typedef struct {
@@ -972,6 +973,10 @@ class dm_easy_mesh_t {
 
 		bool get_colocated(void) { return m_colocated; }
 
+		unsigned int m_num_ap_mld;
+		unsigned int m_num_assoc_sta_mld;
+		em_bss_info_t *get_bsta_bss_info() { return NULL; }
+
 		dm_sta_t *find_sta(mac_address_t sta_mac, bssid_t bssid);
 
 		//  ADD THIS LINE
@@ -1019,6 +1024,13 @@ class dm_easy_mesh_t {
 		// Constructor
 		dm_easy_mesh_t() {
 			m_sta_assoc_map = NULL;
+			m_num_bss = 0;
+			m_num_net_ssids = 0;
+			m_num_ap_mld = 0;
+			m_num_assoc_sta_mld = 0;
+			m_colocated = false;
+			memset(&m_db_cfg_param, 0, sizeof(m_db_cfg_param));
+			m_db_cfg_param.db_cfg_type = db_cfg_type_none;
 		}
 };
 
@@ -1210,6 +1222,8 @@ class em_msg_t {
 	unsigned int validate(char *errors[]);
 
 	bool get_radio_id(mac_address_t *mac);
+
+	static bool parse_profile_tlv(const unsigned char *value, uint16_t value_len, em_profile_type_t *profile);
 
 	bool get_supported_service(em_supported_service_t *svc);
 
@@ -1431,13 +1445,29 @@ typedef struct {
     em_ap_op_bss_radio_t   radios[0];
 } __attribute__((__packed__)) em_ap_op_bss_t;
 
+class em_t;
+class em_mgr_t;
+
 class em_configuration_t {
 	friend class test_em_configuration_t;
+	friend class em_configuration_ap_op_bss_test_t;
+
+		int handle_topology_response(unsigned char *buff, unsigned int len);
+		void handle_ap_vendor_operational_bss(unsigned char *value, unsigned int len);
+		int handle_bss_configuration_report(unsigned char *buff, unsigned int len);
+		int handle_bsta_radio_cap(unsigned char *buff, unsigned int len);
+		int handle_ap_mld_config_tlv(unsigned char *buff, unsigned int len);
+		int handle_assoc_sta_mld_conf_rep_tlv(unsigned char *buff, unsigned int len);
+		em_profile_type_t get_peer_profile() const { return m_peer_profile; }
+		em_profile_type_t   m_peer_profile = em_profile_type_reserved;
 
 	        int handle_ap_operational_bss(unsigned char *buff, unsigned int len);
 	public:
 		static em_wsc_msg_type_t get_wsc_msg_type(unsigned char *tlvs, unsigned int len) { return em_wsc_msg_type_m1; }
+		virtual ~em_configuration_t() {}
 		virtual dm_easy_mesh_t *get_data_model() = 0;
+		virtual em_mgr_t *get_mgr() { return NULL; }
+		void set_peer_profile(em_profile_type_t profile) { m_peer_profile = profile; }
 
 };
 
@@ -1738,6 +1768,7 @@ typedef struct {
 
 class em_mgr_t {
 	public:
+		em_t *get_al_node() { return NULL; }
 		void io_process(em_bus_event_type_t type, unsigned char *data, unsigned int len, em_cmd_params_t *params = NULL);
 };
 
@@ -1758,8 +1789,21 @@ inline unsigned char *get_radio_interface_mac()
     return mac;
 }
 
-class em_t { 
+class em_t : public em_configuration_t {
 	public:
+		em_t() {}
+		em_t(em_interface_t *ruid, em_freq_band_t band, dm_easy_mesh_t *dm, em_mgr_t *mgr,
+				em_profile_type_t profile, em_service_type_t type, bool is_al_em = false)
+		{
+			memcpy(&m_ruid, ruid, sizeof(em_interface_t));
+			m_service_type = type;
+			m_profile_type = profile;
+			m_data_model = dm;
+			m_mgr = mgr;
+		}
+
+		bool m_ssid_mismatch = false;
+		void set_ssid_mismatch(bool mismatch) { m_ssid_mismatch = mismatch; }
 		em_service_type_t   m_service_type;
 		dm_easy_mesh_t*  m_data_model;
 
@@ -1771,7 +1815,7 @@ class em_t {
 
 		em_mgr_t        *m_mgr;
 
-		em_mgr_t *get_mgr() { return m_mgr; }
+		em_mgr_t *get_mgr() override { return m_mgr; }
 
 		em_service_type_t   get_service_type() { return m_service_type; }
 
@@ -1792,7 +1836,7 @@ class em_t {
 
 		em_profile_type_t   get_profile_type() { return m_profile_type; }
 
-		dm_easy_mesh_t *get_data_model() { return m_data_model; }
+		dm_easy_mesh_t *get_data_model() override { return m_data_model; }
 	       
 };
 

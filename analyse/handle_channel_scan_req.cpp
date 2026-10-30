@@ -10,6 +10,10 @@
 #include <ifaddrs.h>
 #include "./common.h"
 
+constexpr unsigned char CHANNEL_SCAN_RESERVED_BITS_MASK = 0x7F;
+constexpr unsigned char CHANNEL_SCAN_FRESH_SCAN_MASK = 0x80;
+constexpr unsigned char CHANNEL_SCAN_SUPPORTED_RADIO_COUNT = 1;
+
 int em_t::set_bp_filter()
 {
     struct packet_mreq mreq;
@@ -252,7 +256,7 @@ int em_channel_t::handle_channel_scan_req(unsigned char *buff, unsigned int len)
 
 	    /* FIX 1: */
 
-	    if (payload[0] & 0x7F) {
+	    if (payload[0] & CHANNEL_SCAN_RESERVED_BITS_MASK) {
                 em_printfout("%s:%d Invalid reserved bits in Channel Scan Request",
                              __func__, __LINE__);
                 return -1;
@@ -260,10 +264,17 @@ int em_channel_t::handle_channel_scan_req(unsigned char *buff, unsigned int len)
 
 	    /*FIX 2: */
 
-	    if (!(payload[0] & 0x80) && req->num_op_classes != 0) {
+	    if (!(payload[0] & CHANNEL_SCAN_FRESH_SCAN_MASK) && req->num_op_classes != 0) {
                 em_printfout("%s:%d Invalid Channel Scan Request: "
                              "num_op_classes=%u when Fresh Scan is 0",
                              __func__, __LINE__, req->num_op_classes);
+                return -1;
+            }
+
+	    /* FIX 3: Validate number of radios */
+            if (req->num_radios != CHANNEL_SCAN_SUPPORTED_RADIO_COUNT) {
+                em_printfout("%s:%d Unsupported number of radios=%u",
+                 __func__, __LINE__, req->num_radios);
                 return -1;
             }
 

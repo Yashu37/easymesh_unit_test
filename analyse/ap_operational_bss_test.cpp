@@ -10,6 +10,18 @@ class test_em_configuration_t : public em_configuration_t {
 public:
         dm_easy_mesh_t dm;
 
+        test_em_configuration_t() {
+                const char *ssids[] = {"TEST", "BSS1", "BSS2"};
+
+                dm.m_num_bss = 0;
+                dm.m_num_net_ssids = 3;
+                for (unsigned int i = 0; i < dm.m_num_net_ssids; i++) {
+                        memset(&dm.m_network_ssid[i], 0, sizeof(dm.m_network_ssid[i]));
+                        strncpy(dm.m_network_ssid[i].m_network_ssid_info.ssid, ssids[i],
+                                sizeof(dm.m_network_ssid[i].m_network_ssid_info.ssid) - 1);
+                }
+        }
+
         dm_easy_mesh_t *get_data_model() override {
                 return &dm;
         }
@@ -42,6 +54,12 @@ int test_handle_ap_operational_bss(void)
             tlv_len);
 
     __asan_unpoison_memory_region(&packet[packet_len], 4096 - packet_len);
+
+    // A rejected packet must not leave partially added BSS entries in the data model
+    if (ret == -1 && obj.dm.m_num_bss != 0) {
+        printf("Data model modified on rejected packet: m_num_bss=%u\n", obj.dm.m_num_bss);
+        return -3;
+    }
 
     return ret;
 }

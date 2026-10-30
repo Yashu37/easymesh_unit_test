@@ -12,16 +12,17 @@ int test_get_supported_service(void)
 
     printf("packet_len = %d\n", packet_len);
 
-    __asan_poison_memory_region(&packet[packet_len], 4096 - packet_len);
+    __asan_poison_memory_region(&packet[packet_len],
+                                4096 - packet_len);
 
     em_msg_t obj;
 
-    // Initialize the object's internal buffer and length
-    // using your existing test-harness mechanism.
+    obj.set_m1(packet + 22, packet_len - 22);
 
     ret = obj.get_supported_service(&svc);
 
-    __asan_unpoison_memory_region(&packet[packet_len], 4096 - packet_len);
+    __asan_unpoison_memory_region(&packet[packet_len],
+                                  4096 - packet_len);
 
     return ret ? 0 : -1;
 }
