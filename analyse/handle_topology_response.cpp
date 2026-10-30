@@ -39,7 +39,7 @@ static bool handle_assoc_sta_mld_topology_update(dm_easy_mesh_t *dm)
 	return false;
 }
 
-/* Copied from unified-wifi-mesh src/em/em_msg.cpp (PR 822, bda67d8) */
+/* Copied from unified-wifi-mesh src/em/em_msg.cpp (PR 822, 9b04018) */
 bool em_msg_t::parse_profile_tlv(const unsigned char *value, uint16_t value_len, em_profile_type_t *profile)
 {
     if ((value == nullptr) || (profile == nullptr)) {
@@ -63,7 +63,29 @@ bool em_msg_t::parse_profile_tlv(const unsigned char *value, uint16_t value_len,
     return true;
 }
 
-/* Copied from unified-wifi-mesh src/em/config/em_configuration.cpp (PR 822, bda67d8) */
+/* Copied from unified-wifi-mesh src/em/config/em_configuration.cpp (PR 822, 9b04018) */
+dm_easy_mesh_t *em_configuration_t::get_peer_dm(const mac_address_t al_mac)
+{
+    em_mgr_t *mgr = get_mgr();
+    dm_easy_mesh_t *dm = (mgr != nullptr) ? mgr->get_data_model(GLOBAL_NET_ID, al_mac) : nullptr;
+    // The controller's own model must not hold a peer's profile; the peer model is created later by dm commit.
+    return (dm != nullptr || get_service_type() == em_service_type_ctrl) ? dm : get_data_model();
+}
+
+em_profile_type_t em_configuration_t::get_peer_profile(const mac_address_t al_mac)
+{
+    dm_easy_mesh_t *dm = get_peer_dm(al_mac);
+    em_profile_type_t profile = (dm != nullptr) ? dm->get_device()->get_peer_profile() : em_profile_type_reserved;
+    return (profile == em_profile_type_reserved) ? em_profile_type_1 : profile;
+}
+
+void em_configuration_t::set_peer_profile(const mac_address_t al_mac, em_profile_type_t profile)
+{
+    if (dm_easy_mesh_t *dm = get_peer_dm(al_mac)) {
+        dm->get_device()->set_peer_profile(profile);
+    }
+}
+
 int em_configuration_t::handle_topology_response(unsigned char *buff, unsigned int len)
 {
     em_tlv_t *tlv;
@@ -77,14 +99,10 @@ int em_configuration_t::handle_topology_response(unsigned char *buff, unsigned i
     unsigned int assoc_sta_mld_count = 0;
     em_profile_type_t profile = em_profile_type_reserved;
 	dm_easy_mesh_t *dm;
-    em_t *al_em = nullptr;
     em_raw_hdr_t *hdr = reinterpret_cast<em_raw_hdr_t *>(buff);
     uint8_t *src_al_mac = hdr->src;
     
 	dm = get_data_model();
-    if (em_mgr_t *mgr = get_mgr()) {
-        al_em = mgr->get_al_node();
-    }
 
     tlv =  reinterpret_cast<em_tlv_t *> (buff + sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t));
     tmp_len = len - static_cast<unsigned int> (sizeof(em_raw_hdr_t) + sizeof(em_cmdu_t));
@@ -125,19 +143,15 @@ int em_configuration_t::handle_topology_response(unsigned char *buff, unsigned i
 
     // For backward compatibility with earlier EasyMesh specifications.
     if (found_profile == true && profile != em_profile_type_reserved) {
-        m_peer_profile = profile;
-        em_printfout("Topology response received from %s with profile: %d", util::mac_to_string(src_al_mac).c_str(), m_peer_profile);
+        set_peer_profile(src_al_mac, profile);
+        em_printfout("Topology response received from %s with profile: %d", util::mac_to_string(src_al_mac).c_str(), profile);
     } else {
         // MultiAP profile TLV is mandatory for profile >= em_profile_type_2.
         // FALL back to profile 1 for backward compatibility with earlier EasyMesh specifications.
-        m_peer_profile = em_profile_type_1;
-        em_printfout("Topology response received from %s with no profile TLV, assuming profile: %d", util::mac_to_string(src_al_mac).c_str(), m_peer_profile);
+        set_peer_profile(src_al_mac, em_profile_type_1);
+        em_printfout("Topology response received from %s with no profile TLV, assuming profile: %d", util::mac_to_string(src_al_mac).c_str(), em_profile_type_1);
     }
-    // Update the peer profile in the AL node
-    if (al_em != nullptr) {
-        al_em->set_peer_profile(m_peer_profile);
-    }
-    if (em_msg_t(em_msg_type_topo_resp, m_peer_profile, buff, len).validate(errors) == 0) {
+    if (em_msg_t(em_msg_type_topo_resp, get_peer_profile(src_al_mac), buff, len).validate(errors) == 0) {
         em_printfout("topology response msg validation failed, ignoring message");
         return -1;
     }
@@ -248,7 +262,7 @@ int em_configuration_t::handle_topology_response(unsigned char *buff, unsigned i
 
     if (found_ap_mld == true) {
         em_printfout("Found AP MLD details in topology response message");
-        handle_ap_mld_config_tlv(tlv->value, htons(tlv->len));
+        handle_ap_mld_config_tlv(tlv->value, ntohs(tlv->len));
     }
     em_printfout("No of AP MLDs: %d", dm->m_num_ap_mld);
 

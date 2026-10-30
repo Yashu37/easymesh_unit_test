@@ -804,8 +804,13 @@ typedef struct {
 
 // Forward declaration
 class dm_sta_t;
+#define GLOBAL_NET_ID "OneWifiMesh"
+
 class dm_device_t{
 	public:
+		em_profile_type_t m_peer_profile = em_profile_type_reserved;
+		em_profile_type_t get_peer_profile() const { return m_peer_profile; }
+		void set_peer_profile(em_profile_type_t profile) { m_peer_profile = profile; }
 		unsigned char *get_dev_interface_mac() { return m_device_info.intf.mac; }
 		em_device_info_t    m_device_info;
 		em_device_info_t *get_device_info(void) { return &m_device_info; }
@@ -966,6 +971,7 @@ class dm_easy_mesh_t {
 		void set_db_cfg_param(db_cfg_type_t cfg_type, const char *criteria);
 
 		dm_device_t m_device;
+		dm_device_t *get_device() { return &m_device; }
 
 		em_device_info_t *get_device_info(void) { return m_device.get_device_info(); }
 
@@ -1445,6 +1451,13 @@ typedef struct {
     em_ap_op_bss_radio_t   radios[0];
 } __attribute__((__packed__)) em_ap_op_bss_t;
 
+typedef enum {
+	em_service_type_ctrl,
+	em_service_type_agent,
+	em_service_type_cli,
+	em_service_type_none
+} em_service_type_t;
+
 class em_t;
 class em_mgr_t;
 
@@ -1458,8 +1471,9 @@ class em_configuration_t {
 		int handle_bsta_radio_cap(unsigned char *buff, unsigned int len);
 		int handle_ap_mld_config_tlv(unsigned char *buff, unsigned int len);
 		int handle_assoc_sta_mld_conf_rep_tlv(unsigned char *buff, unsigned int len);
-		em_profile_type_t get_peer_profile() const { return m_peer_profile; }
-		em_profile_type_t   m_peer_profile = em_profile_type_reserved;
+		em_profile_type_t get_peer_profile(const mac_address_t al_mac);
+		void set_peer_profile(const mac_address_t al_mac, em_profile_type_t profile);
+		dm_easy_mesh_t *get_peer_dm(const mac_address_t al_mac);
 
 	        int handle_ap_operational_bss(unsigned char *buff, unsigned int len);
 	public:
@@ -1467,7 +1481,7 @@ class em_configuration_t {
 		virtual ~em_configuration_t() {}
 		virtual dm_easy_mesh_t *get_data_model() = 0;
 		virtual em_mgr_t *get_mgr() { return NULL; }
-		void set_peer_profile(em_profile_type_t profile) { m_peer_profile = profile; }
+		virtual em_service_type_t get_service_type() { return em_service_type_ctrl; }
 
 };
 
@@ -1534,13 +1548,6 @@ typedef enum {
 
 	em_state_max,
 } em_state_t;
-
-typedef enum {
-	em_service_type_ctrl,
-	em_service_type_agent,
-	em_service_type_cli,
-	em_service_type_none
-} em_service_type_t;
 
 class em_sm_t {
 	em_state_t      m_state;
@@ -1769,6 +1776,7 @@ typedef struct {
 class em_mgr_t {
 	public:
 		em_t *get_al_node() { return NULL; }
+		dm_easy_mesh_t *get_data_model(const char *net_id, const unsigned char *al_mac = NULL) { return NULL; }
 		void io_process(em_bus_event_type_t type, unsigned char *data, unsigned int len, em_cmd_params_t *params = NULL);
 };
 
@@ -1817,7 +1825,7 @@ class em_t : public em_configuration_t {
 
 		em_mgr_t *get_mgr() override { return m_mgr; }
 
-		em_service_type_t   get_service_type() { return m_service_type; }
+		em_service_type_t   get_service_type() override { return m_service_type; }
 
 		void set_state(em_state_t state) {  m_sm.set_state(state); }
 
