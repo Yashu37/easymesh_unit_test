@@ -263,6 +263,26 @@ void construct_mon_sig_crash_input(const mon_sig_crash_test_case_t *tc);
 int  test_mon_sig_crash(const mon_sig_crash_test_case_t *tc);
 void run_all_tests_mon_sig_crash(void);
 
+// --- mon_sig_forward harness (OneWifi lib/common/monitor.c) ---
+#define MSF_NOPID  0
+#define MSF_LIVE   1
+#define MSF_DEAD   2
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // MSF_NOPID / MSF_LIVE / MSF_DEAD
+	int         sig;            // signal to forward
+	int         expect;         // LIVE: child term signal; NOPID/DEAD: 0
+} mon_sig_forward_test_case_t;
+
+extern pid_t       mon_sig_forward_pid;   // defined in mon_sig_forward.cpp
+extern pid_t       msf_child;
+extern const char *msf_case_name;
+extern mon_sig_forward_test_case_t mon_sig_forward_suite[];
+
+void construct_mon_sig_forward_input(const mon_sig_forward_test_case_t *tc);
+int  test_mon_sig_forward(const mon_sig_forward_test_case_t *tc);
+void run_all_tests_mon_sig_forward(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
