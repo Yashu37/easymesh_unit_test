@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <sys/types.h>   /* ssize_t (used by the base64_decode harness) */
 #include <string>
 #include <utility>
 #include <cjson/cJSON.h>
@@ -154,6 +155,24 @@ extern pkt_test_case_t handle_unassoc_sta_link_metrics_suite[];
 extern pkt_test_case_t get_supported_service_suite[];
 extern pkt_test_case_t handle_ap_operational_bss_suite[];
 extern pkt_test_case_t handle_beacon_metrics_query_suite[];
+
+// --- base64_decode harness (OneWifi lib/common/util.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *input;          // base64 input string
+	ssize_t     out_sz;         // output-buffer size handed to base64_decode()
+	int         expected_result;// return value if it did NOT crash
+} base64_test_case_t;
+
+extern char    b64_input[512];
+extern uint8_t b64_out[4096];
+extern ssize_t b64_out_sz;
+extern const char *b64_case_name;
+extern base64_test_case_t base64_decode_suite[];
+
+void construct_base64_input(const base64_test_case_t *tc);
+int  test_base64_decode(void);
+void run_all_tests_base64_decode(void);
 
 // PCAP Global Header
 struct pcap_global_header {

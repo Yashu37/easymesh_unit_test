@@ -17,9 +17,12 @@ int main() {
 	run_all_tests_handle_unassoc_sta_link_metrics_tlv();
 	run_all_tests_handle_ap_operational_bss();
         run_all_tests_handle_beacon_metrics_query();
-#endif
-	//run_all_tests_get_supported_service();
+        run_all_tests_get_supported_service();
 	run_all_tests_handle_channel_scan_req();
 	run_all_tests_get_radio_id_channel_scan_req();
+#endif
+	// base64_decode OOB crash check (OneWifi lib/common/util.c).
+	// Kept last: it aborts under ASan on invalid-char input.
+	run_all_tests_base64_decode();
 	return 0;
 }
