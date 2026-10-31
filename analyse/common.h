@@ -659,6 +659,23 @@ void construct_log_update_input(const log_update_test_case_t *tc);
 int  test_log_update(const log_update_test_case_t *tc);
 void run_all_tests_log_update(void);
 
+// --- log_meminfo harness (OneWifi lib/log/log.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         size;           // buffer size
+	int         pos;            // offset (negative = suspected OOB)
+	int         expect;         // 1=wrote, 0=early return, -1=suspected crash
+} log_meminfo_test_case_t;
+
+extern int         lmi_size;
+extern int         lmi_pos;
+extern const char *lmi_case_name;
+extern log_meminfo_test_case_t log_meminfo_suite[];
+
+void construct_log_meminfo_input(const log_meminfo_test_case_t *tc);
+int  test_log_meminfo(const log_meminfo_test_case_t *tc);
+void run_all_tests_log_meminfo(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

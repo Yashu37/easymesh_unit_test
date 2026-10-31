@@ -95,5 +95,8 @@ int main() {
 
 	// log_dynamic_update OOB check (OneWifi lib/log/log.c).
 //	run_all_tests_log_update();
+
+	// log_meminfo OOB check (OneWifi lib/log/log.c).
+	run_all_tests_log_meminfo();
 	return 0;
 }
