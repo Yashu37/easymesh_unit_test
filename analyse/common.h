@@ -245,6 +245,24 @@ void construct_mon_check_process_input(const mon_cp_test_case_t *tc);
 int  test_mon_check_process(const mon_cp_test_case_t *tc);
 void run_all_tests_mon_check_process(void);
 
+// --- mon_sig_crash harness (OneWifi lib/common/monitor.c) ---
+#define MSC_DIRECT  0
+#define MSC_FORK    1
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // MSC_DIRECT / MSC_FORK
+	int         sig;            // signal to use
+	int         expect_termsig; // FORK: expected term signal; DIRECT: 0
+} mon_sig_crash_test_case_t;
+
+extern pid_t       msc_child;
+extern const char *msc_case_name;
+extern mon_sig_crash_test_case_t mon_sig_crash_suite[];
+
+void construct_mon_sig_crash_input(const mon_sig_crash_test_case_t *tc);
+int  test_mon_sig_crash(const mon_sig_crash_test_case_t *tc);
+void run_all_tests_mon_sig_crash(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

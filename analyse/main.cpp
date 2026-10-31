@@ -35,6 +35,9 @@ int main() {
 //	run_all_tests_file_get();
 
 	// mon_check_process OOB crash check (OneWifi lib/common/monitor.c).
-	run_all_tests_mon_check_process();
+//	run_all_tests_mon_check_process();
+
+	// mon_sig_crash OOB crash check (OneWifi lib/common/monitor.c).
+//	run_all_tests_mon_sig_crash();
 	return 0;
 }
