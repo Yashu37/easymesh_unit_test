@@ -20,7 +20,7 @@
 #include <sanitizer/asan_interface.h>
 
 /* --- copied verbatim from lib/common/util.c:269 --- */
-static char base64_table[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* --- copied verbatim from lib/common/util.c:336 --- */
 ssize_t base64_decode(void *out, ssize_t out_sz, char *input)
