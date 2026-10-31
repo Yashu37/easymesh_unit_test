@@ -9,8 +9,11 @@
  * no __asan_poison applies; the only array is the internal static lists[],
  * which ASan guards with a global red-zone. The loop reads every element as
  * a candidate width, including the 0 just before the terminating -1, so a
- * width that matches that 0 can push the inner scan past -1 -> the
- * behaviour under test.
+ * width that matches that 0 can push the inner scan past -1.
+ *
+ * FIX APPLIED: an "if (width <= 0) return NULL;" guard before the scan, so
+ * width==0 (the table terminator value) can no longer match. Only that
+ * guard was added; nothing else changed.
  */
 
 #include <stdio.h>
@@ -73,6 +76,12 @@ const int *unii_5g_chan2list(int chan, int width)
     };
     const int *start;
     const int *p;
+
+    /* FIX: 0 is the table's terminator, not a real width. Without this
+       guard, width==0 matches the final 0 before -1, start=++p lands on
+       -1, and the inner loop reads past the end of lists[]. */
+    if (width <= 0)
+        return NULL;
 
     for (p = lists; *p != -1; p++)
         if (*p == width)
