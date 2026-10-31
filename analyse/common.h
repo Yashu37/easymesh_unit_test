@@ -696,6 +696,37 @@ void construct_log_sev_input(const log_sev_test_case_t *tc);
 int  test_log_sev(const log_sev_test_case_t *tc);
 void run_all_tests_log_sev(void);
 
+// --- logger_remote_log harness (OneWifi lib/log/log_remote.c) ---
+typedef struct logger logger_t;   /* opaque; unused by the body */
+typedef struct logger_msg {
+	char *lm_timestamp;
+	char *lm_tag;
+	char *lm_text;
+} logger_msg_t;
+
+typedef struct {
+	const char *test_name;      // case name
+	const char *ts;             // timestamp string
+	const char *tag;            // tag string
+	int         text_fill_len;  // pad text to this length (0 = use text)
+	const char *text;           // text string
+	int         enabled;        // log_remote_enabled?
+	int         expect_send;    // expect qm_conn_send_log to fire?
+} logger_remote_test_case_t;
+
+extern char         lrl_ts[64];
+extern char         lrl_tag[64];
+extern char         lrl_text[4096];
+extern size_t       lrl_ts_len, lrl_tag_len, lrl_text_len;
+extern logger_msg_t lrl_msg;
+extern int          lrl_send_count;
+extern const char  *lrl_case_name;
+extern logger_remote_test_case_t logger_remote_suite[];
+
+void construct_logger_remote_input(const logger_remote_test_case_t *tc);
+int  test_logger_remote(const logger_remote_test_case_t *tc);
+void run_all_tests_logger_remote(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

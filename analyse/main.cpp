@@ -101,5 +101,8 @@ int main() {
 
 	// log_severity_parse_sink OOB check (OneWifi lib/log/log.c).
 //	run_all_tests_log_sev();
+
+	// logger_remote_log OOB check (OneWifi lib/log/log_remote.c).
+//	run_all_tests_logger_remote();
 	return 0;
 }
