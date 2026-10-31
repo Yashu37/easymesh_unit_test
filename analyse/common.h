@@ -345,6 +345,21 @@ void construct_os_pid_from_file_input(const os_pid_test_case_t *tc);
 int  test_os_pid_from_file(void);
 void run_all_tests_os_pid_from_file(void);
 
+// --- os_popen harness (OneWifi lib/common/os.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *shell_cmd;      // command passed to os_popen()
+	int         expect_output;  // 1 if output bytes expected, 0 otherwise
+} os_popen_test_case_t;
+
+extern const char *osp_cmd;
+extern const char *osp_case_name;
+extern os_popen_test_case_t os_popen_suite[];
+
+void construct_os_popen_input(const os_popen_test_case_t *tc);
+int  test_os_popen(const os_popen_test_case_t *tc);
+void run_all_tests_os_popen(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

@@ -20,7 +20,15 @@ pid_t os_pid_from_file(char *pid_file);
 
 int test_os_pid_from_file(void)
 {
+    /* The caller-owned input is the path string. Poison everything past its
+     * terminator so any over-read of pid_file is flagged by ASan. */
+    size_t plen = strlen(ospid_path);
+    __asan_poison_memory_region(&ospid_path[plen + 1], sizeof(ospid_path) - (plen + 1));
+
     pid_t ret = os_pid_from_file(ospid_path);
+
+    __asan_unpoison_memory_region(&ospid_path[plen + 1], sizeof(ospid_path) - (plen + 1));
+
     printf("    returned pid = %ld\n", (long)ret);
     return (ret != 0) ? 1 : 0;
 }
