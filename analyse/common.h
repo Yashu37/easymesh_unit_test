@@ -405,6 +405,23 @@ void construct_strexread_input(const strexread_test_case_t *tc);
 int  test_strexread(const strexread_test_case_t *tc);
 void run_all_tests_strexread(void);
 
+// --- unii_5g_chan2list harness (OneWifi lib/common/util.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         chan;           // channel arg
+	int         width;          // width arg
+	int         expect;         // 1=non-NULL, 0=NULL, -1=suspected crash
+} unii_test_case_t;
+
+extern int         unii_chan;
+extern int         unii_width;
+extern const char *unii_case_name;
+extern unii_test_case_t unii_suite[];
+
+void construct_unii_5g_chan2list_input(const unii_test_case_t *tc);
+int  test_unii_5g_chan2list(const unii_test_case_t *tc);
+void run_all_tests_unii_5g_chan2list(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

@@ -62,5 +62,8 @@ int main() {
 
 	// strexread OOB crash check (OneWifi lib/common/util.c).
 //	run_all_tests_strexread();
+
+	// unii_5g_chan2list OOB crash check (OneWifi lib/common/util.c).
+	run_all_tests_unii_5g_chan2list();
 	return 0;
 }
