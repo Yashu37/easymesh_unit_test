@@ -107,5 +107,8 @@ int main() {
 
 	// logger_traceback_log OOB check (OneWifi lib/log/log_traceback.c).
 //	run_all_tests_logger_tb();
+
+	// mlog OOB check (OneWifi lib/log/log.c).
+//	run_all_tests_mlog();
 	return 0;
 }

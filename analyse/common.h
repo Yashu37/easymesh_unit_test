@@ -697,14 +697,22 @@ int  test_log_sev(const log_sev_test_case_t *tc);
 void run_all_tests_log_sev(void);
 
 // --- logger_remote_log harness (OneWifi lib/log/log_remote.c) ---
-typedef struct logger logger_t;   /* opaque; unused by the body */
+typedef struct logger logger_t;
 typedef struct logger_msg {
 	char *lm_timestamp;
 	char *lm_tag;
 	char *lm_text;
-	int   lm_module;      /* used by logger_traceback_log */
-	int   lm_severity;    /* used by logger_traceback_log */
+	char *lm_module_name; /* used by mlog */
+	int   lm_module;      /* used by logger_traceback_log / mlog */
+	int   lm_severity;    /* used by logger_traceback_log / mlog */
 } logger_msg_t;
+/* full logger_t body so mlog's foreach loop compiles (loop runs 0 times) */
+typedef void (*logger_fn_t)(logger_t *, logger_msg_t *);
+typedef bool (*logger_match_fn_t)(int sev, int module);
+struct logger {
+	logger_fn_t       logger_fn;
+	logger_match_fn_t match_fn;
+};
 
 typedef struct {
 	const char *test_name;      // case name
@@ -753,6 +761,31 @@ extern logger_tb_test_case_t logger_tb_suite[];
 void construct_logger_tb_input(const logger_tb_test_case_t *tc);
 int  test_logger_tb(const logger_tb_test_case_t *tc);
 void run_all_tests_logger_tb(void);
+
+// --- mlog harness (OneWifi lib/log/log.c) ---
+#define MLOG_NORMAL 0
+#define MLOG_EMPTY  1
+#define MLOG_LONG   2
+typedef struct {
+	const char *test_name;      // case name
+	int         sev;            // severity (0 = disabled)
+	int         module;         // module id (>=LAST clamps)
+	int         kind;           // MLOG_NORMAL / MLOG_EMPTY / MLOG_LONG
+	int         payload_fill;   // %s payload length (MLOG_LONG)
+	int         expect_captured;// expect the logger to capture a message
+} mlog_test_case_t;
+
+extern int         mlog_captured;
+extern char        mlog_captured_text[8300];
+extern char        mlog_captured_tag[128];
+extern char        mlog_payload[16384];
+extern size_t      mlog_payload_len;
+extern const char *mlog_case_name;
+extern mlog_test_case_t mlog_suite[];
+
+void construct_mlog_input(const mlog_test_case_t *tc);
+int  test_mlog(const mlog_test_case_t *tc);
+void run_all_tests_mlog(void);
 
 // PCAP Global Header
 struct pcap_global_header {
