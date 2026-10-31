@@ -560,6 +560,24 @@ void construct_ds_tree_check_input(const ds_tree_check_test_case_t *tc);
 int  test_ds_tree_check(const ds_tree_check_test_case_t *tc);
 void run_all_tests_ds_tree_check(void);
 
+// --- ds_tree_graphviz_r harness (OneWifi lib/ds/ds_tree.c) ---
+#define DGV_SINGLE  0
+#define DGV_3NODE   1
+#define DGV_DEEP    2
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // DGV_* tree shape
+} ds_tree_gv_test_case_t;
+
+extern ds_tree_node_t dgv_nodes[8];
+extern ds_tree_t      dgv_root;
+extern const char    *dgv_case_name;
+extern ds_tree_gv_test_case_t ds_tree_gv_suite[];
+
+void construct_ds_tree_gv_input(const ds_tree_gv_test_case_t *tc);
+int  test_ds_tree_gv(const ds_tree_gv_test_case_t *tc);
+void run_all_tests_ds_tree_gv(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
