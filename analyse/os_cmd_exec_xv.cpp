@@ -7,10 +7,12 @@
  * Arrays/buffers of interest:
  *   - cmd1[OS_CMD_LINE_SIZE] : local, filled by vsnprintf (bounded)
  *   - cmd2 = alloca(cmdlen)  : taken only when the command is longer than
- *                              cmd1; the SECOND vsnprintf on that path reuses
- *                              the already-consumed `args` (a va_copy into
- *                              args2 is made but not used) -- this is the
- *                              behaviour under test.
+ *                              cmd1. FIX APPLIED: the second vsnprintf now
+ *                              uses the va_copy `args2` instead of the
+ *                              already-consumed `args`. The original code
+ *                              reused `args` (undefined behaviour -> the %s
+ *                              read a garbage pointer and the command was
+ *                              corrupted). Only this one argument changed.
  *   - buf : growing heap buffer for command output (fread/realloc loop)
  *
  * Scaffolding (NOT part of the function): LOG/LOG_SEVERITY no-op stubs and
@@ -72,7 +74,7 @@ bool os_cmd_exec_xv(char **buffer, int *len, int *exit_code, int flags, char *fm
         // fixed cmd buffer too small, allocate and retry
         cmdlen++;
         cmd2 = (char *)alloca(cmdlen);
-        cmdlen = vsnprintf(cmd2, cmdlen, fmt, args);
+        cmdlen = vsnprintf(cmd2, cmdlen, fmt, args2);
         command = cmd2;
     }
     va_end(args2);
