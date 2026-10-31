@@ -64,6 +64,9 @@ int main() {
 //	run_all_tests_strexread();
 
 	// unii_5g_chan2list OOB crash check (OneWifi lib/common/util.c).
-	run_all_tests_unii_5g_chan2list();
+//	run_all_tests_unii_5g_chan2list();
+
+	// devinfo_get_inet_iface_config OOB check (OneWifi lib/datapipeline/devinfo.c).
+//	run_all_tests_devinfo_cfg();
 	return 0;
 }

@@ -422,6 +422,33 @@ void construct_unii_5g_chan2list_input(const unii_test_case_t *tc);
 int  test_unii_5g_chan2list(const unii_test_case_t *tc);
 void run_all_tests_unii_5g_chan2list(void);
 
+// --- devinfo_get_inet_iface_config harness (OneWifi lib/datapipeline/devinfo.c) ---
+#ifndef IP_ADDR_STR_LEN
+#define IP_ADDR_STR_LEN  16
+#endif
+#ifndef MAC_ADDR_STR_LEN
+#define MAC_ADDR_STR_LEN 18
+#endif
+typedef struct {
+	char inet_addr[IP_ADDR_STR_LEN];
+	char mac_str[MAC_ADDR_STR_LEN];
+} devinfo_inet_iface_config_t;
+
+typedef struct {
+	const char *test_name;      // case name
+	const char *if_name;        // interface name arg
+	int         expect_ret;     // expected bool return (1/0)
+} devinfo_cfg_test_case_t;
+
+extern char        dgi_ifname[64];
+extern size_t      dgi_ifname_len;
+extern const char *dgi_case_name;
+extern devinfo_cfg_test_case_t devinfo_cfg_suite[];
+
+void construct_devinfo_cfg_input(const devinfo_cfg_test_case_t *tc);
+int  test_devinfo_cfg(const devinfo_cfg_test_case_t *tc);
+void run_all_tests_devinfo_cfg(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
