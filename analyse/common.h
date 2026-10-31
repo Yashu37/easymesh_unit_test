@@ -209,6 +209,42 @@ void construct_cmd_log_input(const cmd_log_test_case_t *tc);
 int  test_cmd_log(void);
 void run_all_tests_cmd_log(void);
 
+// --- file_get harness (OneWifi lib/common/util.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	ssize_t     size;           // bytes to create (<0 => leave file missing)
+	int         expected_null;  // 1 if file_get() is expected to return NULL
+} file_get_test_case_t;
+
+extern char        fileget_path[256];
+extern const char *fileget_case_name;
+extern ssize_t     fileget_make_size;
+extern file_get_test_case_t file_get_suite[];
+
+void construct_file_get_input(const file_get_test_case_t *tc);
+int  test_file_get(void);
+void run_all_tests_file_get(void);
+
+// --- mon_check_process harness (OneWifi lib/common/monitor.c) ---
+#define MONCP_EXIT    0
+#define MONCP_SIGNAL  1
+#define MONCP_ALIVE   2
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // MONCP_EXIT / MONCP_SIGNAL / MONCP_ALIVE
+	int         param;          // exit code, or signal (<0 => realtime signal)
+	int         expected_ret;   // 1 = alive(true), 0 = dead(false)
+	int         expected_status;// expected *exit_status
+} mon_cp_test_case_t;
+
+extern pid_t       moncp_child;
+extern const char *moncp_case_name;
+extern mon_cp_test_case_t mon_check_process_suite[];
+
+void construct_mon_check_process_input(const mon_cp_test_case_t *tc);
+int  test_mon_check_process(const mon_cp_test_case_t *tc);
+void run_all_tests_mon_check_process(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
