@@ -449,6 +449,22 @@ void construct_devinfo_cfg_input(const devinfo_cfg_test_case_t *tc);
 int  test_devinfo_cfg(const devinfo_cfg_test_case_t *tc);
 void run_all_tests_devinfo_cfg(void);
 
+// --- dpp_mac_str_tmp harness (OneWifi lib/datapipeline/dppline.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	uint8_t     mac[6];         // 6-byte MAC input
+	const char *expected;       // expected formatted string
+} dpp_mac_test_case_t;
+
+extern uint8_t     dmt_mac[16];
+extern const char *dmt_case_name;
+extern const char *dmt_expect;
+extern dpp_mac_test_case_t dpp_mac_suite[];
+
+void construct_dpp_mac_str_tmp_input(const dpp_mac_test_case_t *tc);
+int  test_dpp_mac_str_tmp(const dpp_mac_test_case_t *tc);
+void run_all_tests_dpp_mac_str_tmp(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

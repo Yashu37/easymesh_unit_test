@@ -68,5 +68,8 @@ int main() {
 
 	// devinfo_get_inet_iface_config OOB check (OneWifi lib/datapipeline/devinfo.c).
 //	run_all_tests_devinfo_cfg();
+
+	// dpp_mac_str_tmp OOB crash check (OneWifi lib/datapipeline/dppline.c).
+//	run_all_tests_dpp_mac_str_tmp();
 	return 0;
 }
