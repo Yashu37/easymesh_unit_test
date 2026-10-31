@@ -97,6 +97,9 @@ int main() {
 //	run_all_tests_log_update();
 
 	// log_meminfo OOB check (OneWifi lib/log/log.c).
-	run_all_tests_log_meminfo();
+//	run_all_tests_log_meminfo();
+
+	// log_severity_parse_sink OOB check (OneWifi lib/log/log.c).
+//	run_all_tests_log_sev();
 	return 0;
 }

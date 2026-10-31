@@ -676,6 +676,26 @@ void construct_log_meminfo_input(const log_meminfo_test_case_t *tc);
 int  test_log_meminfo(const log_meminfo_test_case_t *tc);
 void run_all_tests_log_meminfo(void);
 
+// --- log_severity_parse_sink harness (OneWifi lib/log/log.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *input;          // severity string (base token)
+	int         fill_len;       // pad to this length (0 = none)
+	int         null;           // pass sevstr = NULL
+	int         expect_ret;     // expected bool return
+} log_sev_test_case_t;
+
+extern char        lsp_in[512];
+extern size_t      lsp_in_len;
+extern int         lsp_null;
+extern const char *lsp_case_name;
+extern int         lsp_default_set, lsp_sev_set, lsp_mod_sev_set;
+extern log_sev_test_case_t log_sev_suite[];
+
+void construct_log_sev_input(const log_sev_test_case_t *tc);
+int  test_log_sev(const log_sev_test_case_t *tc);
+void run_all_tests_log_sev(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
