@@ -299,6 +299,30 @@ void construct_mon_sig_str_input(const mon_sig_str_test_case_t *tc);
 int  test_mon_sig_str(void);
 void run_all_tests_mon_sig_str(void);
 
+// --- os_cmd_exec_xv harness (OneWifi lib/common/os_exec.c) ---
+#ifndef OS_CMD_FLAG_ANY_EXIT_CODE
+#define OS_CMD_FLAG_ANY_EXIT_CODE   1
+#define OS_CMD_FLAG_NO_LOG_OUTPUT   2
+#define OS_CMD_FLAG_LOG_ERROR_DEBUG 4
+#endif
+typedef struct {
+	const char *test_name;      // case name
+	const char *fmt;            // format string
+	char        arg_fill;       // byte to fill the %s argument with (0 = no arg)
+	int         arg_len;        // length of the %s argument (0 = none)
+	int         flags;          // os_cmd_exec flags
+	int         expect_ret;     // expected bool return (1/0)
+} os_cmd_exec_test_case_t;
+
+extern char        g_arg[1024];
+extern size_t      g_arg_len;
+extern const char *oce_case_name;
+extern os_cmd_exec_test_case_t os_cmd_exec_suite[];
+
+void construct_os_cmd_exec_xv_input(const os_cmd_exec_test_case_t *tc);
+int  test_os_cmd_exec_xv(const os_cmd_exec_test_case_t *tc);
+void run_all_tests_os_cmd_exec_xv(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
