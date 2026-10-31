@@ -89,5 +89,8 @@ int main() {
 
 	// log_dynamic_full_path_get OOB check (OneWifi lib/log/log.c).
 //	run_all_tests_log_fullpath();
+
+	// log_dynamic_state_handler OOB check (OneWifi lib/log/log.c).
+//	run_all_tests_log_state();
 	return 0;
 }

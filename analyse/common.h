@@ -610,6 +610,33 @@ void construct_log_fullpath_input(const log_fullpath_test_case_t *tc);
 int  test_log_fullpath(const log_fullpath_test_case_t *tc);
 void run_all_tests_log_fullpath(void);
 
+// --- log_dynamic_state_handler harness (OneWifi lib/log/log.c) ---
+/* libev stand-in types (handler params are unreferenced) */
+#ifndef LDS_EV_STUBS
+#define LDS_EV_STUBS
+struct ev_loop { int dummy; };
+typedef struct { int dummy; } ev_stat;
+#endif
+
+typedef struct {
+	const char *test_name;      // case name
+	int         update_ret;     // what log_dynamic_update returns
+	int         new_trigger;    // value it writes
+	int         trig_value;     // current trigger_value
+	int         have_cb;        // install a trigger callback?
+	int         expect_cb;      // expect the callback to fire?
+} log_state_test_case_t;
+
+extern int lds_update_ret;
+extern int lds_new_trigger;
+extern int lds_cb_count;
+extern const char *lds_case_name;
+extern log_state_test_case_t log_state_suite[];
+
+void construct_log_state_input(const log_state_test_case_t *tc);
+int  test_log_state(const log_state_test_case_t *tc);
+void run_all_tests_log_state(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
