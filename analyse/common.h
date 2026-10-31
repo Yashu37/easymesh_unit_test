@@ -283,6 +283,22 @@ void construct_mon_sig_forward_input(const mon_sig_forward_test_case_t *tc);
 int  test_mon_sig_forward(const mon_sig_forward_test_case_t *tc);
 void run_all_tests_mon_sig_forward(void);
 
+// --- mon_sig_str harness (OneWifi lib/common/monitor.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         signum;         // signum passed to mon_sig_str()
+	size_t      sigstr_sz;      // size of the caller buffer handed in
+} mon_sig_str_test_case_t;
+
+extern int         mss_signum;
+extern size_t      mss_size;
+extern const char *mss_case_name;
+extern mon_sig_str_test_case_t mon_sig_str_suite[];
+
+void construct_mon_sig_str_input(const mon_sig_str_test_case_t *tc);
+int  test_mon_sig_str(void);
+void run_all_tests_mon_sig_str(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

@@ -3,9 +3,9 @@
  *
  * Function copied VERBATIM from OneWifi lib/common/monitor.c:275. No fixes.
  * Its local array sigstr[MON_SIGSTR_SZ] is filled by the helper
- * mon_sig_str() (also copied verbatim here, from monitor.c:541), so both
- * are included and the harness observes whether either writes out of
- * bounds under ASan.
+ * mon_sig_str() (whose own verbatim copy lives in mon_sig_str.cpp and is
+ * declared extern below), so the harness observes whether either writes
+ * out of bounds under ASan.
  *
  * LOG()/severity names come from OneWifi's lib/log/log.h (not in this
  * harness); a no-op LOG stub and the two #defines are provided ONLY so the
@@ -92,50 +92,3 @@ bool mon_check_process(pid_t child, int *exit_status)
     return false;
 }
 
-/* --- copied verbatim from lib/common/monitor.c:541 --- */
-void mon_sig_str(int signum, char *sigstr, size_t sigstr_sz)
-{
-    char sig_default[16];
-    char *sig;
-
-    switch (signum)
-    {
-        case SIGHUP:       sig = (char *)"SIGHUP";      break;
-        case SIGINT:       sig = (char *)"SIGINT";      break;
-        case SIGQUIT:      sig = (char *)"SIGQUIT";     break;
-        case SIGILL:       sig = (char *)"SIGILL";      break;
-        case SIGTRAP:      sig = (char *)"SIGTRAP";     break;
-        case SIGABRT:      sig = (char *)"SIGABRT";     break;
-        case SIGBUS:       sig = (char *)"SIGBUS";      break;
-        case SIGFPE:       sig = (char *)"SIGFPE";      break;
-        case SIGKILL:      sig = (char *)"SIGKILL";     break;
-        case SIGUSR1:      sig = (char *)"SIGUSR1";     break;
-        case SIGSEGV:      sig = (char *)"SIGSEGV";     break;
-        case SIGUSR2:      sig = (char *)"SIGUSR2";     break;
-        case SIGPIPE:      sig = (char *)"SIGPIPE";     break;
-        case SIGALRM:      sig = (char *)"SIGALRM";     break;
-        case SIGTERM:      sig = (char *)"SIGTERM";     break;
-        case SIGCHLD:      sig = (char *)"SIGCHLD";     break;
-        case SIGCONT:      sig = (char *)"SIGCONT";     break;
-        case SIGSTOP:      sig = (char *)"SIGSTOP";     break;
-        case SIGTSTP:      sig = (char *)"SIGTSTP";     break;
-        case SIGTTIN:      sig = (char *)"SIGTTIN";     break;
-        case SIGTTOU:      sig = (char *)"SIGTTOU";     break;
-        case SIGURG:       sig = (char *)"SIGURG";      break;
-        case SIGXCPU:      sig = (char *)"SIGXCPU";     break;
-        case SIGXFSZ:      sig = (char *)"SIGXFSZ";     break;
-        case SIGVTALRM:    sig = (char *)"SIGVTALRM";   break;
-        case SIGPROF:      sig = (char *)"SIGPROF";     break;
-        case SIGWINCH:     sig = (char *)"SIGWINCH";    break;
-        case SIGIO:        sig = (char *)"SIGIO";       break;
-        case SIGPWR:       sig = (char *)"SIGPWR";      break;
-        case SIGSYS:       sig = (char *)"SIGSYS";      break;
-
-        default:
-            snprintf(sig_default, sizeof(sig_default), "%d", signum);
-            sig = sig_default;
-            break;
-    }
-
-    snprintf(sigstr, sigstr_sz, "%s (%s)", sig, strsignal(signum));
-}

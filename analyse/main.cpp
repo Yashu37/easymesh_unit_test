@@ -42,5 +42,8 @@ int main() {
 
 	// mon_sig_forward OOB crash check (OneWifi lib/common/monitor.c).
 //	run_all_tests_mon_sig_forward();
+
+	// mon_sig_str OOB crash check (OneWifi lib/common/monitor.c).
+//	run_all_tests_mon_sig_str();
 	return 0;
 }
