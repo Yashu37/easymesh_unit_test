@@ -578,6 +578,24 @@ void construct_ds_tree_gv_input(const ds_tree_gv_test_case_t *tc);
 int  test_ds_tree_gv(const ds_tree_gv_test_case_t *tc);
 void run_all_tests_ds_tree_gv(void);
 
+// --- ds_tree_node_str harness (OneWifi lib/ds/ds_tree.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	void       *key;            // node->otn_key
+	int         use_strfn;      // use custom ot_str_fn?
+	const char *expect;         // expected substring (NULL = just non-NULL)
+} ds_node_str_test_case_t;
+
+extern unsigned char dns_backing[sizeof(ds_tree_node_t) + 64];
+extern ds_tree_t     dns_root;
+extern int           dns_use_strfn;
+extern const char   *dns_case_name;
+extern ds_node_str_test_case_t ds_node_str_suite[];
+
+void construct_ds_node_str_input(const ds_node_str_test_case_t *tc);
+int  test_ds_node_str(const ds_node_str_test_case_t *tc);
+void run_all_tests_ds_node_str(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

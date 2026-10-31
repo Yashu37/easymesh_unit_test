@@ -83,5 +83,8 @@ int main() {
 
 	// ds_tree_graphviz_r OOB crash check (OneWifi lib/ds/ds_tree.c).
 //	run_all_tests_ds_tree_gv();
+
+	// ds_tree_node_str OOB crash check (OneWifi lib/ds/ds_tree.c).
+//	run_all_tests_ds_node_str();
 	return 0;
 }
