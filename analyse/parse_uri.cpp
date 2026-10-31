@@ -6,6 +6,11 @@
  * strscpy(tmp, uri, sizeof(tmp)), which is size-bounded. Output is copied
  * into the caller's proto/host via strscpy(..., *_size) (also bounded).
  *
+ * FIX APPLIED: added a "!tproto ||" NULL guard before the strcmp() calls.
+ * The original dereferenced tproto unconditionally, so a URI made only of
+ * delimiter(s) (e.g. ":") -> strtok_r returns NULL -> strcmp(NULL,...) ->
+ * crash. Only that guard was added; nothing else changed.
+ *
  * The strscpy() helper is copied verbatim too (from util.c:731).
  * Scaffolding: STRSCPY/ASSERT_ARRAY macros, UTIL_URI_MAX_LENG, LOGE/LOG
  * no-op stubs. No logic changed.
@@ -59,8 +64,9 @@ bool parse_uri(char *uri, char *proto, size_t proto_size, char *host, size_t hos
     pstr  = strtok_r(NULL, ":", &sptr);
     if (pstr) tport = atoi(pstr);
 
-    if (   strcmp(tproto, "ssl")
-        && strcmp(tproto, "tcp"))
+    if (   !tproto
+        || (strcmp(tproto, "ssl")
+        && strcmp(tproto, "tcp")))
     {
         LOGE("URI %s proto not supported (Only ssl and tcp)", uri);
         return false;
