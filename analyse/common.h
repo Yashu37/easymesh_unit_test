@@ -323,6 +323,28 @@ void construct_os_cmd_exec_xv_input(const os_cmd_exec_test_case_t *tc);
 int  test_os_cmd_exec_xv(const os_cmd_exec_test_case_t *tc);
 void run_all_tests_os_cmd_exec_xv(void);
 
+// --- os_pid_from_file harness (OneWifi lib/common/os.c) ---
+#define OSPID_LIVE      0
+#define OSPID_LONGLINE  1
+#define OSPID_DEAD      2
+#define OSPID_ZERO      3
+#define OSPID_NONNUM    4
+#define OSPID_EMPTY     5
+#define OSPID_MISSING   6
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // OSPID_* kind
+	int         expect_nonzero; // 1 if a pid should be returned, 0 otherwise
+} os_pid_test_case_t;
+
+extern char        ospid_path[256];
+extern const char *ospid_case_name;
+extern os_pid_test_case_t os_pid_suite[];
+
+void construct_os_pid_from_file_input(const os_pid_test_case_t *tc);
+int  test_os_pid_from_file(void);
+void run_all_tests_os_pid_from_file(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

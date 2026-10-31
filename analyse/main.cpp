@@ -48,5 +48,8 @@ int main() {
 
 	// os_cmd_exec_xv OOB crash check (OneWifi lib/common/os_exec.c).
 //	run_all_tests_os_cmd_exec_xv();
+
+	// os_pid_from_file OOB crash check (OneWifi lib/common/os.c).
+//	run_all_tests_os_pid_from_file();
 	return 0;
 }
