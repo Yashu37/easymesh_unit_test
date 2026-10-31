@@ -465,6 +465,65 @@ void construct_dpp_mac_str_tmp_input(const dpp_mac_test_case_t *tc);
 int  test_dpp_mac_str_tmp(const dpp_mac_test_case_t *tc);
 void run_all_tests_dpp_mac_str_tmp(void);
 
+// --- osp_unit_dhcpc_hostname_get harness (OneWifi lib/datapipeline/osp_unit_rdk.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	size_t      buffsz;         // output buffer size
+	const char *serial;         // stub serial value
+	const char *model;          // stub model value
+	int         ser_ok;         // serial getter succeeds?
+	int         mod_ok;         // model getter succeeds?
+	int         expect_ret;     // expected bool return
+} osp_hostname_test_case_t;
+
+extern size_t      ohg_buffsz;
+extern const char *ohg_case_name;
+extern osp_hostname_test_case_t osp_hostname_suite[];
+
+void construct_osp_hostname_input(const osp_hostname_test_case_t *tc);
+int  test_osp_hostname(const osp_hostname_test_case_t *tc);
+void run_all_tests_osp_hostname(void);
+
+// --- radio_get_name_from_cfg harness (OneWifi lib/datapipeline/dpp_types.h) ---
+#define RADIO_IFNAME_LEN 16
+#define RADIO_NAME_LEN   32
+#define RADIO_TYPE_STR_2G   "2.4G"
+#define RADIO_TYPE_STR_5G   "5G"
+#define RADIO_TYPE_STR_5GL  "5GL"
+#define RADIO_TYPE_STR_5GU  "5GU"
+#define RADIO_TYPE_STR_6G   "6G"
+typedef enum {
+	RADIO_TYPE_NONE = 0,
+	RADIO_TYPE_2G,
+	RADIO_TYPE_5G,
+	RADIO_TYPE_5GL,
+	RADIO_TYPE_5GU,
+	RADIO_TYPE_6G,
+} radio_type_t;
+/* minimal radio_entry_t: only the two fields radio_get_name_from_cfg uses */
+typedef struct {
+	radio_type_t type;
+	char         phy_name[RADIO_NAME_LEN];
+} radio_entry_t;
+
+typedef struct {
+	const char   *test_name;    // case name
+	radio_type_t  type;         // radio type
+	const char   *phy_name;     // phy name
+	int           null_cfg;     // pass cfg = NULL
+	int           expect_nonnull; // 1 if a string should be returned
+} radio_name_test_case_t;
+
+extern unsigned char rgn_backing[sizeof(radio_entry_t) + 64];
+extern size_t        rgn_phy_len;
+extern int           rgn_null_cfg;
+extern const char   *rgn_case_name;
+extern radio_name_test_case_t radio_name_suite[];
+
+void construct_radio_name_input(const radio_name_test_case_t *tc);
+int  test_radio_name(const radio_name_test_case_t *tc);
+void run_all_tests_radio_name(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

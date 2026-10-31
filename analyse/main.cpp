@@ -71,5 +71,11 @@ int main() {
 
 	// dpp_mac_str_tmp OOB crash check (OneWifi lib/datapipeline/dppline.c).
 //	run_all_tests_dpp_mac_str_tmp();
+
+	// osp_unit_dhcpc_hostname_get OOB check (OneWifi lib/datapipeline/osp_unit_rdk.c).
+//	run_all_tests_osp_hostname();
+
+	// radio_get_name_from_cfg OOB check (OneWifi lib/datapipeline/dpp_types.h).
+//	run_all_tests_radio_name();
 	return 0;
 }
