@@ -596,6 +596,20 @@ void construct_ds_node_str_input(const ds_node_str_test_case_t *tc);
 int  test_ds_node_str(const ds_node_str_test_case_t *tc);
 void run_all_tests_ds_node_str(void);
 
+// --- log_dynamic_full_path_get harness (OneWifi lib/log/log.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         len;            // buffer length passed to the function
+} log_fullpath_test_case_t;
+
+extern int         ldfp_len;
+extern const char *ldfp_case_name;
+extern log_fullpath_test_case_t log_fullpath_suite[];
+
+void construct_log_fullpath_input(const log_fullpath_test_case_t *tc);
+int  test_log_fullpath(const log_fullpath_test_case_t *tc);
+void run_all_tests_log_fullpath(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

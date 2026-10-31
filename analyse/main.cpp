@@ -86,5 +86,8 @@ int main() {
 
 	// ds_tree_node_str OOB crash check (OneWifi lib/ds/ds_tree.c).
 //	run_all_tests_ds_node_str();
+
+	// log_dynamic_full_path_get OOB check (OneWifi lib/log/log.c).
+//	run_all_tests_log_fullpath();
 	return 0;
 }
