@@ -174,6 +174,26 @@ void construct_base64_input(const base64_test_case_t *tc);
 int  test_base64_decode(void);
 void run_all_tests_base64_decode(void);
 
+// --- base64_encode harness (OneWifi lib/common/util.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *input;          // input bytes (may contain NUL/binary)
+	ssize_t     in_sz;          // input_sz handed to base64_encode()
+	ssize_t     out_sz;         // out_sz   handed to base64_encode()
+	int         expected_result;// return value if it did NOT crash
+} base64_enc_test_case_t;
+
+extern uint8_t b64e_in[512];
+extern char    b64e_out[4096];
+extern ssize_t b64e_in_sz;
+extern ssize_t b64e_out_sz;
+extern const char *b64e_case_name;
+extern base64_enc_test_case_t base64_encode_suite[];
+
+void construct_base64_encode_input(const base64_enc_test_case_t *tc);
+int  test_base64_encode(void);
+void run_all_tests_base64_encode(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
