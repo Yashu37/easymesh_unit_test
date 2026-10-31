@@ -27,5 +27,8 @@ int main() {
 
 	// base64_encode OOB crash check (OneWifi lib/common/util.c).
 //	run_all_tests_base64_encode();
+
+	// cmd_log OOB crash check (OneWifi lib/common/os.c).
+//	run_all_tests_cmd_log();
 	return 0;
 }

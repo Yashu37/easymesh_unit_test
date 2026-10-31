@@ -194,6 +194,21 @@ void construct_base64_encode_input(const base64_enc_test_case_t *tc);
 int  test_base64_encode(void);
 void run_all_tests_base64_encode(void);
 
+// --- cmd_log harness (OneWifi lib/common/os.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *shell_cmd;      // command passed to cmd_log()
+	int         expected_rc;    // expected child exit code (0 = success)
+} cmd_log_test_case_t;
+
+extern const char *cmdlog_cmd;
+extern const char *cmdlog_case_name;
+extern cmd_log_test_case_t cmd_log_suite[];
+
+void construct_cmd_log_input(const cmd_log_test_case_t *tc);
+int  test_cmd_log(void);
+void run_all_tests_cmd_log(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
