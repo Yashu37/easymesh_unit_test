@@ -379,6 +379,32 @@ void construct_parse_uri_input(const parse_uri_test_case_t *tc);
 int  test_parse_uri(const parse_uri_test_case_t *tc);
 void run_all_tests_parse_uri(void);
 
+// --- strexread harness (OneWifi lib/common/util.c) ---
+#define SXR_NORMAL     0
+#define SXR_PROG_NULL  1
+#define SXR_ARGV_NULL  2
+typedef struct {
+	const char *test_name;      // case name
+	const char *prog;           // program
+	const char *a0, *a1, *a2;   // up to 3 argv entries (NULL-terminated)
+	int         mode;           // SXR_NORMAL / SXR_PROG_NULL / SXR_ARGV_NULL
+	int         expect_nonnull; // 1 if a buffer should be returned
+} strexread_test_case_t;
+
+extern char        sxr_prog[256];
+extern size_t      sxr_prog_len;
+extern char        sxr_args[8][256];
+extern const char *sxr_argv[8];
+extern int         sxr_argc;
+extern int         sxr_prog_null;
+extern int         sxr_argv_null;
+extern const char *sxr_case_name;
+extern strexread_test_case_t strexread_suite[];
+
+void construct_strexread_input(const strexread_test_case_t *tc);
+int  test_strexread(const strexread_test_case_t *tc);
+void run_all_tests_strexread(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

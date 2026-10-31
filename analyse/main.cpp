@@ -58,6 +58,9 @@ int main() {
 //	run_all_tests_os_popen();
 
 	// parse_uri OOB crash check (OneWifi lib/common/util.c).
-	run_all_tests_parse_uri();
+//	run_all_tests_parse_uri();
+
+	// strexread OOB crash check (OneWifi lib/common/util.c).
+//	run_all_tests_strexread();
 	return 0;
 }
