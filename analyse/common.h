@@ -702,6 +702,8 @@ typedef struct logger_msg {
 	char *lm_timestamp;
 	char *lm_tag;
 	char *lm_text;
+	int   lm_module;      /* used by logger_traceback_log */
+	int   lm_severity;    /* used by logger_traceback_log */
 } logger_msg_t;
 
 typedef struct {
@@ -726,6 +728,31 @@ extern logger_remote_test_case_t logger_remote_suite[];
 void construct_logger_remote_input(const logger_remote_test_case_t *tc);
 int  test_logger_remote(const logger_remote_test_case_t *tc);
 void run_all_tests_logger_remote(void);
+
+// --- logger_traceback_log harness (OneWifi lib/log/log_traceback.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         module;         // msg->lm_module
+	int         severity;       // msg->lm_severity (>4 store, <=4 flush)
+	const char *tag;            // msg->lm_tag
+	const char *text;           // msg->lm_text
+	int         fill;           // pad text to this length (0 = use text)
+	int         repeat;         // call the handler this many times
+	int         expect_flush;   // expected mlog flush count
+} logger_tb_test_case_t;
+
+extern char         ltb_tag[64];
+extern char         ltb_text[4096];
+extern size_t       ltb_tag_len, ltb_text_len;
+extern logger_msg_t ltb_msg;
+extern int          ltb_repeat;
+extern int          tb_flush_count;
+extern const char  *ltb_case_name;
+extern logger_tb_test_case_t logger_tb_suite[];
+
+void construct_logger_tb_input(const logger_tb_test_case_t *tc);
+int  test_logger_tb(const logger_tb_test_case_t *tc);
+void run_all_tests_logger_tb(void);
 
 // PCAP Global Header
 struct pcap_global_header {

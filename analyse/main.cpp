@@ -104,5 +104,8 @@ int main() {
 
 	// logger_remote_log OOB check (OneWifi lib/log/log_remote.c).
 //	run_all_tests_logger_remote();
+
+	// logger_traceback_log OOB check (OneWifi lib/log/log_traceback.c).
+//	run_all_tests_logger_tb();
 	return 0;
 }
