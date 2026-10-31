@@ -77,5 +77,8 @@ int main() {
 
 	// radio_get_name_from_cfg OOB check (OneWifi lib/datapipeline/dpp_types.h).
 //	run_all_tests_radio_name();
+
+	// ds_tree_check_r OOB crash check (OneWifi lib/ds/ds_tree.c).
+//	run_all_tests_ds_tree_check();
 	return 0;
 }

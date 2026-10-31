@@ -524,6 +524,42 @@ void construct_radio_name_input(const radio_name_test_case_t *tc);
 int  test_radio_name(const radio_name_test_case_t *tc);
 void run_all_tests_radio_name(void);
 
+// --- ds_tree_check_r harness (OneWifi lib/ds/ds_tree.c) ---
+typedef struct ds_tree_node ds_tree_node_t;
+struct ds_tree_node {
+	void           *otn_key;
+	int             otn_prop;      /* color: 1=red, 0=black */
+	ds_tree_node_t *otn_parent;
+	ds_tree_node_t *otn_child[2];
+};
+typedef struct ds_tree ds_tree_t;
+struct ds_tree {
+	size_t          ot_cof;
+	ds_tree_node_t *ot_root;
+	void           *ot_cmp_fn;
+	char          *(*ot_str_fn)(ds_tree_node_t *node);
+	unsigned        ot_ndel;
+};
+
+#define DSC_SINGLE     0
+#define DSC_VALID3     1
+#define DSC_BLACKVIOL  2
+#define DSC_REDVIOL    3
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // DSC_* tree shape
+	int         expect_ok;      // 1 if check returns >=0 (valid), 0 if -1
+} ds_tree_check_test_case_t;
+
+extern ds_tree_node_t dsc_nodes[8];
+extern ds_tree_t      dsc_root;
+extern const char    *dsc_case_name;
+extern ds_tree_check_test_case_t ds_tree_check_suite[];
+
+void construct_ds_tree_check_input(const ds_tree_check_test_case_t *tc);
+int  test_ds_tree_check(const ds_tree_check_test_case_t *tc);
+void run_all_tests_ds_tree_check(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
