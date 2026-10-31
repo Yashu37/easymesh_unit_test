@@ -7,7 +7,9 @@
 #include <sanitizer/asan_interface.h>
 
 int main() {
-#if 0	
+	/* unbuffered stdout so per-test lines flush before any crash/abort */
+	setvbuf(stdout, NULL, _IONBF, 0);
+#if 0
 	run_all_tests_handle_bsta_cap_report();
 	run_all_tests_get_first_tlv();
 	run_all_tests_get_next_tlv();
@@ -50,9 +52,12 @@ int main() {
 //	run_all_tests_os_cmd_exec_xv();
 
 	// os_pid_from_file OOB crash check (OneWifi lib/common/os.c).
-	run_all_tests_os_pid_from_file();
+//	run_all_tests_os_pid_from_file();
 
 	// os_popen OOB crash check (OneWifi lib/common/os.c).
-	run_all_tests_os_popen();
+//	run_all_tests_os_popen();
+
+	// parse_uri OOB crash check (OneWifi lib/common/util.c).
+	run_all_tests_parse_uri();
 	return 0;
 }

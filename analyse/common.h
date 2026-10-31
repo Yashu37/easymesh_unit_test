@@ -360,6 +360,25 @@ void construct_os_popen_input(const os_popen_test_case_t *tc);
 int  test_os_popen(const os_popen_test_case_t *tc);
 void run_all_tests_os_popen(void);
 
+// --- parse_uri harness (OneWifi lib/common/util.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *uri;            // literal URI (when use_fill == 0)
+	int         use_fill;       // 0=literal, 1="ssl:"+fill, 2="ssl:"+fill+":443"
+	char        fill_ch;        // fill byte
+	int         fill_len;       // number of fill bytes
+	int         expect_ret;     // 1/0; -1 = suspected crash case
+} parse_uri_test_case_t;
+
+extern char        puri_in[1024];
+extern size_t      puri_in_len;
+extern const char *puri_case_name;
+extern parse_uri_test_case_t parse_uri_suite[];
+
+void construct_parse_uri_input(const parse_uri_test_case_t *tc);
+int  test_parse_uri(const parse_uri_test_case_t *tc);
+void run_all_tests_parse_uri(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
