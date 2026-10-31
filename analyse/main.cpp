@@ -92,5 +92,8 @@ int main() {
 
 	// log_dynamic_state_handler OOB check (OneWifi lib/log/log.c).
 //	run_all_tests_log_state();
+
+	// log_dynamic_update OOB check (OneWifi lib/log/log.c).
+//	run_all_tests_log_update();
 	return 0;
 }

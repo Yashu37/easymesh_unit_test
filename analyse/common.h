@@ -637,6 +637,28 @@ void construct_log_state_input(const log_state_test_case_t *tc);
 int  test_log_state(const log_state_test_case_t *tc);
 void run_all_tests_log_state(void);
 
+// --- log_dynamic_update harness (OneWifi lib/log/log.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         json_ok;        // json_load_file returns non-NULL?
+	const char *sev_value;      // severity the parse stub writes
+	int         trigger;        // value parse writes to *new_trigger
+	int         use_long_name;  // use a >64-char log_name (stress remote_name[64])
+	int         expect_ret;     // expected bool return
+} log_update_test_case_t;
+
+extern int         ldu_json_ok;
+extern const char *ldu_sev_value;
+extern int         ldu_parse_trigger;
+extern char        ldu_last_local[320];
+extern char        ldu_last_remote[320];
+extern const char *ldu_case_name;
+extern log_update_test_case_t log_update_suite[];
+
+void construct_log_update_input(const log_update_test_case_t *tc);
+int  test_log_update(const log_update_test_case_t *tc);
+void run_all_tests_log_update(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
