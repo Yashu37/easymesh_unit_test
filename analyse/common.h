@@ -2158,6 +2158,23 @@ void construct_DeviceCpuUtil_DataGet_input(const DeviceCpuUtil_DataGet_test_case
 int  test_DeviceCpuUtil_DataGet(const DeviceCpuUtil_DataGet_test_case_t *tc);
 void run_all_tests_DeviceCpuUtil_DataGet(void);
 
+// --- blaster_str_to_mac_bytes harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define BSM_KEY_MAX  64
+#define BSM_PAD      64
+typedef struct {
+	const char   *test_name;    // case name
+	const char   *key;          // input MAC string
+	unsigned char expect[6];    // expected bmac
+} blaster_str_to_mac_bytes_test_case_t;
+
+extern char          bsm_key_buf[BSM_KEY_MAX + BSM_PAD];
+extern unsigned char bsm_mac_buf[MAC_ADDR_LEN + BSM_PAD];
+extern blaster_str_to_mac_bytes_test_case_t blaster_str_to_mac_bytes_suite[];
+
+void construct_blaster_str_to_mac_bytes_input(const blaster_str_to_mac_bytes_test_case_t *tc);
+int  test_blaster_str_to_mac_bytes(const blaster_str_to_mac_bytes_test_case_t *tc);
+void run_all_tests_blaster_str_to_mac_bytes(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

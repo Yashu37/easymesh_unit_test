@@ -248,5 +248,8 @@ int main() {
 
 	// DeviceCpuUtil_DataGet OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_DeviceCpuUtil_DataGet();
+
+	// blaster_str_to_mac_bytes OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_blaster_str_to_mac_bytes();
 	return 0;
 }
