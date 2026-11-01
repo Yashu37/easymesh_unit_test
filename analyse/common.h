@@ -1230,6 +1230,25 @@ void construct_ovsdb_sync_update_one_get_uuid_input(const ovsdb_sync_update_one_
 int  test_ovsdb_sync_update_one_get_uuid(const ovsdb_sync_update_one_get_uuid_test_case_t *tc);
 void run_all_tests_ovsdb_sync_update_one_get_uuid(void);
 
+// --- onewifi_ovsdb_sync_update_where harness (OneWifi lib/ovsdb/ovsdb_sync_api.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         where_len;      // encoded JSON length of where (-1 = NULL)
+	const char *result;         // JSON result from tran_call_s (NULL = none)
+	int         table_fill;     // >0: table name = table_fill x 't'
+	int         expect_ret;     // expected return (count / -1)
+} ovsdb_sync_update_where_test_case_t;
+
+extern char        osw_table[256];
+extern size_t      osw_table_len, osw_table_seen;
+extern int         osw_calls;
+extern const char *osw_result;
+extern ovsdb_sync_update_where_test_case_t ovsdb_sync_update_where_suite[];
+
+void construct_ovsdb_sync_update_where_input(const ovsdb_sync_update_where_test_case_t *tc);
+int  test_ovsdb_sync_update_where(const ovsdb_sync_update_where_test_case_t *tc);
+void run_all_tests_ovsdb_sync_update_where(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
