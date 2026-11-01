@@ -21,6 +21,7 @@
 #include <sanitizer/asan_interface.h>
 
 char   ogug_slot[OGU_SLOT_SZ + OGU_SLOT_PAD];
+char   ogug_slot_err[OGU_ERR_SZ + OGU_SLOT_PAD];
 size_t ogug_errstr_len;
 int    ogug_calls;
 char   ogu_table[OGU_STR_SZ];

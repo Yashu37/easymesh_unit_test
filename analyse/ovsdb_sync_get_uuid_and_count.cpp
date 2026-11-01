@@ -10,9 +10,10 @@
  * by sizeof(uuid->uuid) = 37.
  *
  * Poison route: json_gets() is redirected to ogc_json_gets(), which runs
- * the VERBATIM json_gets / json_gets_fn on a runner-owned slot whose tail
- * past output_sz (128) is poisoned, then copies the result back. The
- * caller's uuid, table and sock path are poisoned by the runner.
+ * the VERBATIM json_gets / json_gets_fn on the runner slot ogc_slot with
+ * the SAME size (128), then copies the result back. The runner poisons
+ * ogc_slot past 128 around the call, plus the caller's uuid, table and
+ * sock path.
  *
  * Scaffolding (NOT the function under test):
  *   - json_gets / json_gets_fn / json_get_str: verbatim from
@@ -31,7 +32,6 @@
 #include <sys/types.h>
 #include <jansson.h>
 #include "common.h"
-#include <sanitizer/asan_interface.h>
 
 /* --- scaffolding --- */
 enum { EMERG, ALERT, CRIT, ERR, WARNING, NOTICE, INFO, DEBUG, TRACE };
@@ -124,9 +124,7 @@ static bool ogc_json_gets(const json_t *json, char *output, size_t output_sz, in
     bool r;
     if (output_sz > OGC_SLOT_SZ) output_sz = OGC_SLOT_SZ;
     memset(ogc_slot, 0, output_sz);
-    __asan_poison_memory_region(ogc_slot + output_sz, sizeof(ogc_slot) - output_sz);
     r = json_gets(json, ogc_slot, output_sz, flags);
-    __asan_unpoison_memory_region(ogc_slot + output_sz, sizeof(ogc_slot) - output_sz);
     memcpy(output, ogc_slot, output_sz);
     ogc_where_len = strnlen(ogc_slot, output_sz);
     return r;

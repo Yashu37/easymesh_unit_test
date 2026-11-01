@@ -2,9 +2,8 @@
  * TEST RUNNER: pktgen_configure_test
  *
  * Poisoned around the call (caller-owned inputs): if_name and dest_mac past
- * their NUL. The snprintf slot for dev_path is poisoned past PATH_MAX inside
- * the handler's snprintf redirect. dev_path[4096] is internal (auto-guarded
- * by ASan).
+ * their NUL, and the dev_path snprintf slot pgf_slot past PATH_MAX (4096).
+ * dev_path[4096] is internal (auto-guarded by ASan).
  * PASS = return, number of pgctrl calls and dev_path length match.
  */
 
@@ -27,9 +26,11 @@ int test_pktgen_configure(const pktgen_configure_test_case_t *tc)
 {
     psn(pgf_ifname, sizeof(pgf_ifname), 1);
     psn(pgf_mac, sizeof(pgf_mac), 1);
+    __asan_poison_memory_region(&pgf_slot[PGF_SLOT_SZ], PGF_SLOT_PAD);   /* dev_path snprintf slot */
 
     int ret = pktgen_configure(pgf_ifname, pgf_mac, 1500);
 
+    __asan_unpoison_memory_region(&pgf_slot[PGF_SLOT_SZ], PGF_SLOT_PAD);
     psn(pgf_mac, sizeof(pgf_mac), 0);
     psn(pgf_ifname, sizeof(pgf_ifname), 0);
 

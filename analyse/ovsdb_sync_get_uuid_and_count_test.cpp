@@ -6,7 +6,7 @@
  *     64 bytes past sizeof(ovs_uuid_t) are poisoned (catches a STRSCPY
  *     write past uuid[37]);
  *   - table and sock path past their NUL.
- * The json_gets slot for where_str is poisoned past 128 inside the handler.
+ *   - the where_str json_gets slot ogc_slot past 128.
  * where_str[128] / uuid1 are internal (auto-guarded by ASan).
  * PASS = count matches, uuid length matches (-1 = uuid NULL), where_str
  * length matches (-1 = any < 128).
@@ -31,9 +31,11 @@ int test_ovsdb_sync_get_uuid_and_count(const ovsdb_sync_get_uuid_and_count_test_
     __asan_poison_memory_region(&ogc_uuid_buf[sizeof(ovs_uuid_t)], sizeof(ogc_uuid_buf) - sizeof(ovs_uuid_t));
     __asan_poison_memory_region(&ogc_table[tl + 1], sizeof(ogc_table) - (tl + 1));
     __asan_poison_memory_region(&ogc_sock[sl + 1], sizeof(ogc_sock) - (sl + 1));
+    __asan_poison_memory_region(&ogc_slot[OGC_SLOT_SZ], OGC_SLOT_PAD);   /* where_str json_gets slot */
 
     int count = ovsdb_sync_get_uuid_and_count(ogc_sock, ogc_table, where, uuid);
 
+    __asan_unpoison_memory_region(&ogc_slot[OGC_SLOT_SZ], OGC_SLOT_PAD);
     __asan_unpoison_memory_region(&ogc_sock[sl + 1], sizeof(ogc_sock) - (sl + 1));
     __asan_unpoison_memory_region(&ogc_table[tl + 1], sizeof(ogc_table) - (tl + 1));
     __asan_unpoison_memory_region(&ogc_uuid_buf[sizeof(ovs_uuid_t)], sizeof(ogc_uuid_buf) - sizeof(ovs_uuid_t));

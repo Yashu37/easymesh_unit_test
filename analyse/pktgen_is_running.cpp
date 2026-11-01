@@ -11,11 +11,12 @@
  * Poison route:
  *   - fopen(PKTGEN_THREAD_FILE_0) -> fmemopen over the runner's file buffer
  *     (tail past the content poisoned by the runner).
- *   - fgets() -> pgr_fgets(): real fgets into a runner slot of the SAME size
- *     (512) with a poisoned tail, then copied into str.
- *   - sscanf() -> pgr_sscanf(): real sscanf into a runner slot of 512 with a
- *     poisoned tail, then copied into run_if. A token longer than 511 would
- *     write into the poison -> ASan aborts.
+ *   - fgets() -> pgr_fgets(): real fgets into the runner slot pgr_slot_str
+ *     with the SAME size (512), then copied into str.
+ *   - sscanf() -> pgr_sscanf(): real sscanf into the runner slot pgr_slot_if
+ *     (512), then copied into run_if.
+ *   The runner poisons both slots past 512 around the call, so a token
+ *   longer than 511 would write into the poison -> ASan aborts.
  * str / run_if are also guarded by ASan stack redzones.
  *
  * Scaffolding (NOT the function under test): LOGD formats its arguments.
@@ -26,7 +27,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include "common.h"
-#include <sanitizer/asan_interface.h>
 
 /* --- scaffolding --- */
 static void pgr_log(const char *fmt, ...)
@@ -52,20 +52,16 @@ static FILE *pgr_fopen(const char *path, const char *mode)
 static char *pgr_fgets(char *s, int size, FILE *fp)
 {
     if (size > PGR_SLOT_SZ) size = PGR_SLOT_SZ;
-    memset(pgr_slot_str, 0, sizeof(pgr_slot_str));
-    __asan_poison_memory_region(pgr_slot_str + size, sizeof(pgr_slot_str) - size);
+    memset(pgr_slot_str, 0, (size_t)size);
     char *r = fgets(pgr_slot_str, size, fp);
-    __asan_unpoison_memory_region(pgr_slot_str + size, sizeof(pgr_slot_str) - size);
     memcpy(s, pgr_slot_str, (size_t)size);
     pgr_str_len = strnlen(pgr_slot_str, (size_t)size);
     return r ? s : NULL;
 }
 static int pgr_sscanf(const char *str, const char *fmt, char *out)
 {
-    memset(pgr_slot_if, 0, sizeof(pgr_slot_if));
-    __asan_poison_memory_region(pgr_slot_if + PGR_SLOT_SZ, PGR_SLOT_PAD);   /* run_if is 512 */
+    memset(pgr_slot_if, 0, PGR_SLOT_SZ);   /* run_if is 512 */
     int r = sscanf(str, fmt, pgr_slot_if);
-    __asan_unpoison_memory_region(pgr_slot_if + PGR_SLOT_SZ, PGR_SLOT_PAD);
     memcpy(out, pgr_slot_if, PGR_SLOT_SZ);
     pgr_if_len = strnlen(pgr_slot_if, PGR_SLOT_SZ);
     return r;

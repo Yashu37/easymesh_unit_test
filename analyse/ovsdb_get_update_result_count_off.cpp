@@ -7,10 +7,12 @@
  * json_dumps_static (in the LOG args) uses the static dumps_static_buf[8192].
  *
  * Poison route: json_gets() is redirected to ogug_json_gets(), which runs
- * the VERBATIM json_gets / json_gets_fn on a runner-owned slot whose tail
- * past output_sz (256 for errstr, 8192 for dumps_static_buf) is poisoned,
- * then copies the result back. So a write past the size given aborts.
- * errstr is also guarded by ASan stack redzones.
+ * the VERBATIM json_gets / json_gets_fn on a runner slot with the SAME size
+ * as the real buffer -- ogug_slot_err (256) for errstr, ogug_slot (8192)
+ * for dumps_static_buf -- then copies the result back. The runner poisons
+ * ogug_slot_err past 256 and ogug_slot past 8192 around the call, so a
+ * write past the size given aborts. errstr is also guarded by ASan stack
+ * redzones.
  *
  * Scaffolding (NOT the function under test):
  *   - json_gets / json_gets_fn / json_dumps_static: verbatim from
@@ -26,7 +28,6 @@
 #include <stdarg.h>
 #include <jansson.h>
 #include "common.h"
-#include <sanitizer/asan_interface.h>
 
 /* --- scaffolding --- */
 enum { EMERG, ALERT, CRIT, ERR, WARNING, NOTICE, INFO, DEBUG, TRACE };
@@ -104,13 +105,12 @@ error:
 static bool ogug_json_gets(const json_t *json, char *output, size_t output_sz, int flags)
 {
     bool r;
+    char *slot = (output_sz == OGU_ERR_SZ) ? ogug_slot_err : ogug_slot;   /* errstr : dumps_static_buf */
     if (output_sz > OGU_SLOT_SZ) output_sz = OGU_SLOT_SZ;
-    memset(ogug_slot, 0, output_sz);
-    __asan_poison_memory_region(ogug_slot + output_sz, sizeof(ogug_slot) - output_sz);
-    r = json_gets(json, ogug_slot, output_sz, flags);
-    __asan_unpoison_memory_region(ogug_slot + output_sz, sizeof(ogug_slot) - output_sz);
-    memcpy(output, ogug_slot, output_sz);
-    if (output_sz == 256) ogug_errstr_len = strnlen(ogug_slot, output_sz);
+    memset(slot, 0, output_sz);
+    r = json_gets(json, slot, output_sz, flags);
+    memcpy(output, slot, output_sz);
+    if (output_sz == OGU_ERR_SZ) ogug_errstr_len = strnlen(slot, output_sz);
     ogug_calls++;
     return r;
 }

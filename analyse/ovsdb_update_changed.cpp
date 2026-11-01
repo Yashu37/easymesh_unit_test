@@ -7,10 +7,11 @@
  * callback json_gets_fn stops when pbuf + input_len >= buf + buf_sz.
  *
  * Poison route: json_gets() is redirected to oucg_json_gets(), which runs
- * the VERBATIM json_gets / json_gets_fn on a runner-owned slot of the SAME
- * size (256) whose tail is poisoned, then copies the result into v_old /
- * v_new. So a write by json_gets past 256 aborts on our poison. v_old /
- * v_new themselves are also guarded by ASan stack redzones.
+ * the VERBATIM json_gets / json_gets_fn on the runner slots oucg_slot[0/1]
+ * with the SAME size (256), then copies the result into v_old / v_new. The
+ * runner poisons both slots past 256 around the call, so a write by
+ * json_gets past 256 aborts. v_old / v_new themselves are also guarded by
+ * ASan stack redzones.
  *
  * Scaffolding (NOT the function under test):
  *   - json_gets / json_gets_fn: verbatim from lib/json_util/string.c.
@@ -25,7 +26,6 @@
 #include <stdarg.h>
 #include <jansson.h>
 #include "common.h"
-#include <sanitizer/asan_interface.h>
 
 /* --- scaffolding --- */
 enum { EMERG, ALERT, CRIT, ERR, WARNING, NOTICE, INFO, DEBUG, TRACE };
@@ -106,9 +106,7 @@ static bool oucg_json_gets(const json_t *json, char *output, size_t output_sz, i
     bool r;
     if (output_sz > OUC_SLOT_SZ) output_sz = OUC_SLOT_SZ;
     memset(slot, 0, output_sz);
-    __asan_poison_memory_region(slot + output_sz, OUC_SLOT_SZ + OUC_SLOT_PAD - output_sz);
     r = json_gets(json, slot, output_sz, flags);
-    __asan_unpoison_memory_region(slot + output_sz, OUC_SLOT_SZ + OUC_SLOT_PAD - output_sz);
     memcpy(output, slot, output_sz);
     oucg_len[(oucg_next - 1) & 1] = strnlen(slot, output_sz);
     return r;

@@ -8,11 +8,12 @@
  *
  * Poison route:
  *   - vsnprintf() is redirected to pgc_vsnprintf(), which runs the real
- *     vsnprintf on a runner-owned slot of the SAME size (512) whose tail
- *     is poisoned, then copies it into cmd -> a write past 512 aborts.
- *   - write() is redirected to pgc_write(), which copies the bytes into a
- *     runner capture buffer poisoned past 512 -> writing more than cmd
- *     holds aborts.
+ *     vsnprintf on the runner slot pgc_slot with the SAME size (512), then
+ *     copies it into cmd.
+ *   - write() is redirected to pgc_write(), which copies the bytes into the
+ *     runner capture buffer pgc_out.
+ *   The runner poisons pgc_slot and pgc_out past 512 around the call, so a
+ *   write past 512 / writing more than cmd holds aborts.
  *   - the file path, format and %s arguments are runner buffers, poisoned
  *     past their NUL by the runner.
  * cmd itself is also guarded by ASan stack redzones.
@@ -31,7 +32,6 @@
 #include <errno.h>
 #include <sys/types.h>
 #include "common.h"
-#include <sanitizer/asan_interface.h>
 
 /* --- scaffolding --- */
 static void pgc_log(const char *fmt, ...)
@@ -56,10 +56,8 @@ static ssize_t pgc_write(int fd, const void *buf, size_t n)
 {
     (void)fd;
     if (n > PGC_SLOT_SZ) n = PGC_SLOT_SZ + PGC_SLOT_PAD;   /* would run into the poison -> ASan */
-    memset(pgc_out, 0, sizeof(pgc_out));
-    __asan_poison_memory_region(pgc_out + PGC_SLOT_SZ, PGC_SLOT_PAD);
+    memset(pgc_out, 0, PGC_SLOT_SZ);
     memcpy(pgc_out, buf, n);
-    __asan_unpoison_memory_region(pgc_out + PGC_SLOT_SZ, PGC_SLOT_PAD);
     pgc_out_len = n;
     return pgc_write_fail ? -1 : (ssize_t)n;
 }
@@ -68,9 +66,7 @@ static int pgc_vsnprintf(char *out, size_t sz, const char *fmt, va_list ap)
     int r;
     if (sz > PGC_SLOT_SZ) sz = PGC_SLOT_SZ;
     memset(pgc_slot, 0, sz);
-    __asan_poison_memory_region(pgc_slot + sz, sizeof(pgc_slot) - sz);
     r = vsnprintf(pgc_slot, sz, fmt, ap);
-    __asan_unpoison_memory_region(pgc_slot + sz, sizeof(pgc_slot) - sz);
     memcpy(out, pgc_slot, sz);
     pgc_vs_ret = r;
     return r;

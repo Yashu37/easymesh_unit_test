@@ -9,9 +9,9 @@
  *
  * Poison route:
  *   - snprintf() is redirected to pgf_snprintf(), which runs the real
- *     vsnprintf on a runner slot of the SAME size (PATH_MAX) with a
- *     poisoned tail, then copies it into dev_path -> a write past 4096
- *     aborts.
+ *     vsnprintf on the runner slot pgf_slot with the SAME size (PATH_MAX),
+ *     then copies it into dev_path. The runner poisons pgf_slot past 4096
+ *     around the call -> a write past 4096 aborts.
  *   - if_name / dest_mac are runner buffers poisoned past their NUL.
  * dev_path itself is also guarded by ASan stack redzones.
  *
@@ -28,7 +28,6 @@
 #include <stdarg.h>
 #include <linux/limits.h>
 #include "common.h"
-#include <sanitizer/asan_interface.h>
 
 /* --- scaffolding --- */
 static void pgf_log(const char *fmt, ...)
@@ -64,11 +63,9 @@ static int pgf_snprintf(char *out, size_t sz, const char *fmt, ...)
     va_list ap;
     if (sz > PGF_SLOT_SZ) sz = PGF_SLOT_SZ;
     memset(pgf_slot, 0, sz);
-    __asan_poison_memory_region(pgf_slot + sz, sizeof(pgf_slot) - sz);
     va_start(ap, fmt);
     r = vsnprintf(pgf_slot, sz, fmt, ap);
     va_end(ap);
-    __asan_unpoison_memory_region(pgf_slot + sz, sizeof(pgf_slot) - sz);
     memcpy(out, pgf_slot, sz);
     pgf_dev_len = strnlen(pgf_slot, sz);
     return r;

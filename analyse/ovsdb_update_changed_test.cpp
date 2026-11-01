@@ -2,8 +2,8 @@
  * TEST RUNNER: ovsdb_update_changed_test
  *
  * Poisoned around the call (caller-owned inputs): field and mon_table past
- * their NUL. The json_gets output slots (same size as v_old / v_new, 256)
- * have their tails poisoned inside the handler's json_gets redirect.
+ * their NUL, and the json_gets output slots oucg_slot[0/1] past 256 (same
+ * size as v_old / v_new).
  * v_old / v_new are internal (auto-guarded by ASan).
  * PASS = changed matches and the dumped lengths match (-1 = "didn't fit":
  * any length < 256).
@@ -23,9 +23,13 @@ int test_ovsdb_update_changed(const ovsdb_update_changed_test_case_t *tc)
 
     __asan_poison_memory_region(&ouc_field[fl + 1], sizeof(ouc_field) - (fl + 1));
     __asan_poison_memory_region(&ouc_table[tl + 1], sizeof(ouc_table) - (tl + 1));
+    __asan_poison_memory_region(&oucg_slot[0][OUC_SLOT_SZ], OUC_SLOT_PAD);   /* v_old json_gets slot */
+    __asan_poison_memory_region(&oucg_slot[1][OUC_SLOT_SZ], OUC_SLOT_PAD);   /* v_new json_gets slot */
 
     bool changed = onewifi_ovsdb_update_changed(&ouc_mon, ouc_field);
 
+    __asan_unpoison_memory_region(&oucg_slot[1][OUC_SLOT_SZ], OUC_SLOT_PAD);
+    __asan_unpoison_memory_region(&oucg_slot[0][OUC_SLOT_SZ], OUC_SLOT_PAD);
     __asan_unpoison_memory_region(&ouc_table[tl + 1], sizeof(ouc_table) - (tl + 1));
     __asan_unpoison_memory_region(&ouc_field[fl + 1], sizeof(ouc_field) - (fl + 1));
 

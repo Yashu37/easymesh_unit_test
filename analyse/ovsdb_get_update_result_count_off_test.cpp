@@ -2,8 +2,8 @@
  * TEST RUNNER: ovsdb_get_update_result_count_off_test
  *
  * Poisoned around the call (caller-owned inputs): table and oper past their
- * NUL. The json_gets output slot has its tail past the given size poisoned
- * inside the handler's json_gets redirect. errstr[256] is internal
+ * NUL, the errstr json_gets slot ogug_slot_err past 256, and the
+ * dumps_static_buf slot ogug_slot past 8192. errstr[256] is internal
  * (auto-guarded by ASan).
  * PASS = count matches and errstr length matches (-1 = errstr not used).
  */
@@ -25,9 +25,13 @@ int test_ovsdb_get_update_result_count_off(const ovsdb_get_update_result_count_o
 
     __asan_poison_memory_region(&ogu_table[tl + 1], sizeof(ogu_table) - (tl + 1));
     __asan_poison_memory_region(&ogu_oper[ol + 1], sizeof(ogu_oper) - (ol + 1));
+    __asan_poison_memory_region(&ogug_slot_err[OGU_ERR_SZ], OGU_SLOT_PAD);   /* errstr json_gets slot */
+    __asan_poison_memory_region(&ogug_slot[OGU_SLOT_SZ], OGU_SLOT_PAD);      /* dumps_static_buf slot */
 
     int count = ovsdb_get_update_result_count_off(result, ogu_table, ogu_oper, tc->offset);
 
+    __asan_unpoison_memory_region(&ogug_slot[OGU_SLOT_SZ], OGU_SLOT_PAD);
+    __asan_unpoison_memory_region(&ogug_slot_err[OGU_ERR_SZ], OGU_SLOT_PAD);
     __asan_unpoison_memory_region(&ogu_oper[ol + 1], sizeof(ogu_oper) - (ol + 1));
     __asan_unpoison_memory_region(&ogu_table[tl + 1], sizeof(ogu_table) - (tl + 1));
 

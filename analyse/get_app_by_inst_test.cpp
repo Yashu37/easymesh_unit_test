@@ -2,9 +2,8 @@
  * TEST RUNNER: get_app_by_inst_test
  *
  * Poisoned around the call: the bytes past the caller's apps_mgr struct
- * (input). The snprintf slot for key_str is poisoned past 32 inside the
- * handler's snprintf redirect. key_str[32] is internal (auto-guarded by
- * ASan).
+ * (input), and the key_str snprintf slot gai_slot past 32. key_str[32] is
+ * internal (auto-guarded by ASan).
  * PASS = the right app is returned (or NULL) and the key length matches.
  */
 
@@ -21,9 +20,11 @@ int test_get_app_by_inst(const get_app_by_inst_test_case_t *tc)
     wifi_apps_mgr_t *mgr = (wifi_apps_mgr_t *)gai_mgr_buf;
 
     __asan_poison_memory_region(&gai_mgr_buf[sizeof(wifi_apps_mgr_t)], sizeof(gai_mgr_buf) - sizeof(wifi_apps_mgr_t));
+    __asan_poison_memory_region(&gai_slot[GAI_SLOT_SZ], GAI_SLOT_PAD);   /* key_str snprintf slot */
 
     wifi_app_t *app = get_app_by_inst(mgr, (wifi_app_inst_t)tc->inst);
 
+    __asan_unpoison_memory_region(&gai_slot[GAI_SLOT_SZ], GAI_SLOT_PAD);
     __asan_unpoison_memory_region(&gai_mgr_buf[sizeof(wifi_apps_mgr_t)], sizeof(gai_mgr_buf) - sizeof(wifi_apps_mgr_t));
 
     printf("    inst=%d -> app=%s key=\"%s\" key_len=%zu\n", tc->inst, app ? "found" : "NULL", gai_key_seen, gai_key_len);

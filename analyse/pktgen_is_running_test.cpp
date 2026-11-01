@@ -3,8 +3,8 @@
  *
  * Poisoned around the call:
  *   - the file content buffer pgr_data past its content (input);
- *   - inside the handler: the fgets slot past 512 and the sscanf slot past
- *     512 (= sizeof(str) / sizeof(run_if)).
+ *   - the fgets slot pgr_slot_str and the sscanf slot pgr_slot_if past 512
+ *     (= sizeof(str) / sizeof(run_if)).
  * str / run_if are internal (auto-guarded by ASan).
  * PASS = return matches and run_if length matches (<= 511).
  */
@@ -20,9 +20,13 @@ int onewifi_pktgen_is_running(void);
 int test_pktgen_is_running(const pktgen_is_running_test_case_t *tc)
 {
     __asan_poison_memory_region(&pgr_data[pgr_data_len], sizeof(pgr_data) - pgr_data_len);
+    __asan_poison_memory_region(&pgr_slot_str[PGR_SLOT_SZ], PGR_SLOT_PAD);   /* str fgets slot */
+    __asan_poison_memory_region(&pgr_slot_if[PGR_SLOT_SZ], PGR_SLOT_PAD);    /* run_if sscanf slot */
 
     int ret = onewifi_pktgen_is_running();
 
+    __asan_unpoison_memory_region(&pgr_slot_if[PGR_SLOT_SZ], PGR_SLOT_PAD);
+    __asan_unpoison_memory_region(&pgr_slot_str[PGR_SLOT_SZ], PGR_SLOT_PAD);
     __asan_unpoison_memory_region(&pgr_data[pgr_data_len], sizeof(pgr_data) - pgr_data_len);
 
     printf("    ret=%d str_len=%zu run_if_len=%zu\n", ret, pgr_str_len, pgr_if_len);

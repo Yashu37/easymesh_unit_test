@@ -8,9 +8,9 @@
  * for INT_MIN) and handed to hash_map_get().
  *
  * Poison route:
- *   - snprintf() -> gai_snprintf(): real vsnprintf on a runner slot of the
- *     SAME size (32) with a poisoned tail, then copied into key_str -> a
- *     write past 32 aborts.
+ *   - snprintf() -> gai_snprintf(): real vsnprintf on the runner slot
+ *     gai_slot with the SAME size (32), then copied into key_str. The runner
+ *     poisons gai_slot past 32 around the call -> a write past 32 aborts.
  *   - hash_map_get() -> gai_hash_map_get(): copies the key (strlen) into a
  *     runner buffer and looks it up in a tiny runner table.
  *   - apps_mgr is a runner struct; the bytes past it are poisoned.
@@ -25,7 +25,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include "common.h"
-#include <sanitizer/asan_interface.h>
 
 /* --- scaffolding --- */
 static void *gai_hash_map_get(void *map, const char *key)
@@ -43,11 +42,9 @@ static int gai_snprintf(char *out, size_t sz, const char *fmt, ...)
     va_list ap;
     if (sz > GAI_SLOT_SZ) sz = GAI_SLOT_SZ;
     memset(gai_slot, 0, sz);
-    __asan_poison_memory_region(gai_slot + sz, sizeof(gai_slot) - sz);
     va_start(ap, fmt);
     r = vsnprintf(gai_slot, sz, fmt, ap);
     va_end(ap);
-    __asan_unpoison_memory_region(gai_slot + sz, sizeof(gai_slot) - sz);
     memcpy(out, gai_slot, sz);
     return r;
 }

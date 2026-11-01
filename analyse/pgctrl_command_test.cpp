@@ -2,8 +2,8 @@
  * TEST RUNNER: pgctrl_command_test
  *
  * Poisoned around the call (caller-owned inputs): file, format and the %s
- * argument past their NUL. The vsnprintf slot (512) and the write capture
- * buffer (512) have their tails poisoned inside the handler's redirects.
+ * argument past their NUL, and the cmd vsnprintf slot pgc_slot and the
+ * write() capture buffer pgc_out past 512.
  * cmd[512] is internal (auto-guarded by ASan).
  * PASS = return matches and the bytes written match (<= 511).
  */
@@ -28,9 +28,13 @@ int test_pgctrl_command(const pgctrl_command_test_case_t *tc)
     psn(pgc_file, sizeof(pgc_file), 1);
     psn(pgc_fmt, sizeof(pgc_fmt), 1);
     psn(pgc_arg, sizeof(pgc_arg), 1);
+    __asan_poison_memory_region(&pgc_slot[PGC_SLOT_SZ], PGC_SLOT_PAD);   /* cmd vsnprintf slot */
+    __asan_poison_memory_region(&pgc_out[PGC_SLOT_SZ], PGC_SLOT_PAD);    /* write() capture */
 
     int ret = pgctrl_command(pgc_file, pgc_fmt, pgc_arg, 7);
 
+    __asan_unpoison_memory_region(&pgc_out[PGC_SLOT_SZ], PGC_SLOT_PAD);
+    __asan_unpoison_memory_region(&pgc_slot[PGC_SLOT_SZ], PGC_SLOT_PAD);
     psn(pgc_arg, sizeof(pgc_arg), 0);
     psn(pgc_fmt, sizeof(pgc_fmt), 0);
     psn(pgc_file, sizeof(pgc_file), 0);

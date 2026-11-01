@@ -1464,7 +1464,8 @@ int  test_ovsdb_update_changed(const ovsdb_update_changed_test_case_t *tc);
 void run_all_tests_ovsdb_update_changed(void);
 
 // --- ovsdb_get_update_result_count_off harness (OneWifi lib/ovsdb/ovsdb_sync_api.c) ---
-#define OGU_SLOT_SZ   8192    // largest json_gets size used (dumps_static_buf)
+#define OGU_SLOT_SZ   8192    // = sizeof(dumps_static_buf)
+#define OGU_ERR_SZ    256     // = sizeof(errstr)
 #define OGU_SLOT_PAD  64
 #define OGU_STR_SZ    64
 typedef struct {
@@ -1476,6 +1477,7 @@ typedef struct {
 } ovsdb_get_update_result_count_off_test_case_t;
 
 extern char   ogug_slot[OGU_SLOT_SZ + OGU_SLOT_PAD];
+extern char   ogug_slot_err[OGU_ERR_SZ + OGU_SLOT_PAD];
 extern size_t ogug_errstr_len;
 extern int    ogug_calls;
 extern char   ogu_table[OGU_STR_SZ];
