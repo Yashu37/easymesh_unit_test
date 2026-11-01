@@ -5,9 +5,9 @@
  *   - descriptor: bytes past sizeof(wifi_app_descriptor_t);
  *   - apps_mgr: bytes past sizeof(wifi_apps_mgr_t);
  *   - the malloc pool: each slot's tail past sizeof(wifi_app_t).
- * The snprintf slot for key_str is poisoned past 32 inside the handler.
+ *   - the key_str snprintf slot apr_slot past 32 (= sizeof(key_str)).
  * key_str[32] is internal (auto-guarded by ASan).
- * PASS = RETURN_OK, key length / put / init_fn calls match and the stored
+ * PASS = RETURN_OK (RETURN_ERR when malloc fails), key length / put / init_fn calls match and the stored
  * app carries the descriptor and ctrl.
  */
 
@@ -28,10 +28,12 @@ int test_app_register(const app_register_test_case_t *tc)
         __asan_poison_memory_region(&apr_pool[i][sizeof(wifi_app_t)], APR_POOL_PAD);
     __asan_poison_memory_region(&apr_desc_buf[sizeof(wifi_app_descriptor_t)], APR_DPAD);
     __asan_poison_memory_region(&apr_mgr_buf[sizeof(wifi_apps_mgr_t)], APR_MPAD);
+    __asan_poison_memory_region(&apr_slot[APR_SLOT_SZ], APR_SLOT_PAD);   /* key_str snprintf slot */
     fflush(stdout);
 
     int ret = app_register((wifi_apps_mgr_t *)apr_mgr_buf, (wifi_app_descriptor_t *)apr_desc_buf);
 
+    __asan_unpoison_memory_region(&apr_slot[APR_SLOT_SZ], APR_SLOT_PAD);
     __asan_unpoison_memory_region(&apr_mgr_buf[sizeof(wifi_apps_mgr_t)], APR_MPAD);
     __asan_unpoison_memory_region(&apr_desc_buf[sizeof(wifi_app_descriptor_t)], APR_DPAD);
     for (int i = 0; i < APR_POOL_SLOTS; i++)
@@ -42,7 +44,7 @@ int test_app_register(const app_register_test_case_t *tc)
                              strnlen(app->desc.desc, sizeof(app->desc.desc)) == 255);
     printf("    inst=%d -> ret=%d key=\"%s\" key_len=%zu put=%d init_calls=%d stored_ok=%d\n",
            tc->inst, ret, apr_key_seen, apr_key_len, app != NULL, apr_init_calls, stored_ok);
-    return ret == 0 && apr_key_len == (size_t)tc->expect_key_len && (app != NULL) == (tc->expect_put != 0) &&
+    return ret == (tc->malloc_fail ? -1 : 0) && apr_key_len == (size_t)tc->expect_key_len && (app != NULL) == (tc->expect_put != 0) &&
            apr_init_calls == tc->expect_init && stored_ok;
 }
 

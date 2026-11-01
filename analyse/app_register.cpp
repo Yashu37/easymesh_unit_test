@@ -1,17 +1,20 @@
 /*
  * HANDLER: app_register
  *
- * Function copied VERBATIM from OneWifi source/apps/wifi_apps_mgr.c. No fixes.
+ * Function copied VERBATIM from OneWifi source/apps/wifi_apps_mgr.c, plus one FIX.
  * Local key_str[32] is filled by
  *   snprintf(key_str, sizeof(key_str), "app_%010d", descriptor->inst)
  * (<= 15 chars) and then strdup'd as the hash-map key.
  * The new app is malloc(sizeof(wifi_app_t)) and memset / memcpy'd with
- * sizeof(wifi_app_t) / sizeof(wifi_app_descriptor_t). Note: malloc's
- * result is NOT checked before memset (checked by the last case).
+ * sizeof(wifi_app_t) / sizeof(wifi_app_descriptor_t).
+ * The malloc result was used unchecked: memset(NULL) on allocation failure.
+ * FIX APPLIED: "if (app == NULL) return RETURN_ERR;" right after malloc.
+ * Only that line was added.
  *
  * Poison route:
- *   - snprintf() -> apr_snprintf(): real vsnprintf on a runner slot of the
- *     SAME size (32) with a poisoned tail, then copied into key_str.
+ *   - snprintf() -> apr_snprintf(): real vsnprintf on the runner slot
+ *     apr_slot with the SAME size (32), then copied into key_str. The
+ *     runner poisons apr_slot past 32 around the call.
  *   - malloc() -> apr_malloc(): hands out a runner pool slot whose tail past
  *     sizeof(wifi_app_t) is poisoned -> memset/memcpy past the app aborts.
  *   - descriptor is a runner buffer; bytes past sizeof(wifi_app_descriptor_t)
@@ -32,10 +35,10 @@
 #include <string.h>
 #include <stdarg.h>
 #include "common.h"
-#include <sanitizer/asan_interface.h>
 
 /* --- scaffolding --- */
 #define RETURN_OK 0
+#define RETURN_ERR -1
 static wifi_app_t *apr_get_app_by_inst(wifi_apps_mgr_t *m, wifi_app_inst_t inst)
 {
     (void)m; (void)inst;
@@ -62,11 +65,9 @@ static int apr_snprintf(char *out, size_t sz, const char *fmt, ...)
     va_list ap;
     if (sz > APR_SLOT_SZ) sz = APR_SLOT_SZ;
     memset(apr_slot, 0, sz);
-    __asan_poison_memory_region(apr_slot + sz, sizeof(apr_slot) - sz);
     va_start(ap, fmt);
     r = vsnprintf(apr_slot, sz, fmt, ap);
     va_end(ap);
-    __asan_unpoison_memory_region(apr_slot + sz, sizeof(apr_slot) - sz);
     memcpy(out, apr_slot, sz);
     return r;
 }
@@ -86,6 +87,7 @@ int app_register(wifi_apps_mgr_t *apps_mgr, wifi_app_descriptor_t *descriptor)
     }
     update_rfc_params(descriptor);
     app = (wifi_app_t *)malloc(sizeof(wifi_app_t));
+    if (app == NULL) return RETURN_ERR;   /* FIX: malloc result was used unchecked (memset(NULL)) */
     memset(app, 0, sizeof(wifi_app_t));
     app->ctrl = apps_mgr->ctrl;
     memcpy(&app->desc, descriptor, sizeof(wifi_app_descriptor_t));

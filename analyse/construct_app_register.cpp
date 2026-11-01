@@ -6,8 +6,8 @@
  * desc name. rfc = true -> init_fn(app, create_flag) is called.
  *
  * Cases: new app rfc on, new app rfc off, already registered (returns
- * early), inst INT_MIN (15-char key), inst INT_MAX, and LAST malloc
- * returning NULL (memset(NULL) -- no check in the function).
+ * early), inst INT_MIN (15-char key), inst INT_MAX, and malloc returning
+ * NULL (crashed before the fix; now returns RETURN_ERR).
  */
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ app_register_test_case_t app_register_suite[] = {
     { "already_reg",      0x8,     1,    1,     0,           0,    0,  0 },
     { "inst_int_min",   INT_MIN,   1,    0,     0,          15,    1,  1 },
     { "inst_int_max",   INT_MAX,   1,    0,     0,          14,    1,  1 },
-    { "malloc_fails",     0x4,     1,    0,     1,           0,    0,  0 },   /* NULL deref expected */
+    { "malloc_fails",     0x4,     1,    0,     1,           0,    0,  0 },   /* RETURN_ERR after the fix */
 
     { NULL, 0, 0, 0, 0, 0, 0, 0 }  /* sentinel */
 };

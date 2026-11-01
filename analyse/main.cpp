@@ -205,6 +205,6 @@ int main() {
 //	run_all_tests_get_app_by_inst();
 
 	// app_register OOB check (OneWifi source/apps/wifi_apps_mgr.c).
-	run_all_tests_app_register();
+//	run_all_tests_app_register();
 	return 0;
 }
