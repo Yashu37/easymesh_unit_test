@@ -263,5 +263,8 @@ int main() {
 
 	// ActiveMsmtConfValidation OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_ActiveMsmtConfValidation();
+
+	// SetActiveMsmtStepDstMac OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_SetActiveMsmtStepDstMac();
 	return 0;
 }

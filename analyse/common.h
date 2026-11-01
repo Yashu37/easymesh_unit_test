@@ -2178,13 +2178,16 @@ void run_all_tests_blaster_str_to_mac_bytes(void);
 
 // --- active_msmt_log_message harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
 typedef enum { BLASTER_INFO_LOG = 0, BLASTER_DEBUG_LOG } blaster_log_level_t;  // wifi_blaster.h
-typedef struct {                               // stand-in: only the two CCSP trace hooks are used
+typedef struct { int network_mode; } wifi_ctrl_t;   // subset (rdk_dev_mode_type_*)
+typedef struct {                               // stand-in: CCSP trace hooks + ctrl + hal_cap used by blaster
 	struct {
 		struct {
 			void (*CcspTraceInfoRdkb_fn)(char *);
 			void (*CcspTraceDebugRdkb_fn)(char *);
 		} desc;
 	} wifi_ccsp;
+	wifi_ctrl_t ctrl;
+	int         hal_cap;
 } wifi_mgr_t;
 #define AML_SLOT_SZ  1024    // = sizeof(msg)
 #define AML_ARG_MAX  2112    // room for a 2000-char argument
@@ -2241,11 +2244,16 @@ typedef struct {                             // wifi_blaster.h
 	mac_address_t       sta_mac;
 	active_msmt_data_t *sta_active_msmt_data;
 } blaster_hashmap_t;
+#ifndef MAX_NUM_RADIOS
+#define MAX_NUM_RADIOS 3
+#endif
 typedef struct {                             // subset of include/wifi_base.h active_msmt_step_t
 	unsigned char SrcMac[13];                // MAC_ADDRESS_LENGTH
 	unsigned char DestMac[13];
 	unsigned int  StepId;
 	int           ApIndex;
+	bool          isMLO;
+	int           mldApIndex[MAX_NUM_RADIOS - 1];
 } active_msmt_step_t;
 #define PLAN_ID_LENGTH  38                   // include/wifi_base.h
 #define MAX_STEP_COUNT  32                   // include/wifi_base.h
@@ -2349,6 +2357,31 @@ extern ActiveMsmtConfValidation_test_case_t ActiveMsmtConfValidation_suite[];
 void construct_ActiveMsmtConfValidation_input(const ActiveMsmtConfValidation_test_case_t *tc);
 int  test_ActiveMsmtConfValidation(const ActiveMsmtConfValidation_test_case_t *tc);
 void run_all_tests_ActiveMsmtConfValidation(void);
+
+// --- SetActiveMsmtStepDstMac harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define SAD_SLOT_SZ  256     // = sizeof(msg)
+#define SAD_PAD      64
+typedef struct {
+	const char   *test_name;    // case name
+	int           invalid;      // StepInstance[STEP] = INVALID (early return)
+	int           ext_mode;     // network_mode = ext (msg path) vs gw (diag path)
+	const char   *dst_mac;      // DstMac input string
+	unsigned char expect_mac[6];// expected cfg->Step[STEP].DestMac
+} SetActiveMsmtStepDstMac_test_case_t;
+
+extern char   sad_slot[SAD_SLOT_SZ + SAD_PAD];
+extern size_t sad_msg_len;
+extern char   sad_last_err[256];
+extern int    sad_report_err, sad_diag_calls, sad_last_step_status;
+extern active_msmt_status_t sad_last_status;
+extern char   sad_mgr_buf[sizeof(wifi_actvie_msmt_t) + SAD_PAD];
+extern char   sad_wmgr_buf[sizeof(wifi_mgr_t) + SAD_PAD];
+extern char   sad_dst_buf[64 + SAD_PAD];
+extern SetActiveMsmtStepDstMac_test_case_t SetActiveMsmtStepDstMac_suite[];
+
+void construct_SetActiveMsmtStepDstMac_input(const SetActiveMsmtStepDstMac_test_case_t *tc);
+int  test_SetActiveMsmtStepDstMac(const SetActiveMsmtStepDstMac_test_case_t *tc);
+void run_all_tests_SetActiveMsmtStepDstMac(void);
 
 // PCAP Global Header
 struct pcap_global_header {
