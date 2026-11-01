@@ -1012,6 +1012,33 @@ void run_all_tests_os_pid_to_name(void);
 // jansson json_t *, which converts implicitly).
 typedef char pjs_errmsg_t[128];                                              // lib/pjs/pjs_common.h
 typedef bool schema_from_json_t(void *out, void *js, bool update, pjs_errmsg_t err);  // ovsdb_table.h
+typedef void schema_mark_changed_t(void *old, void *rec);                    // ovsdb_table.h
+#define PJS_OVS_UUID_SZ             37      /* Max OVS UUID size */  // lib/pjs/pjs_common.h
+typedef struct
+{
+    char uuid[PJS_OVS_UUID_SZ];
+} ovs_uuid_t;
+typedef enum                                                                 // lib/ovsdb/ovsdb_update.h
+{
+    OVSDB_UPDATE_ERROR = -1,
+    OVSDB_UPDATE_NEW,
+    OVSDB_UPDATE_MODIFY,
+    OVSDB_UPDATE_DEL,
+}
+ovsdb_update_type_t;
+typedef struct ovsdb_update_monitor_s ovsdb_update_monitor_t;
+typedef void ovsdb_update_cbk_t(ovsdb_update_monitor_t *self);
+struct ovsdb_update_monitor_s                     // json_t * spelled void * (see above)
+{
+    ovsdb_update_cbk_t     *mon_cb;            /* Update callback */
+    void                   *mon_data;          /* User-supplied data, not touched by ovsdb_update_* */
+    ovsdb_update_type_t     mon_type;           /* Update type */
+    const char             *mon_table;          /* Table that was modified */
+    const char             *mon_uuid;           /* UUID of the modified ROW */
+    void                   *mon_json_new;       /* JSON message containing the update */
+    void                   *mon_json_old;       /* JSON message containing old data */
+    void                   *mon_old_rec;
+};
 #define OVSDB_TABLE_KEY_SIZE 64
 #define OVSDB_TABLE_NAME_SIZE 64
 typedef struct ovsdb_cache_row
@@ -1035,6 +1062,11 @@ typedef struct ovsdb_table
     int                     key2_offset; // optional alternate key2, example: radio_config
     char                    key2_name[OVSDB_TABLE_KEY_SIZE];
     schema_from_json_t      *from_json;
+    schema_mark_changed_t   *mark_changed;
+    bool                    partial_update;
+    // cache:
+    void                    (*cache_callback)(ovsdb_update_monitor_t *self,
+                                void *old_rec, void *record, struct ovsdb_cache_row *row);
     int                     row_size;
     ds_tree_t               rows; // uuid key
     ds_tree_t               rows_k; // primary key
@@ -1092,6 +1124,38 @@ extern ovsdb_cache_pre_fetch_test_case_t ovsdb_cache_pre_fetch_suite[];
 void construct_ovsdb_cache_pre_fetch_input(const ovsdb_cache_pre_fetch_test_case_t *tc);
 int  test_ovsdb_cache_pre_fetch(const ovsdb_cache_pre_fetch_test_case_t *tc);
 void run_all_tests_ovsdb_cache_pre_fetch(void);
+
+// --- onewifi_ovsdb_cache_update_cb harness (OneWifi lib/ovsdb/ovsdb_cache.c) ---
+#define OCU_UPD_OFF    0
+#define OCU_UUID_OFF   4
+#define OCU_VER_OFF    41
+#define OCU_KEY_OFF    78
+#define OCU_SCHEMA_SZ  142
+#define OCU_SLOT_SZ    (sizeof(ovsdb_cache_row_t) + OCU_SCHEMA_SZ + 64)
+typedef struct {
+	const char *test_name;      // case name
+	int         mon_type;       // OVSDB_UPDATE_* (or invalid)
+	int         has_data;       // mon_data = &table (0 = NULL)
+	int         table_ok;       // mon_table matches table_name
+	int         cached;         // ds_tree_find returns the cached row
+	const char *json_new;       // mon_json_new text ("LONG" = 255-char if_name)
+	const char *json_old;       // mon_json_old text
+	int         expect_cb;      // cache_callback calls
+	int         expect_insert;  // row inserted
+	int         expect_free;    // free() calls
+} ovsdb_cache_update_cb_test_case_t;
+
+extern unsigned char ocu_pool[2][OCU_SLOT_SZ];
+extern int    ocu_cached, ocu_removes, ocu_freed, ocu_cbs, ocu_marks;
+extern char   ocu_uuid[64];
+extern size_t ocu_uuid_len;
+extern ovsdb_table_t ocu_table;
+extern ovsdb_update_monitor_t ocu_mon;
+extern ovsdb_cache_update_cb_test_case_t ovsdb_cache_update_cb_suite[];
+
+void construct_ovsdb_cache_update_cb_input(const ovsdb_cache_update_cb_test_case_t *tc);
+int  test_ovsdb_cache_update_cb(const ovsdb_cache_update_cb_test_case_t *tc);
+void run_all_tests_ovsdb_cache_update_cb(void);
 
 // PCAP Global Header
 struct pcap_global_header {
