@@ -242,5 +242,8 @@ int main() {
 
 	// analytics_event_new_bssid OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
 //	run_all_tests_analytics_event_new_bssid();
+
+	// is_blaster_device_associated OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_is_blaster_device_associated();
 	return 0;
 }

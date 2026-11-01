@@ -1687,6 +1687,7 @@ void run_all_tests_app_register(void);
 typedef struct {                                                    // subset of the HAL wifi_associated_dev3_t
 	unsigned char cli_MACAddress[6];                                // first field in wifi_hal_ap.h
 	int           cli_RSSI;
+	bool          cli_MLDEnable;                                    // wifi_hal_generic.h
 } wifi_associated_dev3_t;
 typedef struct {
 	unsigned int            good_rssi_time;
@@ -2091,6 +2092,51 @@ extern analytics_event_new_bssid_test_case_t analytics_event_new_bssid_suite[];
 void construct_analytics_event_new_bssid_input(const analytics_event_new_bssid_test_case_t *tc);
 int  test_analytics_event_new_bssid(const analytics_event_new_bssid_test_case_t *tc);
 void run_all_tests_analytics_event_new_bssid(void);
+
+// --- is_blaster_device_associated harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#ifndef MAC_ADDR_LEN
+#define MAC_ADDR_LEN    6                      // include/wifi_base.h
+#endif
+#ifndef STA_KEY_LEN
+#define STA_KEY_LEN     2*MAC_ADDR_LEN + 6     // include/wifi_base.h (= 18, no parentheses, as in source)
+#endif
+typedef char          sta_key_t[STA_KEY_LEN];
+typedef struct {                               // subset of rdk_wifi_vap_info_t (fields used here)
+	unsigned int     vap_index;
+	pthread_mutex_t *associated_devices_lock;
+	void            *associated_devices_map;  // hash_map_t *
+} rdk_wifi_vap_info_t;
+#define BIB_KEY_SZ   18      // = sizeof(sta_key_t)
+#define BIB_PAD      64
+typedef struct {
+	const char   *test_name;    // case name
+	int           no_vap;       // get_wifidb_rdk_vap_info returns NULL
+	int           no_map;       // associated_devices_map == NULL
+	int           in_map;       // station is in the map
+	int           mlo_null;     // is_mlo == NULL
+	int           mlo_in;       // *is_mlo before the call
+	int           mld;          // sta->dev_stats.cli_MLDEnable
+	unsigned char mac0;         // first MAC byte (others +1..+5; 0xff = all ff)
+	bool          expect_ret;   // expected return
+	int           expect_mlo;   // *is_mlo after the call
+} is_blaster_device_associated_test_case_t;
+
+extern char   bib_slot_key[BIB_KEY_SZ + BIB_PAD];
+extern size_t bib_key_len;
+extern char   bib_key_seen[64];
+extern char   bib_sta_key[32];
+extern int    bib_vap_lookups, bib_lookup_index;
+extern rdk_wifi_vap_info_t *bib_vap;
+extern assoc_dev_data_t    *bib_sta;
+extern unsigned char bib_mac_buf[MAC_ADDR_LEN + BIB_PAD];
+extern char   bib_mlo_buf[sizeof(bool) + BIB_PAD];
+extern char   bib_vap_buf[sizeof(rdk_wifi_vap_info_t) + BIB_PAD];
+extern char   bib_sta_buf[sizeof(assoc_dev_data_t) + BIB_PAD];
+extern is_blaster_device_associated_test_case_t is_blaster_device_associated_suite[];
+
+void construct_is_blaster_device_associated_input(const is_blaster_device_associated_test_case_t *tc);
+int  test_is_blaster_device_associated(const is_blaster_device_associated_test_case_t *tc);
+void run_all_tests_is_blaster_device_associated(void);
 
 // PCAP Global Header
 struct pcap_global_header {
