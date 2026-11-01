@@ -1005,6 +1005,63 @@ void construct_os_pid_to_name_input(const os_pid_to_name_test_case_t *tc);
 int  test_os_pid_to_name(const os_pid_to_name_test_case_t *tc);
 void run_all_tests_os_pid_to_name(void);
 
+// --- ovsdb_table_t / ovsdb_cache_row_t (OneWifi lib/ovsdb/ovsdb_table.h) ---
+// Subset: only the fields the lib/ovsdb harnesses touch, same names/types.
+#define OVSDB_TABLE_KEY_SIZE 64
+#define OVSDB_TABLE_NAME_SIZE 64
+typedef struct ovsdb_cache_row
+{
+    ds_tree_node_t  node; // tree node uuid key
+    ds_tree_node_t  node_k; // tree node primary key
+    ds_tree_node_t  node_k2; // tree node alternate key2
+    int             user_flags;
+    char            record[]; // actual values placeholder
+} ovsdb_cache_row_t;
+
+typedef struct ovsdb_table
+{
+    char                    table_name[OVSDB_TABLE_NAME_SIZE];
+    int                     schema_size;
+    int                     upd_type_offset;
+    int                     uuid_offset;
+    int                     version_offset;
+    int                     key_offset; // primary key, example: if_name
+    char                    key_name[OVSDB_TABLE_KEY_SIZE];
+    int                     key2_offset; // optional alternate key2, example: radio_config
+    char                    key2_name[OVSDB_TABLE_KEY_SIZE];
+    int                     row_size;
+    ds_tree_t               rows; // uuid key
+    ds_tree_t               rows_k; // primary key
+    ds_tree_t               rows_k2; // alternate key2
+} ovsdb_table_t;
+
+// --- _ovsdb_cache_insert_row harness (OneWifi lib/ovsdb/ovsdb_cache.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         use_key;        // key_offset >= 0
+	int         use_key2;       // key2_offset >= 0
+	const char *key;            // literal key (used when key_fill == 0)
+	int         key_fill;       // >0: key = key_fill x 'k'
+	int         key2_fill;      // >0: key2 = key2_fill x 'z'
+	int         uuid_empty;     // 1: empty uuid string
+	int         expect_inserts; // expected ds_tree_insert calls
+} ovsdb_cache_insert_row_test_case_t;
+
+#define OCI_UUID_OFF   0
+#define OCI_KEY_OFF    37
+#define OCI_KEY2_OFF   293
+#define OCI_SCHEMA_SZ  549
+#define OCI_ROWBUF_SZ  (sizeof(ovsdb_cache_row_t) + OCI_SCHEMA_SZ + 64)
+extern unsigned char oci_rowbuf[OCI_ROWBUF_SZ];
+extern ovsdb_table_t oci_table;
+extern int    oci_inserts;
+extern size_t oci_last_key_len, oci_msg_len;
+extern ovsdb_cache_insert_row_test_case_t ovsdb_cache_insert_row_suite[];
+
+void construct_ovsdb_cache_insert_row_input(const ovsdb_cache_insert_row_test_case_t *tc);
+int  test_ovsdb_cache_insert_row(const ovsdb_cache_insert_row_test_case_t *tc);
+void run_all_tests_ovsdb_cache_insert_row(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

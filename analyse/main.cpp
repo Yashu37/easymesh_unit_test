@@ -137,5 +137,8 @@ int main() {
 
 	// os_pid_to_name OOB check (OneWifi lib/osa/os_proc.c).
 //	run_all_tests_os_pid_to_name();
+
+	// _ovsdb_cache_insert_row OOB check (OneWifi lib/ovsdb/ovsdb_cache.c).
+//	run_all_tests_ovsdb_cache_insert_row();
 	return 0;
 }
