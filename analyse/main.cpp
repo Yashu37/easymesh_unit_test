@@ -194,5 +194,8 @@ int main() {
 
 	// pgctrl_command OOB check (OneWifi lib/pktgen/pktgen.c).
 //	run_all_tests_pgctrl_command();
+
+	// onewifi_pktgen_is_running OOB check (OneWifi lib/pktgen/pktgen.c).
+//	run_all_tests_pktgen_is_running();
 	return 0;
 }

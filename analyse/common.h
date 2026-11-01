@@ -1540,6 +1540,31 @@ void construct_pgctrl_command_input(const pgctrl_command_test_case_t *tc);
 int  test_pgctrl_command(const pgctrl_command_test_case_t *tc);
 void run_all_tests_pgctrl_command(void);
 
+// --- onewifi_pktgen_is_running harness (OneWifi lib/pktgen/pktgen.c) ---
+#define PGR_SLOT_SZ   512     // = BUF_LEN_MAX (str, run_if)
+#define PGR_SLOT_PAD  64
+#define PGR_DATA_SZ   8192
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // file content shape (see construct file)
+	int         if_len;         // kind 5: interface name length
+	int         fopen_fail;     // fopen() fails
+	int         expect_ret;     // expected return
+	int         expect_if;      // run_if length
+} pktgen_is_running_test_case_t;
+
+extern char   pgr_data[PGR_DATA_SZ];
+extern size_t pgr_data_len;
+extern int    pgr_fopen_fail;
+extern char   pgr_slot_str[PGR_SLOT_SZ + PGR_SLOT_PAD];
+extern char   pgr_slot_if[PGR_SLOT_SZ + PGR_SLOT_PAD];
+extern size_t pgr_str_len, pgr_if_len;
+extern pktgen_is_running_test_case_t pktgen_is_running_suite[];
+
+void construct_pktgen_is_running_input(const pktgen_is_running_test_case_t *tc);
+int  test_pktgen_is_running(const pktgen_is_running_test_case_t *tc);
+void run_all_tests_pktgen_is_running(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
