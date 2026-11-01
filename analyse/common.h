@@ -2399,6 +2399,23 @@ void construct_SetActiveMsmtStepSrcMac_input(const SetActiveMsmtStepSrcMac_test_
 int  test_SetActiveMsmtStepSrcMac(const SetActiveMsmtStepSrcMac_test_case_t *tc);
 void run_all_tests_SetActiveMsmtStepSrcMac(void);
 
+// --- convert_channel_width_to_str harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define CCW_STR_SZ  16
+#define CCW_PAD     64
+typedef struct {
+	const char   *test_name;    // case name
+	unsigned int  cw;           // wifi_channelBandwidth_t value
+	size_t        len;          // len passed to the function
+	const char   *expect;       // expected str
+} convert_channel_width_to_str_test_case_t;
+
+extern char ccw_str_buf[CCW_STR_SZ + CCW_PAD];
+extern convert_channel_width_to_str_test_case_t convert_channel_width_to_str_suite[];
+
+void construct_convert_channel_width_to_str_input(const convert_channel_width_to_str_test_case_t *tc);
+int  test_convert_channel_width_to_str(const convert_channel_width_to_str_test_case_t *tc);
+void run_all_tests_convert_channel_width_to_str(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
