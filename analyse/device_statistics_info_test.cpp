@@ -20,24 +20,27 @@
 
 void device_statistics_info(analytics_data_t *data);
 
-static void slots(int on)
-{
-    void (*f)(void const volatile *, size_t) = on ? __asan_poison_memory_region : __asan_unpoison_memory_region;
-    f(&ds_slot_tm[DS_TM_SZ], DS_PAD);
-    f(&ds_slot_mac[DS_MAC_SZ], DS_PAD);
-    f(&ds_slot_128[DS_TMP_SZ], DS_PAD);
-    f(&ds_slot_256[DS_STA_SZ], DS_PAD);
-    f(&ds_data_buf[sizeof(analytics_data_t)], DS_PAD);
-    for (int i = 0; i < DS_MAX_STA; i++) f(&ds_sta_pool[i][sizeof(analytics_sta_info_t)], DS_PAD);
-}
-
 int test_device_statistics_info(const device_statistics_info_test_case_t *tc)
 {
-    slots(1);
+    /* POISON: caller input + station entries + the 4 array write slots past their real sizes */
+    __asan_poison_memory_region(&ds_data_buf[sizeof(analytics_data_t)], DS_PAD);          /* data struct */
+    for (int i = 0; i < DS_MAX_STA; i++)
+        __asan_poison_memory_region(&ds_sta_pool[i][sizeof(analytics_sta_info_t)], DS_PAD); /* station entries */
+    __asan_poison_memory_region(&ds_slot_tm[DS_TM_SZ], DS_PAD);      /* tm_str[128]        */
+    __asan_poison_memory_region(&ds_slot_mac[DS_MAC_SZ], DS_PAD);    /* client_mac[32]     */
+    __asan_poison_memory_region(&ds_slot_128[DS_TMP_SZ], DS_PAD);    /* temp_str[128]      */
+    __asan_poison_memory_region(&ds_slot_256[DS_STA_SZ], DS_PAD);    /* sta_stats_str[256] */
 
     device_statistics_info((analytics_data_t *)ds_data_buf);
 
-    slots(0);
+    /* UNPOISON */
+    __asan_unpoison_memory_region(&ds_slot_256[DS_STA_SZ], DS_PAD);
+    __asan_unpoison_memory_region(&ds_slot_128[DS_TMP_SZ], DS_PAD);
+    __asan_unpoison_memory_region(&ds_slot_mac[DS_MAC_SZ], DS_PAD);
+    __asan_unpoison_memory_region(&ds_slot_tm[DS_TM_SZ], DS_PAD);
+    for (int i = 0; i < DS_MAX_STA; i++)
+        __asan_unpoison_memory_region(&ds_sta_pool[i][sizeof(analytics_sta_info_t)], DS_PAD);
+    __asan_unpoison_memory_region(&ds_data_buf[sizeof(analytics_data_t)], DS_PAD);
 
     int want_radios = tc->radios - (tc->fail_idx >= 0 && tc->fail_idx < tc->radios ? 1 : 0);
     printf("    radios=%d stations=%d -> radio_stats=%d tm_len=%zu max_temp_str_len=%zu max_sta_stats_len=%zu client_mac_len=%zu\n",
