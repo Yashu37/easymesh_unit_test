@@ -2247,8 +2247,16 @@ typedef struct {                             // subset of include/wifi_base.h ac
 	unsigned int  StepId;
 	int           ApIndex;
 } active_msmt_step_t;
+#define PLAN_ID_LENGTH  38                   // include/wifi_base.h
+#define MAX_STEP_COUNT  32                   // include/wifi_base.h
+#define MAC_ADDRESS_LENGTH 13                // include/wifi_base.h
 typedef struct {                             // subset of include/wifi_base.h active_msmt_t
-	unsigned int ActiveMsmtNumberOfSamples;
+	unsigned int  ActiveMsmtSampleDuration;
+	unsigned int  ActiveMsmtPktSize;
+	unsigned int  ActiveMsmtNumberOfSamples;
+	unsigned char PlanId[PLAN_ID_LENGTH];
+	int           StepInstance[MAX_STEP_COUNT];   // active_msmt_step_status_t
+	active_msmt_step_t Step[MAX_STEP_COUNT];
 } active_msmt_t;
 typedef struct {                             // subset of wifi_blaster.h wifi_actvie_msmt_t (fields used by the blaster harnesses)
 	pthread_mutex_t      lock;
@@ -2315,6 +2323,32 @@ extern process_active_msmt_diagnostics_test_case_t process_active_msmt_diagnosti
 void construct_process_active_msmt_diagnostics_input(const process_active_msmt_diagnostics_test_case_t *tc);
 int  test_process_active_msmt_diagnostics(const process_active_msmt_diagnostics_test_case_t *tc);
 void run_all_tests_process_active_msmt_diagnostics(void);
+
+// --- ActiveMsmtConfValidation harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define AMC_SLOT_SZ  256     // = sizeof(msg)
+#define AMC_PAD      64
+enum {
+	AMC_NULL, AMC_VALID, AMC_EMPTY_PLAN, AMC_LONG_PLAN, AMC_BAD_SAMPLES,
+	AMC_BAD_DURATION, AMC_BAD_RATIO, AMC_BAD_PKTSIZE, AMC_BAD_STEP_MAC, AMC_PLAN_NO_NUL
+};
+typedef struct {
+	const char *test_name;       // case name
+	int         kind;            // AMC_* selector
+	int         expect_ret;      // expected return
+	const char *expect_err_sub;  // substring the recorded error must contain
+} ActiveMsmtConfValidation_test_case_t;
+
+extern char   amc_slot[AMC_SLOT_SZ + AMC_PAD];
+extern size_t amc_msg_len;
+extern char   amc_last_err[256];
+extern int    amc_report_err, amc_report_all, amc_step_invalid;
+extern active_msmt_status_t amc_last_status;
+extern char   amc_cfg_buf[sizeof(active_msmt_t) + AMC_PAD];
+extern ActiveMsmtConfValidation_test_case_t ActiveMsmtConfValidation_suite[];
+
+void construct_ActiveMsmtConfValidation_input(const ActiveMsmtConfValidation_test_case_t *tc);
+int  test_ActiveMsmtConfValidation(const ActiveMsmtConfValidation_test_case_t *tc);
+void run_all_tests_ActiveMsmtConfValidation(void);
 
 // PCAP Global Header
 struct pcap_global_header {
