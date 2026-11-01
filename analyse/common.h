@@ -2182,7 +2182,7 @@ void run_all_tests_blaster_str_to_mac_bytes(void);
 
 // --- active_msmt_log_message harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
 typedef enum { BLASTER_INFO_LOG = 0, BLASTER_DEBUG_LOG } blaster_log_level_t;  // wifi_blaster.h
-typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; } wifi_ctrl_t;   // subset (apps_mgr + rdk_dev_mode_type_*)
+typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; unsigned int webconfig_state; } wifi_ctrl_t;   // subset (apps_mgr + mode + webconfig_state)
 typedef struct {                               // stand-in: CCSP trace hooks + ctrl + hal_cap used by blaster
 	struct {
 		struct {
@@ -2270,6 +2270,10 @@ typedef struct {                             // subset of include/wifi_base.h ac
 	unsigned char PlanId[PLAN_ID_LENGTH];
 	int           StepInstance[MAX_STEP_COUNT];   // active_msmt_step_status_t
 	active_msmt_step_t Step[MAX_STEP_COUNT];
+	struct { double cpu_one, cpu_five, cpu_fifteen; unsigned int util_cpu, util_mem; } ActiveMsmtResources;
+	int           Status;                          // blaster_state_t
+	struct { char traceParent[512]; char traceState[512]; } t_header;
+	unsigned char blaster_mqtt_topic[256];
 } active_msmt_t;
 typedef struct {                             // subset of wifi_blaster.h wifi_actvie_msmt_t (fields used by the blaster harnesses)
 	pthread_mutex_t      lock;
@@ -2488,6 +2492,33 @@ extern WiFiBlastClient_test_case_t WiFiBlastClient_suite[];
 void construct_WiFiBlastClient_input(const WiFiBlastClient_test_case_t *tc);
 int  test_WiFiBlastClient(const WiFiBlastClient_test_case_t *tc);
 void run_all_tests_WiFiBlastClient(void);
+
+// --- process_request harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define PRQ_SLOT_SZ  256   // = sizeof(msg)
+#define PRQ_PAD      64
+typedef struct {
+	const char *test_name;     // case name
+	int         ext;           // network_mode ext
+	int         health_fail;   // DeviceMemory_DataGet returns false
+	int         high_cpu;      // util_cpu over threshold
+	int         low_mem;       // util_mem under threshold
+	int         conf_invalid;  // ActiveMsmtConfValidation fails (ext only)
+	const char *want_msg_sub;  // substring msg must contain ("" = none)
+} process_request_test_case_t;
+
+extern char   prq_slot[PRQ_SLOT_SZ + PRQ_PAD];
+extern size_t prq_msg_len;
+extern char   prq_last_err[256];
+extern int    prq_report_all, prq_blast_calls;
+extern int    prq_health_fail, prq_high_cpu, prq_conf_invalid, prq_low_mem_force;
+extern char   prq_cfg_buf[sizeof(active_msmt_t) + PRQ_PAD];
+extern char   prq_mgr_buf[sizeof(wifi_actvie_msmt_t) + PRQ_PAD];
+extern char   prq_wmgr_buf[sizeof(wifi_mgr_t) + PRQ_PAD];
+extern process_request_test_case_t process_request_suite[];
+
+void construct_process_request_input(const process_request_test_case_t *tc);
+int  test_process_request(const process_request_test_case_t *tc);
+void run_all_tests_process_request(void);
 
 // PCAP Global Header
 struct pcap_global_header {
