@@ -1065,7 +1065,11 @@ typedef struct ovsdb_table
     schema_from_json_t      *from_json;
     schema_to_json_t        *to_json;
     schema_mark_changed_t   *mark_changed;
+    ovsdb_update_monitor_t  monitor;
+    char                    **columns; // all schema columns, null term
     bool                    partial_update;
+    ovsdb_update_cbk_t      *monitor_callback;
+    void                    (*table_callback)(ovsdb_update_monitor_t *self, void *old_rec, void *record);
     // cache:
     void                    (*cache_callback)(ovsdb_update_monitor_t *self,
                                 void *old_rec, void *record, struct ovsdb_cache_row *row);
@@ -1314,6 +1318,35 @@ extern ovsdb_table_from_json_test_case_t ovsdb_table_from_json_suite[];
 void construct_ovsdb_table_from_json_input(const ovsdb_table_from_json_test_case_t *tc);
 int  test_ovsdb_table_from_json(const ovsdb_table_from_json_test_case_t *tc);
 void run_all_tests_ovsdb_table_from_json(void);
+
+// --- onewifi_ovsdb_table_monitor_columns harness (OneWifi lib/ovsdb/ovsdb_table.c) ---
+#define OTM_MAX_COLS  63
+#define OTM_STR_SZ    2048
+typedef struct {
+	const char *test_name;      // case name
+	int         cols_null;      // columns = NULL
+	int         kind;           // 1 = schema cols, 2 = {_version, if_name}, 3 = col_len x 'c'
+	int         ncols;          // requested columns
+	int         col_len;        // kind 3: length of each column
+	int         monitor_ok;     // monitor API succeeds
+	int         expect_ret;     // expected return (1 = true)
+	int         expect_which;   // 'A' = update_monitor (ALL), 'C' = update_monitor_ex
+	int         expect_partial; // table->partial_update after the call
+	int         expect_colc;    // colc given to update_monitor_ex
+} ovsdb_table_monitor_columns_test_case_t;
+
+extern char  otm_strs[OTM_MAX_COLS][OTM_STR_SZ];
+extern char *otm_argv[OTM_MAX_COLS + 1];
+extern char  otm_schema_strs[4][16];
+extern char *otm_schema_argv[8];
+extern int   otm_ncols, otm_which, otm_colc, otm_monitor_ok;
+extern size_t otm_tmp_len;
+extern ovsdb_table_t otm_table;
+extern ovsdb_table_monitor_columns_test_case_t ovsdb_table_monitor_columns_suite[];
+
+void construct_ovsdb_table_monitor_columns_input(const ovsdb_table_monitor_columns_test_case_t *tc);
+int  test_ovsdb_table_monitor_columns(const ovsdb_table_monitor_columns_test_case_t *tc);
+void run_all_tests_ovsdb_table_monitor_columns(void);
 
 // PCAP Global Header
 struct pcap_global_header {
