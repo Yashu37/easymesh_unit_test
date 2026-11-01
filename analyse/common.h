@@ -1273,6 +1273,31 @@ void construct_ovsdb_sync_upsert_where_input(const ovsdb_sync_upsert_where_test_
 int  test_ovsdb_sync_upsert_where(const ovsdb_sync_upsert_where_test_case_t *tc);
 void run_all_tests_ovsdb_sync_upsert_where(void);
 
+// --- onewifi_ovsdb_table_filter_row harness (OneWifi lib/ovsdb/ovsdb_table.c) ---
+#define OTF_MAX_COLS  63
+#define OTF_STR_SZ    2048
+typedef struct {
+	const char *test_name;      // case name
+	int         has_row;        // pass a row (0 = NULL)
+	int         cols_null;      // pass columns = NULL
+	const char *op;             // columns[0] ("+", "-", other; NULL = empty argv)
+	int         ncols;          // column names after the op
+	int         col_len;        // >0: each column = col_len x 'c'
+	int         expect_which;   // '+', '-' or 0 (no filter ran)
+	int         expect_argc;    // argc given to the filter (-1 = not called)
+} ovsdb_table_filter_row_test_case_t;
+
+extern char  otf_strs[OTF_MAX_COLS][OTF_STR_SZ];
+extern char *otf_argv[OTF_MAX_COLS + 1];
+extern int   otf_ncols;
+extern int   otf_which, otf_argc;
+extern size_t otf_str_len;
+extern ovsdb_table_filter_row_test_case_t ovsdb_table_filter_row_suite[];
+
+void construct_ovsdb_table_filter_row_input(const ovsdb_table_filter_row_test_case_t *tc);
+int  test_ovsdb_table_filter_row(const ovsdb_table_filter_row_test_case_t *tc);
+void run_all_tests_ovsdb_table_filter_row(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
