@@ -218,5 +218,8 @@ int main() {
 
 	// analytics_event_hal_disassoc_device OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
 //	run_all_tests_analytics_event_hal_disassoc_device();
+
+	// analytics_event_hal_scan_results OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
+//	run_all_tests_analytics_event_hal_scan_results();
 	return 0;
 }

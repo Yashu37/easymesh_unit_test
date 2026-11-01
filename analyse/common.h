@@ -1849,6 +1849,34 @@ void construct_analytics_event_hal_disassoc_device_input(const analytics_event_h
 int  test_analytics_event_hal_disassoc_device(const analytics_event_hal_disassoc_device_test_case_t *tc);
 void run_all_tests_analytics_event_hal_disassoc_device(void);
 
+// --- analytics_event_hal_scan_results harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+typedef struct {                             // include/wifi_base.h (bss[] not used here)
+	unsigned int  radio_index;
+	unsigned char bss_placeholder[64];      // wifi_bss_info_t bss[MAX_SCANNED_VAPS]
+	unsigned int  num;
+} scan_results_t;
+#define ASR_SLOT_SZ  128     // = sizeof(str)
+#define ASR_PAD      64
+typedef struct {
+	const char  *test_name;     // case name
+	int          arg_null;      // arg = NULL
+	unsigned int radio_index;   // results->radio_index
+	unsigned int num;           // results->num
+	int          expect_ret;    // expected return
+	int          expect_calls;  // snprintf calls
+	int          expect_len;    // str length
+} analytics_event_hal_scan_results_test_case_t;
+
+extern char   asr_slot[ASR_SLOT_SZ + ASR_PAD];
+extern size_t asr_len;
+extern int    asr_calls;
+extern char   asr_arg_buf[sizeof(scan_results_t) + ASR_PAD];
+extern analytics_event_hal_scan_results_test_case_t analytics_event_hal_scan_results_suite[];
+
+void construct_analytics_event_hal_scan_results_input(const analytics_event_hal_scan_results_test_case_t *tc);
+int  test_analytics_event_hal_scan_results(const analytics_event_hal_scan_results_test_case_t *tc);
+void run_all_tests_analytics_event_hal_scan_results(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
