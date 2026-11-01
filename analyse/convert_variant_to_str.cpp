@@ -2,12 +2,12 @@
  * HANDLER: convert_variant_to_str
  *
  * Function copied VERBATIM from OneWifi source/apps/blaster/wifi_blaster.c
- * (only "static" dropped so the runner can call it). No fixes.
+ * ("static" dropped so the runner can call it) plus one FIX.
  * Local static arrays arr_str[][8] / arr_enum[] (parallel). For each set
  * bit it does snprintf(str, len, "%s,", arr_str[i]); afterwards it trims the
  * trailing comma with:  str[strlen(str) - 1] = '\0';
  *
- * BUG under test: if NO arr_enum bit is set in `variant` (e.g. variant with
+ * BUG (FIXED here): if NO arr_enum bit is set in `variant` (e.g. variant with
  * only WIFI_80211_VARIANT_H 0x10 / _AD 0x40, or 0), nothing is written, so
  * when `str` is empty strlen(str) == 0 and str[strlen(str) - 1] writes to
  * str[-1] -- an out-of-bounds write BEFORE the caller's buffer.
@@ -68,6 +68,7 @@ void convert_variant_to_str(wifi_ieee80211Variant_t variant, char *str, size_t l
         }
     }
 
-    str[strlen(str) - 1] = '\0';
+    size_t _l = strlen(str);
+    if (_l > 0) str[_l - 1] = '\0';   /* FIX: guard the trailing-comma trim (was str[strlen(str)-1], str[-1] when empty) */
     wifi_util_dbg_print(WIFI_BLASTER, "%s:%d 0x%X converted to %s\n",__func__,__LINE__, variant, str);
 }

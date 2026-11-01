@@ -21,7 +21,7 @@ convert_variant_to_str_test_case_t convert_variant_to_str_suite[] = {
     /* name            variant  expect   underflow */
     { "variant_a",     0x01,    "a",      0 },
     { "variant_ax",    0x80,    "ax",     0 },
-    { "no_match_empty",0x10,    "",       1 },   /* WIFI_80211_VARIANT_H -> str[-1] write */
+    { "no_match_empty",0x10,    "",       0 },   /* after fix: str stays empty, no underflow */
 
     { NULL, 0, NULL, 0 }  /* sentinel */
 };

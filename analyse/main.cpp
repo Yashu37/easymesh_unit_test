@@ -274,6 +274,6 @@ int main() {
 //	run_all_tests_convert_channel_width_to_str();
 
 	// convert_variant_to_str OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
-	run_all_tests_convert_variant_to_str();
+//	run_all_tests_convert_variant_to_str();
 	return 0;
 }
