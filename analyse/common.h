@@ -1671,6 +1671,69 @@ void construct_app_register_input(const app_register_test_case_t *tc);
 int  test_app_register(const app_register_test_case_t *tc);
 void run_all_tests_app_register(void);
 
+// --- source/apps/analytics types (subsets, OneWifi include/wifi_base.h + wifi_analytics.h) ---
+#include <sys/resource.h>
+typedef struct { int cli_RSSI; } wifi_associated_dev3_t;          // only cli_RSSI is used
+typedef struct {
+	unsigned int            good_rssi_time;
+	unsigned int            bad_rssi_time;
+	unsigned int            rapid_reconnects;
+	wifi_associated_dev3_t  dev_stats;
+} sta_data_t;
+typedef struct {
+	unsigned int            primary_radio_channel;
+	char                    channel_bandwidth[64];
+	int                     NoiseFloor;
+	int                     channelUtil;
+	int                     channelInterference;
+} radio_data_t;
+typedef struct {
+	unsigned int    ap_index;
+	mac_address_t   sta_mac;
+} analytics_sta_info_t;
+typedef struct {
+	unsigned int    minutes_alive;
+	unsigned int    tick_demultiplexer;
+	void           *sta_map;          // hash_map_t *
+	struct rusage   last_usage;
+} analytics_data_t;
+
+// --- device_statistics_info harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+#define DS_TM_SZ        128   // tm_str
+#define DS_MAC_SZ       32    // client_mac
+#define DS_TMP_SZ       128   // temp_str
+#define DS_STA_SZ       256   // sta_stats_str
+#define DS_PAD          64
+#define DS_MAX_STA      8
+#define DS_NO_STATS_AP  99
+typedef struct {
+	const char *test_name;      // case name
+	int         minutes;        // data->minutes_alive
+	int         radios;         // getNumberRadios()
+	int         fail_idx;       // radio whose stats fail (-1 = none)
+	int         bw_len;         // channel_bandwidth length
+	int         nsta;           // stations in sta_map
+	int         no_stats;       // station 1 has no stats
+	int         extreme;        // INT_MIN / UINT_MAX counters
+	int         big_cpu;        // huge rusage delta
+} device_statistics_info_test_case_t;
+
+extern char   ds_slot_tm[DS_TM_SZ + DS_PAD];
+extern char   ds_slot_mac[DS_MAC_SZ + DS_PAD];
+extern char   ds_slot_128[DS_TMP_SZ + DS_PAD];
+extern char   ds_slot_256[DS_STA_SZ + DS_PAD];
+extern size_t ds_tm_len, ds_mac_len, ds_tmp_len, ds_sta_len;
+extern int    ds_num_radios, ds_radio_fail_idx, ds_radio_calls, ds_nsta, ds_iter;
+extern char   ds_bw[64];
+extern sta_data_t ds_sta_data[DS_MAX_STA];
+extern unsigned char ds_sta_pool[DS_MAX_STA][sizeof(analytics_sta_info_t) + DS_PAD];
+extern char   ds_data_buf[sizeof(analytics_data_t) + DS_PAD];
+extern device_statistics_info_test_case_t device_statistics_info_suite[];
+
+void construct_device_statistics_info_input(const device_statistics_info_test_case_t *tc);
+int  test_device_statistics_info(const device_statistics_info_test_case_t *tc);
+void run_all_tests_device_statistics_info(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

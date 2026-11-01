@@ -206,5 +206,8 @@ int main() {
 
 	// app_register OOB check (OneWifi source/apps/wifi_apps_mgr.c).
 //	run_all_tests_app_register();
+
+	// device_statistics_info OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
+//	run_all_tests_device_statistics_info();
 	return 0;
 }
