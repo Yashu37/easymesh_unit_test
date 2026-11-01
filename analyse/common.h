@@ -1512,6 +1512,34 @@ void construct_ovsdb_sync_get_uuid_and_count_input(const ovsdb_sync_get_uuid_and
 int  test_ovsdb_sync_get_uuid_and_count(const ovsdb_sync_get_uuid_and_count_test_case_t *tc);
 void run_all_tests_ovsdb_sync_get_uuid_and_count(void);
 
+// --- pgctrl_command harness (OneWifi lib/pktgen/pktgen.c) ---
+#define PGC_SLOT_SZ   512     // = BUF_LEN_MAX (cmd)
+#define PGC_SLOT_PAD  64
+#define PGC_STR_SZ    4096
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // 0 "start\n", 1 "%s", 2 "add_device %s@%d\n"
+	int         arg_len;        // %s argument length
+	int         path_len;       // 0 = pgctrl path, else N x 'p'
+	int         open_fail;      // open() fails
+	int         write_fail;     // write() fails
+	int         expect_ret;     // expected return
+	int         expect_out;     // bytes written
+} pgctrl_command_test_case_t;
+
+extern char   pgc_slot[PGC_SLOT_SZ + PGC_SLOT_PAD];
+extern char   pgc_out[PGC_SLOT_SZ + PGC_SLOT_PAD];
+extern size_t pgc_out_len, pgc_open_path_len;
+extern int    pgc_vs_ret, pgc_open_fail, pgc_write_fail;
+extern char   pgc_file[PGC_STR_SZ];
+extern char   pgc_fmt[PGC_STR_SZ];
+extern char   pgc_arg[PGC_STR_SZ];
+extern pgctrl_command_test_case_t pgctrl_command_suite[];
+
+void construct_pgctrl_command_input(const pgctrl_command_test_case_t *tc);
+int  test_pgctrl_command(const pgctrl_command_test_case_t *tc);
+void run_all_tests_pgctrl_command(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
