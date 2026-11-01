@@ -209,5 +209,8 @@ int main() {
 
 	// device_statistics_info OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
 //	run_all_tests_device_statistics_info();
+
+	// analytics_event_hal_sta_conn_status OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
+//	run_all_tests_analytics_event_hal_sta_conn_status();
 	return 0;
 }

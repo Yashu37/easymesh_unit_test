@@ -1734,6 +1734,39 @@ void construct_device_statistics_info_input(const device_statistics_info_test_ca
 int  test_device_statistics_info(const device_statistics_info_test_case_t *tc);
 void run_all_tests_device_statistics_info(void);
 
+// --- analytics_event_hal_sta_conn_status harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+typedef enum {                               // rdkb-halif-wifi include/wifi_hal_generic.h (same order)
+	wifi_connection_status_disabled,
+	wifi_connection_status_disconnected,
+	wifi_connection_status_connected,
+	wifi_connection_status_ap_not_found
+} wifi_connection_status_t;
+typedef struct {                             // subset of rdk_sta_data_t
+	struct { int connect_status; int vap_index; } stats;
+	struct { unsigned char bssid[6]; } bss_info;
+} rdk_sta_data_t;
+#define SCS_SLOT_SZ  128     // = sizeof(temp_str)
+#define SCS_PAD      64
+typedef struct {
+	const char *test_name;      // case name
+	int         arg_null;       // arg = NULL
+	int         status;         // stats.connect_status
+	int         vap_index;      // stats.vap_index
+	int         expect_ret;     // expected return
+	int         expect_calls;   // snprintf calls
+	int         expect_len;     // temp_str length
+} analytics_event_hal_sta_conn_status_test_case_t;
+
+extern char   scs_slot[SCS_SLOT_SZ + SCS_PAD];
+extern size_t scs_len;
+extern int    scs_calls;
+extern char   scs_arg_buf[sizeof(rdk_sta_data_t) + SCS_PAD];
+extern analytics_event_hal_sta_conn_status_test_case_t analytics_event_hal_sta_conn_status_suite[];
+
+void construct_analytics_event_hal_sta_conn_status_input(const analytics_event_hal_sta_conn_status_test_case_t *tc);
+int  test_analytics_event_hal_sta_conn_status(const analytics_event_hal_sta_conn_status_test_case_t *tc);
+void run_all_tests_analytics_event_hal_sta_conn_status(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
