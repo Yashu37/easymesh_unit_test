@@ -2038,6 +2038,31 @@ void construct_analytics_event_trigger_disconnection_analytics_input(const analy
 int  test_analytics_event_trigger_disconnection_analytics(const analytics_event_trigger_disconnection_analytics_test_case_t *tc);
 void run_all_tests_analytics_event_trigger_disconnection_analytics(void);
 
+// --- analytics_event_udhcp_ip_fail harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+// reuses vap_svc_ext_t from the trigger_disconnection_analytics block above
+#define UIF_MAC_SZ   18      // = sizeof(bssid_str) (mac_addr_str_t)
+#define UIF_TMP_SZ   512     // = sizeof(temp_str)
+#define UIF_PAD      64
+typedef struct {
+	const char   *test_name;    // case name
+	int           arg_null;     // arg = NULL
+	unsigned int  vap_index;    // ext->connected_vap_index
+	unsigned char bssid0;       // first BSSID byte (others +1..+5)
+	int           expect_ret;   // expected return
+	const char   *expect;       // expected temp_str
+} analytics_event_udhcp_ip_fail_test_case_t;
+
+extern char   uif_slot_mac[UIF_MAC_SZ + UIF_PAD];
+extern char   uif_slot_tmp[UIF_TMP_SZ + UIF_PAD];
+extern size_t uif_tmp_len;
+extern int    uif_mac_calls;
+extern char   uif_arg_buf[sizeof(vap_svc_ext_t) + UIF_PAD];
+extern analytics_event_udhcp_ip_fail_test_case_t analytics_event_udhcp_ip_fail_suite[];
+
+void construct_analytics_event_udhcp_ip_fail_input(const analytics_event_udhcp_ip_fail_test_case_t *tc);
+int  test_analytics_event_udhcp_ip_fail(const analytics_event_udhcp_ip_fail_test_case_t *tc);
+void run_all_tests_analytics_event_udhcp_ip_fail(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

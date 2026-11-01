@@ -236,5 +236,8 @@ int main() {
 
 	// analytics_event_trigger_disconnection_analytics OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
 //	run_all_tests_analytics_event_trigger_disconnection_analytics();
+
+	// analytics_event_udhcp_ip_fail OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
+//	run_all_tests_analytics_event_udhcp_ip_fail();
 	return 0;
 }
