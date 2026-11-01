@@ -251,5 +251,8 @@ int main() {
 
 	// blaster_str_to_mac_bytes OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_blaster_str_to_mac_bytes();
+
+	// active_msmt_log_message OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_active_msmt_log_message();
 	return 0;
 }

@@ -2175,6 +2175,42 @@ void construct_blaster_str_to_mac_bytes_input(const blaster_str_to_mac_bytes_tes
 int  test_blaster_str_to_mac_bytes(const blaster_str_to_mac_bytes_test_case_t *tc);
 void run_all_tests_blaster_str_to_mac_bytes(void);
 
+// --- active_msmt_log_message harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+typedef enum { BLASTER_INFO_LOG = 0, BLASTER_DEBUG_LOG } blaster_log_level_t;  // wifi_blaster.h
+typedef struct {                               // stand-in: only the two CCSP trace hooks are used
+	struct {
+		struct {
+			void (*CcspTraceInfoRdkb_fn)(char *);
+			void (*CcspTraceDebugRdkb_fn)(char *);
+		} desc;
+	} wifi_ccsp;
+} wifi_mgr_t;
+#define AML_SLOT_SZ  1024    // = sizeof(msg)
+#define AML_ARG_MAX  2112    // room for a 2000-char argument
+#define AML_PAD      64
+typedef struct {
+	const char         *test_name;        // case name
+	int                 level_idx;        // index into aml_levels[]
+	const char         *dst_mac;          // DstMac argument (NULL when big)
+	int                 big;              // use a 2000-char argument
+	int                 expect_trace;     // trace-hook call count
+	const char         *expect_contains;  // prefix the recorded trace must match
+} active_msmt_log_message_test_case_t;
+
+extern char   aml_slot[AML_SLOT_SZ + AML_PAD];
+extern size_t aml_msg_len;
+extern char   aml_dbg_out[4096];
+extern char   aml_trace_out[2048];
+extern int    aml_trace_calls;
+extern char   aml_arg_buf[AML_ARG_MAX + AML_PAD];
+extern char   aml_mgr_buf[sizeof(wifi_mgr_t) + AML_PAD];
+extern blaster_log_level_t aml_levels[];
+extern active_msmt_log_message_test_case_t active_msmt_log_message_suite[];
+
+void construct_active_msmt_log_message_input(const active_msmt_log_message_test_case_t *tc);
+int  test_active_msmt_log_message(const active_msmt_log_message_test_case_t *tc);
+void run_all_tests_active_msmt_log_message(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
