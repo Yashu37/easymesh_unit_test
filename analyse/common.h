@@ -1920,6 +1920,29 @@ void construct_analytics_event_hal_channel_change_input(const analytics_event_ha
 int  test_analytics_event_hal_channel_change(const analytics_event_hal_channel_change_test_case_t *tc);
 void run_all_tests_analytics_event_hal_channel_change(void);
 
+// --- analytics_event_hal_potential_misconfiguration harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+typedef struct {                             // source/apps/levl/wifi_levl.h
+	unsigned int    max_probe_ttl_cnt;
+	char            mac_str[18];         // mac_addr_str_t (typedef appears later in this file)
+} __attribute__((__packed__)) probe_ttl_data_t;
+#define APM_SLOT_SZ  128     // = sizeof(temp_str)
+#define APM_PAD      64
+typedef struct {
+	const char  *test_name;     // case name
+	const char  *mac_str;       // ttl_data->mac_str
+	unsigned int count;         // ttl_data->max_probe_ttl_cnt
+	int          expect_len;    // temp_str length
+} analytics_event_hal_potential_misconfiguration_test_case_t;
+
+extern char   apm_slot[APM_SLOT_SZ + APM_PAD];
+extern size_t apm_len;
+extern char   apm_arg_buf[sizeof(probe_ttl_data_t) + APM_PAD];
+extern analytics_event_hal_potential_misconfiguration_test_case_t analytics_event_hal_potential_misconfiguration_suite[];
+
+void construct_analytics_event_hal_potential_misconfiguration_input(const analytics_event_hal_potential_misconfiguration_test_case_t *tc);
+int  test_analytics_event_hal_potential_misconfiguration(const analytics_event_hal_potential_misconfiguration_test_case_t *tc);
+void run_all_tests_analytics_event_hal_potential_misconfiguration(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
