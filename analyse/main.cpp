@@ -221,5 +221,8 @@ int main() {
 
 	// analytics_event_hal_scan_results OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
 //	run_all_tests_analytics_event_hal_scan_results();
+
+	// analytics_event_hal_channel_change OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
+//	run_all_tests_analytics_event_hal_channel_change();
 	return 0;
 }

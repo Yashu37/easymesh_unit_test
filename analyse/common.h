@@ -1877,6 +1877,49 @@ void construct_analytics_event_hal_scan_results_input(const analytics_event_hal_
 int  test_analytics_event_hal_scan_results(const analytics_event_hal_scan_results_test_case_t *tc);
 void run_all_tests_analytics_event_hal_scan_results(void);
 
+// --- analytics_event_hal_channel_change harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+typedef enum {                               // rdkb-halif-wifi wifi_hal_generic.h
+	WIFI_EVENT_CHANNELS_CHANGED,
+	WIFI_EVENT_DFS_RADAR_DETECTED
+} wifi_chan_eventType_t;
+typedef enum {                               // rdkb-halif-wifi wifi_hal_radio.h
+	WIFI_EVENT_RADAR_DETECTED,
+	WIFI_EVENT_RADAR_CAC_FINISHED,
+	WIFI_EVENT_RADAR_CAC_ABORTED,
+	WIFI_EVENT_RADAR_NOP_FINISHED,
+	WIFI_EVENT_RADAR_PRE_CAC_EXPIRED,
+	WIFI_EVENT_RADAR_CAC_STARTED
+} wifi_radar_eventType_t;
+typedef struct {                             // rdk-wifi-hal wifi_hal_rdk_framework.h
+	unsigned int           radioIndex;       // wifi_radio_index_t
+	wifi_chan_eventType_t  event;
+	wifi_radar_eventType_t sub_event;
+	unsigned int           channel;
+	int                    channelWidth;     // wifi_channelBandwidth_t
+	unsigned int           op_class;
+} __attribute__((__packed__)) wifi_channel_change_event_t;
+#define ACC_SLOT_SZ  128     // = sizeof(desc)
+#define ACC_PAD      64
+typedef struct {
+	const char  *test_name;     // case name
+	int          event;         // ch->event
+	unsigned int sub_event;     // ch->sub_event
+	unsigned int channel;       // ch->channel
+	int          bw;            // ch->channelWidth
+	unsigned int radio;         // ch->radioIndex
+	const char  *expect_prefix; // desc must start with this
+} analytics_event_hal_channel_change_test_case_t;
+
+extern char   acc_slot[ACC_SLOT_SZ + ACC_PAD];
+extern size_t acc_len;
+extern int    acc_calls;
+extern char   acc_arg_buf[sizeof(wifi_channel_change_event_t) + ACC_PAD];
+extern analytics_event_hal_channel_change_test_case_t analytics_event_hal_channel_change_suite[];
+
+void construct_analytics_event_hal_channel_change_input(const analytics_event_hal_channel_change_test_case_t *tc);
+int  test_analytics_event_hal_channel_change(const analytics_event_hal_channel_change_test_case_t *tc);
+void run_all_tests_analytics_event_hal_channel_change(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
