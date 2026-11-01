@@ -1961,6 +1961,42 @@ void construct_analytics_event_wpa3_rfc_input(const analytics_event_wpa3_rfc_tes
 int  test_analytics_event_wpa3_rfc(const analytics_event_wpa3_rfc_test_case_t *tc);
 void run_all_tests_analytics_event_wpa3_rfc(void);
 
+// --- analytics_event_sta_connect_in_progress harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+typedef struct {                             // subset of HAL wifi_bss_info_t (bssid first, ssid, rssi, ...)
+	unsigned char bssid[6];                  // bssid_t
+	char          ssid[33];                  // ssid_t
+	int           rssi;
+	unsigned char rest[64];                  // remaining fields (not touched)
+} __attribute__((packed)) wifi_bss_info_t;
+typedef struct scan_result {                 // source/core/services/vap_svc.h
+	wifi_bss_info_t external_ap;
+	int             radio_freq_band;         // wifi_freq_bands_t
+	int             conn_attempt;            // connection_attempt_t
+	unsigned int    conn_retry_attempt;
+	unsigned int    vap_index;               // wifi_vap_index_t
+} __attribute__((packed)) bss_candidate_t;
+#define SCP_MAC_SZ   18      // = sizeof(bssid_str) (mac_addr_str_t)
+#define SCP_TMP_SZ   512     // = sizeof(temp_str)
+#define SCP_PAD      64
+typedef struct {
+	const char   *test_name;    // case name
+	int           arg_null;     // arg = NULL
+	unsigned char bssid0;       // first BSSID byte (others +1..+5)
+	int           expect_ret;   // expected return
+	const char   *expect;       // expected temp_str
+} analytics_event_sta_connect_in_progress_test_case_t;
+
+extern char   scp_slot_mac[SCP_MAC_SZ + SCP_PAD];
+extern char   scp_slot_tmp[SCP_TMP_SZ + SCP_PAD];
+extern size_t scp_tmp_len;
+extern int    scp_mac_calls;
+extern char   scp_arg_buf[sizeof(bss_candidate_t) + SCP_PAD];
+extern analytics_event_sta_connect_in_progress_test_case_t analytics_event_sta_connect_in_progress_suite[];
+
+void construct_analytics_event_sta_connect_in_progress_input(const analytics_event_sta_connect_in_progress_test_case_t *tc);
+int  test_analytics_event_sta_connect_in_progress(const analytics_event_sta_connect_in_progress_test_case_t *tc);
+void run_all_tests_analytics_event_sta_connect_in_progress(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
