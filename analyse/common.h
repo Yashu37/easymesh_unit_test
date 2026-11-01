@@ -2416,6 +2416,24 @@ void construct_convert_channel_width_to_str_input(const convert_channel_width_to
 int  test_convert_channel_width_to_str(const convert_channel_width_to_str_test_case_t *tc);
 void run_all_tests_convert_channel_width_to_str(void);
 
+// --- convert_variant_to_str harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define CVS_GUARD   64    // poisoned bytes placed BEFORE str (to catch str[-1])
+#define CVS_STR_SZ  16
+#define CVS_PAD     64
+typedef struct {
+	const char   *test_name;    // case name
+	unsigned int  variant;      // wifi_ieee80211Variant_t value
+	const char   *expect;       // expected str (valid cases)
+	int           underflow;    // 1 = str[-1] underflow expected (bug)
+} convert_variant_to_str_test_case_t;
+
+extern char cvs_str_buf[CVS_GUARD + CVS_STR_SZ + CVS_PAD];
+extern convert_variant_to_str_test_case_t convert_variant_to_str_suite[];
+
+void construct_convert_variant_to_str_input(const convert_variant_to_str_test_case_t *tc);
+int  test_convert_variant_to_str(const convert_variant_to_str_test_case_t *tc);
+void run_all_tests_convert_variant_to_str(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
