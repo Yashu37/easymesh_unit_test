@@ -929,6 +929,22 @@ void construct_os_nif_list_get_input(const os_nif_list_get_test_case_t *tc);
 int  test_os_nif_list_get(const os_nif_list_get_test_case_t *tc);
 void run_all_tests_os_nif_list_get(void);
 
+// --- os_nif_macaddr_from_str harness (OneWifi lib/osa/os_nif_linux.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *str;            // input MAC string (used when fill == 0)
+	int         fill;           // >0: input = fill chars of "a:a:a:..."
+	int         expect_ret;     // expected return (1 = true)
+} os_nif_macaddr_test_case_t;
+
+extern char   onm_str[256];
+extern size_t onm_str_len;
+extern os_nif_macaddr_test_case_t os_nif_macaddr_from_str_suite[];
+
+void construct_os_nif_macaddr_from_str_input(const os_nif_macaddr_test_case_t *tc);
+int  test_os_nif_macaddr_from_str(const os_nif_macaddr_test_case_t *tc);
+void run_all_tests_os_nif_macaddr_from_str(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
