@@ -1298,6 +1298,23 @@ void construct_ovsdb_table_filter_row_input(const ovsdb_table_filter_row_test_ca
 int  test_ovsdb_table_filter_row(const ovsdb_table_filter_row_test_case_t *tc);
 void run_all_tests_ovsdb_table_filter_row(void);
 
+// --- onewifi_ovsdb_table_from_json harness (OneWifi lib/ovsdb/ovsdb_table.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *json;           // row JSON (NULL = jrow NULL, "LONG" = long values)
+	int         expect_ret;     // expected return (1 = true)
+} ovsdb_table_from_json_test_case_t;
+
+extern char   otj_rec[OCU_SCHEMA_SZ + 64];
+extern ovsdb_table_t otj_table;
+extern size_t otj_perr_len;
+extern int    otj_calls;
+extern ovsdb_table_from_json_test_case_t ovsdb_table_from_json_suite[];
+
+void construct_ovsdb_table_from_json_input(const ovsdb_table_from_json_test_case_t *tc);
+int  test_ovsdb_table_from_json(const ovsdb_table_from_json_test_case_t *tc);
+void run_all_tests_ovsdb_table_from_json(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
