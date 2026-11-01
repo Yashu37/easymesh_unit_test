@@ -254,5 +254,8 @@ int main() {
 
 	// active_msmt_log_message OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_active_msmt_log_message();
+
+	// active_msmt_set_status_desc OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_active_msmt_set_status_desc();
 	return 0;
 }

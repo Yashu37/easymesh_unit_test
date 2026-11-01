@@ -2211,6 +2211,48 @@ void construct_active_msmt_log_message_input(const active_msmt_log_message_test_
 int  test_active_msmt_log_message(const active_msmt_log_message_test_case_t *tc);
 void run_all_tests_active_msmt_log_message(void);
 
+// --- active_msmt_set_status_desc harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+typedef enum {                               // wifi_blaster.h
+	ACTIVE_MSMT_STATUS_SUCCEED      = 0,
+	ACTIVE_MSMT_STATUS_CANCELED     = 1,
+	ACTIVE_MSMT_STATUS_FAILED       = 2,
+	ACTIVE_MSMT_STATUS_BUSY         = 3,
+	ACTIVE_MSMT_STATUS_NO_CLIENT    = 4,
+	ACTIVE_MSMT_STATUS_WRONG_ARG    = 5,
+	ACTIVE_MSMT_STATUS_SLEEP_CLIENT = 6,
+	ACTIVE_MSMT_STATUS_UNDEFINED
+} active_msmt_status_t;
+typedef struct {                             // stand-in: only status + status_desc are touched here
+	active_msmt_status_t status;
+	char                 status_desc[512];
+} wifi_actvie_msmt_t;
+char *active_msmt_status_to_str(active_msmt_status_t status);
+#define ASD_MAC_SZ     13     // = sizeof(mac) = MAC_ADDRESS_LENGTH
+#define ASD_DSTMAC_SZ  13     // = sizeof(DestMac) = MAC_ADDRESS_LENGTH
+#define ASD_DESC_SZ    512    // = sizeof(status_desc)
+#define ASD_PAD        64
+typedef struct {
+	const char          *test_name;        // case name
+	int                  dst_mac_kind;     // 0 raw6, 1 hex12-string, 2 raw6 (NUL at 6)
+	const char          *plan_id;          // plan_id string (NULL -> "?:" fallback)
+	const char          *msg;              // msg string (NULL -> "?:" fallback)
+	active_msmt_status_t status;           // g_active_msmt->status
+	const char          *want_desc_prefix; // status_desc must start with this
+} active_msmt_set_status_desc_test_case_t;
+
+extern char   asd_slot_mac[ASD_MAC_SZ + ASD_PAD];
+extern char   asd_slot_desc[ASD_DESC_SZ + ASD_PAD];
+extern size_t asd_mac_len, asd_desc_len;
+extern unsigned char asd_mac_buf[ASD_DSTMAC_SZ + ASD_PAD];
+extern char   asd_plan_buf[64 + ASD_PAD];
+extern char   asd_msg_buf[512 + ASD_PAD];
+extern char   asd_mgr_buf[sizeof(wifi_actvie_msmt_t) + ASD_PAD];
+extern active_msmt_set_status_desc_test_case_t active_msmt_set_status_desc_suite[];
+
+void construct_active_msmt_set_status_desc_input(const active_msmt_set_status_desc_test_case_t *tc);
+int  test_active_msmt_set_status_desc(const active_msmt_set_status_desc_test_case_t *tc);
+void run_all_tests_active_msmt_set_status_desc(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
