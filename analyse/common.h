@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
 #include <stdio.h>
+#include <stddef.h>  /* offsetof (os_nif_list_get ds_list stub) */
 #include <stdlib.h>
 #include <stdarg.h>
 #include <sys/types.h>   /* ssize_t (used by the base64_decode harness) */
@@ -853,6 +854,80 @@ extern os_nif_gw_test_case_t os_nif_gateway_del_suite[];
 void construct_os_nif_gateway_del_input(const os_nif_gw_test_case_t *tc);
 int  test_os_nif_gateway_del(const os_nif_gw_test_case_t *tc);
 void run_all_tests_os_nif_gateway_del(void);
+
+extern char        ogs_ifname[256];
+extern size_t      ogs_ifname_len;
+extern os_ipaddr_t ogs_gw;
+extern os_nif_gw_test_case_t os_nif_gateway_set_suite[];
+void construct_os_nif_gateway_set_input(const os_nif_gw_test_case_t *tc);
+int  test_os_nif_gateway_set(const os_nif_gw_test_case_t *tc);
+void run_all_tests_os_nif_gateway_set(void);
+
+// --- os_nif_list_get harness (OneWifi lib/osa/os_nif_linux.c) ---
+// Minimal ds_list stub (scaffolding, NOT lib/ds): singly-linked, head insert,
+// iterator with remove -- just enough for os_nif_list_get/os_nif_list_free.
+typedef struct ds_list_node { struct ds_list_node *next; } ds_list_node_t;
+typedef struct { ds_list_node_t *head; size_t cof; } ds_list_t;
+typedef struct { ds_list_t *list; ds_list_node_t **prevp; ds_list_node_t *cur; int removed; } ds_list_iter_t;
+#define ds_list_init(l, type, member) do { (l)->head = NULL; (l)->cof = offsetof(type, member); } while (0)
+static inline void ds_list_insert_head(ds_list_t *l, void *data)
+{
+	ds_list_node_t *nd = (ds_list_node_t *)((char *)data + l->cof);
+	nd->next = l->head; l->head = nd;
+}
+static inline void *ds_list_icont(ds_list_iter_t *it)
+{
+	return it->cur ? (void *)((char *)it->cur - it->list->cof) : NULL;
+}
+static inline void *ds_list_ifirst(ds_list_iter_t *it, ds_list_t *l)
+{
+	it->list = l; it->prevp = &l->head; it->cur = l->head; it->removed = 0;
+	return ds_list_icont(it);
+}
+static inline void *ds_list_inext(ds_list_iter_t *it)
+{
+	if (!it->removed) it->prevp = &it->cur->next;
+	it->removed = 0; it->cur = *it->prevp;
+	return ds_list_icont(it);
+}
+static inline void ds_list_iremove(ds_list_iter_t *it)
+{
+	*it->prevp = it->cur->next; it->removed = 1;
+}
+
+struct os_nif_list_entry                    // verbatim from lib/osa/os_nif.h
+{
+    char            le_ifname[64];
+    ds_list_node_t  le_node;
+};
+
+#define ONLG_REAL        0   // read the real /proc/net/dev
+#define ONLG_DATA        1   // use the literal data
+#define ONLG_NAME_LEN    2   // one "<arg x 'a'>: 0 0" line
+#define ONLG_LONG_LINE   3   // one line of arg chars (longer than buf[256])
+#define ONLG_FOPEN_FAIL  4   // fopen returns NULL
+#define ONLG_MANY        5   // arg interface lines (pool exhaustion when > slots)
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // ONLG_*
+	const char *data;           // literal content for ONLG_DATA
+	int         arg;            // length / count for NAME_LEN / LONG_LINE / MANY
+	int         expect_ret;     // expected return of os_nif_list_get (1 = true)
+	int         expect_count;   // expected entries (-1 = any >= 1)
+} os_nif_list_get_test_case_t;
+
+#define ONLG_POOL_SLOTS  128
+#define ONLG_SLOT_PAD    64     // poisoned bytes after each entry
+extern unsigned char onlg_pool[ONLG_POOL_SLOTS][sizeof(struct os_nif_list_entry) + ONLG_SLOT_PAD];
+extern int           onlg_pool_used;
+extern char          onlg_data[16384];
+extern size_t        onlg_data_len;
+extern int           onlg_use_real, onlg_fopen_fail;
+extern os_nif_list_get_test_case_t os_nif_list_get_suite[];
+
+void construct_os_nif_list_get_input(const os_nif_list_get_test_case_t *tc);
+int  test_os_nif_list_get(const os_nif_list_get_test_case_t *tc);
+void run_all_tests_os_nif_list_get(void);
 
 // PCAP Global Header
 struct pcap_global_header {

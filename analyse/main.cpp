@@ -119,5 +119,11 @@ int main() {
 
 	// os_nif_gateway_del OOB check (OneWifi lib/osa/os_nif_linux.c).
 //	run_all_tests_os_nif_gateway_del();
+
+	// os_nif_gateway_set OOB check (OneWifi lib/osa/os_nif_linux.c).
+//	run_all_tests_os_nif_gateway_set();
+
+	// os_nif_list_get OOB check (OneWifi lib/osa/os_nif_linux.c).
+//	run_all_tests_os_nif_list_get();
 	return 0;
 }
