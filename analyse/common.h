@@ -1637,9 +1637,20 @@ typedef struct {                             // source/apps/wifi_apps_mgr.h (fn 
 	void *mgmt_frame_hook_fn;
 	void *update_fn;
 } wifi_app_descriptor_t;
+#include <sys/resource.h>
 struct wifi_app {                            // subset: desc first, ctrl last (as in source)
 	wifi_app_descriptor_t desc;
-	unsigned char         rest[512];        // lock, cond, queue, tid, data, handle, ... (not touched)
+	unsigned char         rest[512];        // lock, cond, queue, tid, handle, ... (not touched)
+	struct {                                 // data.u.analytics (same layout as analytics_data_t)
+		union {
+			struct {
+				unsigned int minutes_alive;
+				unsigned int tick_demultiplexer;
+				void        *sta_map;     // hash_map_t *
+				struct rusage last_usage;
+			} analytics;
+		} u;
+	} data;
 	void                 *ctrl;
 };
 #define APR_SLOT_SZ     32    // = sizeof(key_str)
@@ -1673,7 +1684,10 @@ void run_all_tests_app_register(void);
 
 // --- source/apps/analytics types (subsets, OneWifi include/wifi_base.h + wifi_analytics.h) ---
 #include <sys/resource.h>
-typedef struct { int cli_RSSI; } wifi_associated_dev3_t;          // only cli_RSSI is used
+typedef struct {                                                    // subset of the HAL wifi_associated_dev3_t
+	unsigned char cli_MACAddress[6];                                // first field in wifi_hal_ap.h
+	int           cli_RSSI;
+} wifi_associated_dev3_t;
 typedef struct {
 	unsigned int            good_rssi_time;
 	unsigned int            bad_rssi_time;
@@ -1766,6 +1780,43 @@ extern analytics_event_hal_sta_conn_status_test_case_t analytics_event_hal_sta_c
 void construct_analytics_event_hal_sta_conn_status_input(const analytics_event_hal_sta_conn_status_test_case_t *tc);
 int  test_analytics_event_hal_sta_conn_status(const analytics_event_hal_sta_conn_status_test_case_t *tc);
 void run_all_tests_analytics_event_hal_sta_conn_status(void);
+
+// --- analytics_event_hal_assoc_device harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+typedef struct {                             // leading fields of include/wifi_base.h assoc_dev_data_t
+	int ap_index;
+	wifi_associated_dev3_t dev_stats;
+	int reason;
+} assoc_dev_data_t;
+#define AAD_MAC_SZ      32    // = sizeof(client_mac)
+#define AAD_TMP_SZ      64    // = sizeof(temp_str)
+#define AAD_PAD         64
+#define AAD_POOL_SLOTS  4
+typedef struct {
+	const char *test_name;      // case name
+	int         ap_index;       // assoc_data->ap_index
+	int         existing;       // station already in sta_map
+	int         malloc_fail;    // malloc returns NULL
+	int         mac_hi;         // MAC aa:ab:.. (hex letters)
+	int         expect_put;     // a new station is put in the map
+	int         expect_tmp_len; // temp_str length
+} analytics_event_hal_assoc_device_test_case_t;
+
+extern char   aad_slot_mac[AAD_MAC_SZ + AAD_PAD];
+extern char   aad_slot_tmp[AAD_TMP_SZ + AAD_PAD];
+extern size_t aad_tmp_len;
+extern unsigned char aad_pool[AAD_POOL_SLOTS][sizeof(analytics_sta_info_t) + AAD_PAD];
+extern int    aad_pool_used, aad_malloc_fail, aad_get_calls;
+extern void  *aad_existing;
+extern char   aad_existing_key[32];
+extern char   aad_put_key[64];
+extern void  *aad_put_data;
+extern char   aad_arg_buf[sizeof(assoc_dev_data_t) + AAD_PAD];
+extern char   aad_apps_buf[sizeof(wifi_app_t) + AAD_PAD];
+extern analytics_event_hal_assoc_device_test_case_t analytics_event_hal_assoc_device_suite[];
+
+void construct_analytics_event_hal_assoc_device_input(const analytics_event_hal_assoc_device_test_case_t *tc);
+int  test_analytics_event_hal_assoc_device(const analytics_event_hal_assoc_device_test_case_t *tc);
+void run_all_tests_analytics_event_hal_assoc_device(void);
 
 // PCAP Global Header
 struct pcap_global_header {
