@@ -967,6 +967,25 @@ void construct_os_nif_softwds_create_input(const os_nif_softwds_test_case_t *tc)
 int  test_os_nif_softwds_create(const os_nif_softwds_test_case_t *tc);
 void run_all_tests_os_nif_softwds_create(void);
 
+// --- os_nif_softwds_destroy harness (OneWifi lib/osa/os_nif_linux.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *ifname;         // literal ifname (used when fill == 0)
+	int         fill;           // >0: ifname = fill x 'd'
+	int         exit_status;    // exit status the stubbed cmd_log returns
+	int         expect_ret;     // expected return (1 = true)
+} os_nif_softwds_destroy_test_case_t;
+
+extern char   osd_ifname[2048];
+extern size_t osd_ifname_len;
+extern size_t osd_cmd_len;
+extern int    osd_calls, osd_exit;
+extern os_nif_softwds_destroy_test_case_t os_nif_softwds_destroy_suite[];
+
+void construct_os_nif_softwds_destroy_input(const os_nif_softwds_destroy_test_case_t *tc);
+int  test_os_nif_softwds_destroy(const os_nif_softwds_destroy_test_case_t *tc);
+void run_all_tests_os_nif_softwds_destroy(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
