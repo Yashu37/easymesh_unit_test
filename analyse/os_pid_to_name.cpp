@@ -1,13 +1,15 @@
 /*
  * HANDLER: os_pid_to_name
  *
- * Function copied VERBATIM from OneWifi lib/osa/os_proc.c. No fixes.
+ * Function copied VERBATIM from OneWifi lib/osa/os_proc.c, plus one FIX line.
  * Local buf[64] holds the /proc/<pid>/comm path, then the comm read by
  * fgets(buf, sizeof(buf), fp) -- both bounded. The result is copied to the
  * caller's proc_name with strscpy(proc_name, buf, len). len is int32_t and
- * is passed straight to strscpy's size_t size with NO check: a negative len
- * becomes a huge size (e.g. -1 -> SIZE_MAX), so the comm is copied untruncated
- * and can write past the caller's buffer -- the behaviour under test.
+ * was passed straight to strscpy's size_t size with NO check: a negative len
+ * became a huge size (e.g. -1 -> SIZE_MAX), so the comm was copied untruncated
+ * and wrote past the caller's buffer.
+ * FIX APPLIED: "if (len < 0) goto func_exit;" before strscpy (returns -1).
+ * Only that line was added.
  * Caller output proc_name is poisoned past its real size by the runner;
  * buf is internal (auto-guarded by ASan).
  *
@@ -63,6 +65,7 @@ int32_t os_pid_to_name(pid_t pid, char *proc_name, int32_t len)
         buf[l-1] = 0;
     }
 
+    if (len < 0) goto func_exit;   /* FIX: reject negative len (would become a huge size_t) */
     strscpy(proc_name, buf, len);
     rc = 0;
 

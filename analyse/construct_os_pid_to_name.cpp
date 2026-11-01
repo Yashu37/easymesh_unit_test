@@ -29,7 +29,7 @@ os_pid_to_name_test_case_t os_pid_to_name_suite[] = {
     { "self_trunc_1",      OPN_SELF,           1,      1,   0 },
     { "self_len_0",        OPN_SELF,           1,      0,   0 },
     { "no_such_pid",       OPN_NONE,          64,     64,  -1 },
-    { "self_len_neg1",     OPN_SELF,           4,     -1,   0 },   /* len -> SIZE_MAX in strscpy */
+    { "self_len_neg1",     OPN_SELF,           4,     -1,  -1 },   /* rejected by the fix (was SIZE_MAX -> overflow) */
 
     { NULL, 0, 0, 0, 0 }  /* sentinel */
 };
