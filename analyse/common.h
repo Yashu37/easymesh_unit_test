@@ -1565,6 +1565,31 @@ void construct_pktgen_is_running_input(const pktgen_is_running_test_case_t *tc);
 int  test_pktgen_is_running(const pktgen_is_running_test_case_t *tc);
 void run_all_tests_pktgen_is_running(void);
 
+// --- pktgen_configure harness (OneWifi lib/pktgen/pktgen.c) ---
+#define PGF_SLOT_SZ   4096    // = PATH_MAX (dev_path)
+#define PGF_SLOT_PAD  64
+#define PGF_STR_SZ    16384
+typedef struct {
+	const char *test_name;      // case name
+	int         if_len;         // 5 = "wlan0", else N x 'i'
+	int         mac_len;        // 17 = real MAC, else N x 'm'
+	int         fail_at;        // pgctrl call number that fails (0 = none)
+	int         expect_ret;     // expected return
+	int         expect_calls;   // pgctrl_command calls
+	int         expect_dev;     // dev_path length (0 = not built)
+} pktgen_configure_test_case_t;
+
+extern char   pgf_slot[PGF_SLOT_SZ + PGF_SLOT_PAD];
+extern size_t pgf_dev_len, pgf_max_path;
+extern int    pgf_calls, pgf_fail_at;
+extern char   pgf_ifname[PGF_STR_SZ];
+extern char   pgf_mac[PGF_STR_SZ];
+extern pktgen_configure_test_case_t pktgen_configure_suite[];
+
+void construct_pktgen_configure_input(const pktgen_configure_test_case_t *tc);
+int  test_pktgen_configure(const pktgen_configure_test_case_t *tc);
+void run_all_tests_pktgen_configure(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
