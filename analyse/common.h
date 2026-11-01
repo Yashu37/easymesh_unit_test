@@ -1391,6 +1391,32 @@ void construct_ovsdb_table_to_json_input(const ovsdb_table_to_json_test_case_t *
 int  test_ovsdb_table_to_json(const ovsdb_table_to_json_test_case_t *tc);
 void run_all_tests_ovsdb_table_to_json(void);
 
+// --- onewifi_ovsdb_table_update_cb harness (OneWifi lib/ovsdb/ovsdb_table.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         mon_type;       // OVSDB_UPDATE_* (or invalid)
+	int         has_data;       // mon_data = &table (0 = NULL)
+	int         table_ok;       // mon_table matches table_name
+	int         partial;        // table->partial_update
+	const char *json_new;       // mon_json_new ("LONG" = 255-char if_name)
+	const char *json_old;       // mon_json_old
+	int         uuid_ok;        // mon_uuid matches the row uuid
+	int         expect_cb;      // table_callback calls
+	int         expect_marks;   // mark_changed calls
+} ovsdb_table_update_cb_test_case_t;
+
+extern int    otu_cbs, otu_marks, otu_last_type;
+extern size_t otu_last_name_len;
+extern char   otu_uuid[64];
+extern size_t otu_uuid_len;
+extern ovsdb_table_t otu_table;
+extern ovsdb_update_monitor_t otu_mon;
+extern ovsdb_table_update_cb_test_case_t ovsdb_table_update_cb_suite[];
+
+void construct_ovsdb_table_update_cb_input(const ovsdb_table_update_cb_test_case_t *tc);
+int  test_ovsdb_table_update_cb(const ovsdb_table_update_cb_test_case_t *tc);
+void run_all_tests_ovsdb_table_update_cb(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

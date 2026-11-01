@@ -176,5 +176,8 @@ int main() {
 
 	// onewifi_ovsdb_table_to_json OOB check (OneWifi lib/ovsdb/ovsdb_table.c).
 //	run_all_tests_ovsdb_table_to_json();
+
+	// onewifi_ovsdb_table_update_cb OOB check (OneWifi lib/ovsdb/ovsdb_table.c).
+//	run_all_tests_ovsdb_table_update_cb();
 	return 0;
 }
