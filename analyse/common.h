@@ -1943,6 +1943,24 @@ void construct_analytics_event_hal_potential_misconfiguration_input(const analyt
 int  test_analytics_event_hal_potential_misconfiguration(const analytics_event_hal_potential_misconfiguration_test_case_t *tc);
 void run_all_tests_analytics_event_hal_potential_misconfiguration(void);
 
+// --- analytics_event_wpa3_rfc harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+#define AWR_SLOT_SZ  32      // = sizeof(str)
+#define AWR_PAD      64
+typedef struct {
+	const char *test_name;      // case name
+	bool        rfc;            // *(bool *)arg
+	const char *expect;         // expected str
+} analytics_event_wpa3_rfc_test_case_t;
+
+extern char   awr_slot[AWR_SLOT_SZ + AWR_PAD];
+extern size_t awr_len;
+extern char   awr_arg_buf[sizeof(bool) + AWR_PAD];
+extern analytics_event_wpa3_rfc_test_case_t analytics_event_wpa3_rfc_suite[];
+
+void construct_analytics_event_wpa3_rfc_input(const analytics_event_wpa3_rfc_test_case_t *tc);
+int  test_analytics_event_wpa3_rfc(const analytics_event_wpa3_rfc_test_case_t *tc);
+void run_all_tests_analytics_event_wpa3_rfc(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
