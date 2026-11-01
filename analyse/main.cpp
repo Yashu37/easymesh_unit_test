@@ -275,5 +275,8 @@ int main() {
 
 	// convert_variant_to_str OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_convert_variant_to_str();
+
+	// DeviceMemory_DataGet OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_DeviceMemory_DataGet();
 	return 0;
 }

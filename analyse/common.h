@@ -2434,6 +2434,26 @@ void construct_convert_variant_to_str_input(const convert_variant_to_str_test_ca
 int  test_convert_variant_to_str(const convert_variant_to_str_test_case_t *tc);
 void run_all_tests_convert_variant_to_str(void);
 
+// --- DeviceMemory_DataGet harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define DMG_SLOT_SZ  256     // = sizeof(buf)
+#define DMG_PAD      64
+typedef struct {
+	const char  *test_name;     // case name
+	const char  *content;       // /proc/meminfo content (NULL = file missing)
+	bool         expect_ret;    // expected return
+	unsigned int expect_util;   // expected *util_mem on success
+} DeviceMemory_DataGet_test_case_t;
+
+extern char dmg_path[64];
+extern char dmg_slot[DMG_SLOT_SZ + DMG_PAD];
+extern int  dmg_lines;
+extern char dmg_util_buf[sizeof(unsigned int) + DMG_PAD];
+extern DeviceMemory_DataGet_test_case_t DeviceMemory_DataGet_suite[];
+
+void construct_DeviceMemory_DataGet_input(const DeviceMemory_DataGet_test_case_t *tc);
+int  test_DeviceMemory_DataGet(const DeviceMemory_DataGet_test_case_t *tc);
+void run_all_tests_DeviceMemory_DataGet(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
