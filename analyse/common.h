@@ -1818,6 +1818,37 @@ void construct_analytics_event_hal_assoc_device_input(const analytics_event_hal_
 int  test_analytics_event_hal_assoc_device(const analytics_event_hal_assoc_device_test_case_t *tc);
 void run_all_tests_analytics_event_hal_assoc_device(void);
 
+// --- analytics_event_hal_disassoc_device harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+#define ADD_MAC_SZ   32    // = sizeof(client_mac)
+#define ADD_TMP_SZ   64    // = sizeof(temp_str)
+#define ADD_PAD      64
+typedef struct {
+	const char *test_name;      // case name
+	int         ap_index;       // assoc_data->ap_index
+	int         reason;         // assoc_data->reason
+	int         known;          // station is in sta_map
+	int         rm_null;        // hash_map_remove returns NULL
+	int         mac_hi;         // MAC aa:ab:.. (hex letters)
+	int         expect_removes; // hash_map_remove calls
+	int         expect_freed;   // free() called
+	int         expect_tmp_len; // temp_str length
+} analytics_event_hal_disassoc_device_test_case_t;
+
+extern char   add_slot_mac[ADD_MAC_SZ + ADD_PAD];
+extern char   add_slot_tmp[ADD_TMP_SZ + ADD_PAD];
+extern size_t add_tmp_len;
+extern void  *add_entry, *add_freed;
+extern char   add_entry_key[32];
+extern char   add_key_seen[64];
+extern int    add_remove_calls, add_remove_null;
+extern char   add_arg_buf[sizeof(assoc_dev_data_t) + ADD_PAD];
+extern char   add_apps_buf[sizeof(wifi_app_t) + ADD_PAD];
+extern analytics_event_hal_disassoc_device_test_case_t analytics_event_hal_disassoc_device_suite[];
+
+void construct_analytics_event_hal_disassoc_device_input(const analytics_event_hal_disassoc_device_test_case_t *tc);
+int  test_analytics_event_hal_disassoc_device(const analytics_event_hal_disassoc_device_test_case_t *tc);
+void run_all_tests_analytics_event_hal_disassoc_device(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
