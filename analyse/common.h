@@ -1373,6 +1373,24 @@ void construct_ovsdb_table_monitor_filter_input(const ovsdb_table_monitor_filter
 int  test_ovsdb_table_monitor_filter(const ovsdb_table_monitor_filter_test_case_t *tc);
 void run_all_tests_ovsdb_table_monitor_filter(void);
 
+// --- onewifi_ovsdb_table_to_json harness (OneWifi lib/ovsdb/ovsdb_table.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // 0 empty record, 1 normal, 2 fields at full size
+	int         fail;           // to_json fails
+	int         expect_obj;     // a JSON object is returned
+} ovsdb_table_to_json_test_case_t;
+
+extern char   ott_rec[OCU_SCHEMA_SZ + 64];
+extern ovsdb_table_t ott_table;
+extern size_t ott_perr_len;
+extern int    ott_calls, ott_fail;
+extern ovsdb_table_to_json_test_case_t ovsdb_table_to_json_suite[];
+
+void construct_ovsdb_table_to_json_input(const ovsdb_table_to_json_test_case_t *tc);
+int  test_ovsdb_table_to_json(const ovsdb_table_to_json_test_case_t *tc);
+void run_all_tests_ovsdb_table_to_json(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
