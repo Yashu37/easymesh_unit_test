@@ -1,13 +1,15 @@
 /*
  * HANDLER: onewifi_ovsdb_table_monitor_filter
  *
- * Function copied VERBATIM from OneWifi lib/ovsdb/ovsdb_table.c. No fixes.
+ * Function copied VERBATIM from OneWifi lib/ovsdb/ovsdb_table.c, plus one FIX.
  * Local cols[schema_count + 2] (VLA of char *) gets the schema columns
  * (memcpy schema_count), "_version" and NULL, then filter_out_nt_array()
  * compacts it in place -- all within schema_count + 2 slots.
- * The op is read as **filter (first char of filter[0]) with no check that
- * filter[0] exists: an empty filter argv {NULL} dereferences NULL -- the
- * behaviour checked by the last case.
+ * The op was read as **filter (first char of filter[0]) with no check that
+ * filter[0] exists: an empty filter argv {NULL} dereferenced NULL.
+ * FIX APPLIED: the first check is now "if (!filter || !*filter)", so an
+ * empty filter is treated like no filter (monitor all columns).
+ * Only that condition changed.
  * Caller inputs filter[] and table->columns[] (+ their strings) are
  * poisoned by the runner; cols is internal (ASan stack redzones).
  *
@@ -99,7 +101,7 @@ bool onewifi_ovsdb_table_monitor_filter(int ovsdb_fd, ovsdb_table_t *table,
     int schema_count = count_nt_array(table->columns);
     char *cols[schema_count + 2]; // +2: _version, NULL
     char **columns;
-    if (!filter)
+    if (!filter || !*filter)   /* FIX: empty filter argv {NULL} -> same as no filter (was **filter on NULL) */
     {
         columns = NULL;
     }

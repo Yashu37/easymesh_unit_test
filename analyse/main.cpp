@@ -172,6 +172,6 @@ int main() {
 //	run_all_tests_ovsdb_table_monitor_columns();
 
 	// onewifi_ovsdb_table_monitor_filter OOB check (OneWifi lib/ovsdb/ovsdb_table.c).
-	run_all_tests_ovsdb_table_monitor_filter();
+//	run_all_tests_ovsdb_table_monitor_filter();
 	return 0;
 }

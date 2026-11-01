@@ -9,7 +9,7 @@
  * Cases: filter NULL, "-" removing 2 of 4 (+ _version kept), "-" removing
  * all + _version, "-" with a 60-column schema, "-" with an empty schema,
  * "+" with 2 columns, a plain list, an empty-string op, and LAST the empty
- * filter argv {NULL} (**filter on NULL).
+ * filter argv {NULL} (crashed before the fix; now treated as no filter).
  */
 
 #include <stdio.h>
@@ -36,7 +36,7 @@ ovsdb_table_monitor_filter_test_case_t ovsdb_table_monitor_filter_suite[] = {
     { "plus_two",               4,      0,     "+ c0 c2",                        0,     2,   0 },
     { "plain_list",             4,      0,     "c1 c2 _version",                 0,     3,   1 },
     { "empty_string_op",        4,      0,     "EMPTYOP",                        0,     1,   0 },
-    { "empty_filter_argv",      4,      0,     NULL,                             0,     0,   0 },   /* {NULL} */
+    { "empty_filter_argv",      4,      0,     NULL,                             1,     0,   0 },   /* {NULL} -> no filter (fix) */
 
     { NULL, 0, 0, NULL, 0, 0, 0 }  /* sentinel */
 };
