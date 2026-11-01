@@ -1007,6 +1007,11 @@ void run_all_tests_os_pid_to_name(void);
 
 // --- ovsdb_table_t / ovsdb_cache_row_t (OneWifi lib/ovsdb/ovsdb_table.h) ---
 // Subset: only the fields the lib/ovsdb harnesses touch, same names/types.
+// js is "void *" here instead of json_t * because common.h is shared with
+// log_dynamic_update.cpp, which has its own fake json_t (callers pass a real
+// jansson json_t *, which converts implicitly).
+typedef char pjs_errmsg_t[128];                                              // lib/pjs/pjs_common.h
+typedef bool schema_from_json_t(void *out, void *js, bool update, pjs_errmsg_t err);  // ovsdb_table.h
 #define OVSDB_TABLE_KEY_SIZE 64
 #define OVSDB_TABLE_NAME_SIZE 64
 typedef struct ovsdb_cache_row
@@ -1029,6 +1034,7 @@ typedef struct ovsdb_table
     char                    key_name[OVSDB_TABLE_KEY_SIZE];
     int                     key2_offset; // optional alternate key2, example: radio_config
     char                    key2_name[OVSDB_TABLE_KEY_SIZE];
+    schema_from_json_t      *from_json;
     int                     row_size;
     ds_tree_t               rows; // uuid key
     ds_tree_t               rows_k; // primary key
@@ -1061,6 +1067,31 @@ extern ovsdb_cache_insert_row_test_case_t ovsdb_cache_insert_row_suite[];
 void construct_ovsdb_cache_insert_row_input(const ovsdb_cache_insert_row_test_case_t *tc);
 int  test_ovsdb_cache_insert_row(const ovsdb_cache_insert_row_test_case_t *tc);
 void run_all_tests_ovsdb_cache_insert_row(void);
+
+// --- onewifi_ovsdb_cache_pre_fetch harness (OneWifi lib/ovsdb/ovsdb_cache.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         row_exists;     // find_row_by_key returns a row
+	const char *result;         // JSON text tran_call_s returns (NULL = no result, "LONG" = built)
+	int         fj_fail;        // from_json fails
+	int         key_fill;       // >0: key = key_fill x 'k'
+	int         expect_ret;     // expected return (0 / -1)
+} ovsdb_cache_pre_fetch_test_case_t;
+
+#define OCP_POOL_SZ  (OCI_ROWBUF_SZ + 256)
+extern unsigned char ocp_rowpool[OCP_POOL_SZ];
+extern size_t      ocp_calloc_size;
+extern int         ocp_row_exists, ocp_freed, ocp_fj_fail;
+extern size_t      ocp_perr_len;
+extern const char *ocp_result_json;
+extern char        ocp_key[256];
+extern size_t      ocp_key_len;
+extern ovsdb_table_t ocp_table;
+extern ovsdb_cache_pre_fetch_test_case_t ovsdb_cache_pre_fetch_suite[];
+
+void construct_ovsdb_cache_pre_fetch_input(const ovsdb_cache_pre_fetch_test_case_t *tc);
+int  test_ovsdb_cache_pre_fetch(const ovsdb_cache_pre_fetch_test_case_t *tc);
+void run_all_tests_ovsdb_cache_pre_fetch(void);
 
 // PCAP Global Header
 struct pcap_global_header {

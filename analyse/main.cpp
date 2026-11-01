@@ -140,5 +140,8 @@ int main() {
 
 	// _ovsdb_cache_insert_row OOB check (OneWifi lib/ovsdb/ovsdb_cache.c).
 //	run_all_tests_ovsdb_cache_insert_row();
+
+	// onewifi_ovsdb_cache_pre_fetch OOB check (OneWifi lib/ovsdb/ovsdb_cache.c).
+//	run_all_tests_ovsdb_cache_pre_fetch();
 	return 0;
 }
