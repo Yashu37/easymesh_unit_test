@@ -1,3 +1,4 @@
+#include <pthread.h>
 /* SPDX-License-Identifier: GPL-2.0 */
 
 #include <stdio.h>
@@ -2222,9 +2223,41 @@ typedef enum {                               // wifi_blaster.h
 	ACTIVE_MSMT_STATUS_SLEEP_CLIENT = 6,
 	ACTIVE_MSMT_STATUS_UNDEFINED
 } active_msmt_status_t;
-typedef struct {                             // stand-in: only status + status_desc are touched here
+#define OPER_BUFFER_LEN 64                   // wifi_blaster.h
+typedef struct active_msmt_data {            // wifi_blaster.h
+	unsigned int   MaxTxRate;
+	unsigned int   MaxRxRate;
+	int            rssi;
+	unsigned long  TxPhyRate;
+	unsigned long  RxPhyRate;
+	int            SNR;
+	int            ReTransmission;
+	double         throughput;
+	char           Operating_standard[OPER_BUFFER_LEN + 1];
+	char           Operating_channelwidth[OPER_BUFFER_LEN + 1];
+	mac_address_t  cli_MACAddress;
+} active_msmt_data_t;
+typedef struct {                             // wifi_blaster.h
+	mac_address_t       sta_mac;
+	active_msmt_data_t *sta_active_msmt_data;
+} blaster_hashmap_t;
+typedef struct {                             // subset of include/wifi_base.h active_msmt_step_t
+	unsigned char SrcMac[13];                // MAC_ADDRESS_LENGTH
+	unsigned char DestMac[13];
+	unsigned int  StepId;
+	int           ApIndex;
+} active_msmt_step_t;
+typedef struct {                             // subset of include/wifi_base.h active_msmt_t
+	unsigned int ActiveMsmtNumberOfSamples;
+} active_msmt_t;
+typedef struct {                             // subset of wifi_blaster.h wifi_actvie_msmt_t (fields used by the blaster harnesses)
+	pthread_mutex_t      lock;
+	active_msmt_t        active_msmt;
+	active_msmt_step_t   curStepData;
+	active_msmt_data_t  *active_msmt_data;
 	active_msmt_status_t status;
 	char                 status_desc[512];
+	void                *active_msmt_map;    // hash_map_t *
 } wifi_actvie_msmt_t;
 char *active_msmt_status_to_str(active_msmt_status_t status);
 #define ASD_MAC_SZ     13     // = sizeof(mac) = MAC_ADDRESS_LENGTH
@@ -2252,6 +2285,36 @@ extern active_msmt_set_status_desc_test_case_t active_msmt_set_status_desc_suite
 void construct_active_msmt_set_status_desc_input(const active_msmt_set_status_desc_test_case_t *tc);
 int  test_active_msmt_set_status_desc(const active_msmt_set_status_desc_test_case_t *tc);
 void run_all_tests_active_msmt_set_status_desc(void);
+
+// --- process_active_msmt_diagnostics harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define PAD_KEY_SZ      18     // = sizeof(sta_key_t) = STA_KEY_LEN
+#define PAD_PAD         64
+#define PAD_MAX_SAMPLES 8
+typedef struct {
+	const char   *test_name;    // case name
+	int           no_map;       // active_msmt_map == NULL
+	int           ap_index;     // ap_index argument (-1 = offline)
+	unsigned int  samples;      // ActiveMsmtNumberOfSamples
+	int           existing;     // station already in the map
+	unsigned char mac0;         // first DestMac byte (others +1..+5)
+	int           expect_put;   // a new station is put in the map
+} process_active_msmt_diagnostics_test_case_t;
+
+extern char   pad_slot_key[PAD_KEY_SZ + PAD_PAD];
+extern size_t pad_key_len;
+extern char   pad_key_seen[64];
+extern char   pad_put_key[64];
+extern void  *pad_put_data;
+extern void  *pad_existing;
+extern char   pad_existing_key[32];
+extern int    pad_calls;
+extern char   pad_mgr_buf[sizeof(wifi_actvie_msmt_t) + PAD_PAD];
+extern char   pad_src_buf[PAD_MAX_SAMPLES * sizeof(active_msmt_data_t) + PAD_PAD];
+extern process_active_msmt_diagnostics_test_case_t process_active_msmt_diagnostics_suite[];
+
+void construct_process_active_msmt_diagnostics_input(const process_active_msmt_diagnostics_test_case_t *tc);
+int  test_process_active_msmt_diagnostics(const process_active_msmt_diagnostics_test_case_t *tc);
+void run_all_tests_process_active_msmt_diagnostics(void);
 
 // PCAP Global Header
 struct pcap_global_header {
