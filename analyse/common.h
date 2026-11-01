@@ -1619,6 +1619,56 @@ void construct_get_app_by_inst_input(const get_app_by_inst_test_case_t *tc);
 int  test_get_app_by_inst(const get_app_by_inst_test_case_t *tc);
 void run_all_tests_get_app_by_inst(void);
 
+// --- app_register harness (OneWifi source/apps/wifi_apps_mgr.c) ---
+typedef char wifi_app_name_t[256];
+typedef int (* wifi_app_init_fn_t)(wifi_app_t *app, unsigned int create_flag);
+typedef struct {                             // source/apps/wifi_apps_mgr.h (fn types after init_fn as void *)
+	wifi_app_inst_t inst;
+	unsigned int create_flag;
+	unsigned int reg_events_types;
+	bool rfc;
+	bool enable;
+	wifi_app_name_t         desc;
+	wifi_app_init_fn_t init_fn;
+	void *event_fn;
+	void *deinit_fn;
+	void *mgmt_frame_hook_fn;
+	void *update_fn;
+} wifi_app_descriptor_t;
+struct wifi_app {                            // subset: desc first, ctrl last (as in source)
+	wifi_app_descriptor_t desc;
+	unsigned char         rest[512];        // lock, cond, queue, tid, data, handle, ... (not touched)
+	void                 *ctrl;
+};
+#define APR_SLOT_SZ     32    // = sizeof(key_str)
+#define APR_SLOT_PAD    64
+#define APR_POOL_SLOTS  8
+#define APR_POOL_PAD    64
+typedef struct {
+	const char *test_name;      // case name
+	int         inst;           // descriptor->inst
+	int         rfc;            // descriptor->rfc
+	int         already;        // get_app_by_inst finds it
+	int         malloc_fail;    // malloc returns NULL
+	int         expect_key_len; // key put in the map (0 = none)
+	int         expect_put;     // hash_map_put called
+	int         expect_init;    // init_fn calls
+} app_register_test_case_t;
+
+extern char   apr_slot[APR_SLOT_SZ + APR_SLOT_PAD];
+extern unsigned char apr_pool[APR_POOL_SLOTS][sizeof(wifi_app_t) + APR_POOL_PAD];
+extern int    apr_pool_used, apr_malloc_fail, apr_already, apr_rfc_calls, apr_init_calls;
+extern char   apr_key_seen[64];
+extern size_t apr_key_len;
+extern void  *apr_put_data;
+extern char   apr_desc_buf[sizeof(wifi_app_descriptor_t) + 64];
+extern char   apr_mgr_buf[sizeof(wifi_apps_mgr_t) + 64];
+extern app_register_test_case_t app_register_suite[];
+
+void construct_app_register_input(const app_register_test_case_t *tc);
+int  test_app_register(const app_register_test_case_t *tc);
+void run_all_tests_app_register(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
