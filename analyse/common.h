@@ -1463,6 +1463,29 @@ void construct_ovsdb_update_changed_input(const ovsdb_update_changed_test_case_t
 int  test_ovsdb_update_changed(const ovsdb_update_changed_test_case_t *tc);
 void run_all_tests_ovsdb_update_changed(void);
 
+// --- ovsdb_get_update_result_count_off harness (OneWifi lib/ovsdb/ovsdb_sync_api.c) ---
+#define OGU_SLOT_SZ   8192    // largest json_gets size used (dumps_static_buf)
+#define OGU_SLOT_PAD  64
+#define OGU_STR_SZ    64
+typedef struct {
+	const char *test_name;      // case name
+	int         kind;           // result shape (see construct file)
+	int         offset;         // offset argument
+	int         expect_count;   // expected return
+	int         expect_errlen;  // errstr length (-1 = errstr path not taken)
+} ovsdb_get_update_result_count_off_test_case_t;
+
+extern char   ogug_slot[OGU_SLOT_SZ + OGU_SLOT_PAD];
+extern size_t ogug_errstr_len;
+extern int    ogug_calls;
+extern char   ogu_table[OGU_STR_SZ];
+extern char   ogu_oper[OGU_STR_SZ];
+extern ovsdb_get_update_result_count_off_test_case_t ovsdb_get_update_result_count_off_suite[];
+
+void construct_ovsdb_get_update_result_count_off_input(const ovsdb_get_update_result_count_off_test_case_t *tc);
+int  test_ovsdb_get_update_result_count_off(const ovsdb_get_update_result_count_off_test_case_t *tc);
+void run_all_tests_ovsdb_get_update_result_count_off(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
