@@ -134,5 +134,8 @@ int main() {
 
 	// os_nif_softwds_destroy OOB check (OneWifi lib/osa/os_nif_linux.c).
 //	run_all_tests_os_nif_softwds_destroy();
+
+	// os_pid_to_name OOB check (OneWifi lib/osa/os_proc.c).
+	run_all_tests_os_pid_to_name();
 	return 0;
 }

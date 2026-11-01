@@ -986,6 +986,25 @@ void construct_os_nif_softwds_destroy_input(const os_nif_softwds_destroy_test_ca
 int  test_os_nif_softwds_destroy(const os_nif_softwds_destroy_test_case_t *tc);
 void run_all_tests_os_nif_softwds_destroy(void);
 
+// --- os_pid_to_name harness (OneWifi lib/osa/os_proc.c) ---
+#define OPN_SELF  0
+#define OPN_NONE  1
+typedef struct {
+	const char *test_name;      // case name
+	int         pid_kind;       // OPN_SELF (getpid) / OPN_NONE (nonexistent pid)
+	int         buf_size;       // bytes of proc_name the caller really owns
+	int         len;            // len argument passed to os_pid_to_name
+	int         expect_ret;     // expected return (0 / -1)
+} os_pid_to_name_test_case_t;
+
+extern char opn_name[128];
+extern int  opn_pid;
+extern os_pid_to_name_test_case_t os_pid_to_name_suite[];
+
+void construct_os_pid_to_name_input(const os_pid_to_name_test_case_t *tc);
+int  test_os_pid_to_name(const os_pid_to_name_test_case_t *tc);
+void run_all_tests_os_pid_to_name(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
