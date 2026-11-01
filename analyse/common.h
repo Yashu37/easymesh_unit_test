@@ -1417,6 +1417,26 @@ void construct_ovsdb_table_update_cb_input(const ovsdb_table_update_cb_test_case
 int  test_ovsdb_table_update_cb(const ovsdb_table_update_cb_test_case_t *tc);
 void run_all_tests_ovsdb_table_update_cb(void);
 
+// --- onewifi_ovsdb_tran_comment harness (OneWifi lib/ovsdb/ovsdb_method.c) ---
+#define OTC_BUF_SZ  2048
+typedef struct {
+	const char *test_name;      // case name
+	int         comment_null;   // ovsdb_comment = NULL
+	int         comment_len;    // 2 = "em", else N x 'c'
+	int         oper;           // ovsdb_tro_t value
+	int         where_kind;     // 0 NULL, 1 one triple, 2 row not array, 3 non-string, 4 30 x 100-char
+	int         expect_ret;     // expected return (1 = true)
+	int         expect_appended;// comment op appended to js_array
+} ovsdb_tran_comment_test_case_t;
+
+extern char  otc_comment_buf[OTC_BUF_SZ];
+extern char *ovsdb_comment;
+extern ovsdb_tran_comment_test_case_t ovsdb_tran_comment_suite[];
+
+void construct_ovsdb_tran_comment_input(const ovsdb_tran_comment_test_case_t *tc);
+int  test_ovsdb_tran_comment(const ovsdb_tran_comment_test_case_t *tc);
+void run_all_tests_ovsdb_tran_comment(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
