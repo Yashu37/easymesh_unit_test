@@ -200,5 +200,8 @@ int main() {
 
 	// pktgen_configure OOB check (OneWifi lib/pktgen/pktgen.c).
 //	run_all_tests_pktgen_configure();
+
+	// get_app_by_inst OOB check (OneWifi source/apps/wifi_apps_mgr.c).
+//	run_all_tests_get_app_by_inst();
 	return 0;
 }

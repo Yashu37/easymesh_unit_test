@@ -1590,6 +1590,35 @@ void construct_pktgen_configure_input(const pktgen_configure_test_case_t *tc);
 int  test_pktgen_configure(const pktgen_configure_test_case_t *tc);
 void run_all_tests_pktgen_configure(void);
 
+// --- get_app_by_inst harness (OneWifi source/apps/wifi_apps_mgr.c) ---
+typedef int wifi_app_inst_t;                 // enum of bit values (include/wifi_base.h)
+typedef struct wifi_app wifi_app_t;          // opaque here
+typedef struct wifi_apps_mgr {               // subset of source/apps/wifi_apps_mgr.h
+	void       *ctrl;
+	void       *apps_map;                   // hash_map_t * (defined later in this header)
+} wifi_apps_mgr_t;
+#define GAI_SLOT_SZ   32      // = sizeof(key_str)
+#define GAI_SLOT_PAD  64
+typedef struct {
+	const char *test_name;      // case name
+	int         inst;           // inst argument
+	int         expect_found;   // an app is returned
+	int         expect_key_len; // key_str length
+} get_app_by_inst_test_case_t;
+
+extern char   gai_slot[GAI_SLOT_SZ + GAI_SLOT_PAD];
+extern char   gai_key_seen[64];
+extern size_t gai_key_len;
+extern char   gai_keys[4][32];
+extern void  *gai_vals[4];
+extern int    gai_nentries;
+extern char   gai_mgr_buf[sizeof(wifi_apps_mgr_t) + 64];
+extern get_app_by_inst_test_case_t get_app_by_inst_suite[];
+
+void construct_get_app_by_inst_input(const get_app_by_inst_test_case_t *tc);
+int  test_get_app_by_inst(const get_app_by_inst_test_case_t *tc);
+void run_all_tests_get_app_by_inst(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
