@@ -233,5 +233,8 @@ int main() {
 
 	// analytics_event_sta_connect_in_progress OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
 //	run_all_tests_analytics_event_sta_connect_in_progress();
+
+	// analytics_event_trigger_disconnection_analytics OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
+//	run_all_tests_analytics_event_trigger_disconnection_analytics();
 	return 0;
 }

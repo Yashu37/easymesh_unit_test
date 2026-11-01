@@ -1997,6 +1997,47 @@ void construct_analytics_event_sta_connect_in_progress_input(const analytics_eve
 int  test_analytics_event_sta_connect_in_progress(const analytics_event_sta_connect_in_progress_test_case_t *tc);
 void run_all_tests_analytics_event_sta_connect_in_progress(void);
 
+// --- analytics_event_trigger_disconnection_analytics harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+typedef struct {                             // source/core/services/vap_svc.h
+	bss_candidate_t *scan_list;
+	unsigned int     scan_count;
+} __attribute__((packed)) bss_candidate_list_t;
+typedef struct {                             // source/core/services/vap_svc.h: real field order up to connected_vap_index
+	bss_candidate_list_t candidates_list;
+	bss_candidate_t      last_connected_bss;
+	bss_candidate_t      new_bss;
+	bool                 new_bss_delayed;
+	int                  conn_state;         // connection_state_t
+	bool                 is_radio_ignored;
+	bool                 is_on_channel;
+	unsigned int         ignored_radio_index;  // wifi_radio_index_t
+	unsigned int         selfheal_status;
+	unsigned int         connected_vap_index;
+	unsigned char        rest[80];           // last_connected_time ... is_vap_started[] (not touched)
+} __attribute__((packed)) vap_svc_ext_t;
+#define TDA_MAC_SZ   18      // = sizeof(bssid_str) (mac_addr_str_t)
+#define TDA_TMP_SZ   512     // = sizeof(temp_str)
+#define TDA_PAD      64
+typedef struct {
+	const char   *test_name;    // case name
+	int           arg_null;     // arg = NULL
+	unsigned int  vap_index;    // ext->connected_vap_index
+	unsigned char bssid0;       // first BSSID byte (others +1..+5)
+	int           expect_ret;   // expected return
+	const char   *expect;       // expected temp_str
+} analytics_event_trigger_disconnection_analytics_test_case_t;
+
+extern char   tda_slot_mac[TDA_MAC_SZ + TDA_PAD];
+extern char   tda_slot_tmp[TDA_TMP_SZ + TDA_PAD];
+extern size_t tda_tmp_len;
+extern int    tda_mac_calls;
+extern char   tda_arg_buf[sizeof(vap_svc_ext_t) + TDA_PAD];
+extern analytics_event_trigger_disconnection_analytics_test_case_t analytics_event_trigger_disconnection_analytics_suite[];
+
+void construct_analytics_event_trigger_disconnection_analytics_input(const analytics_event_trigger_disconnection_analytics_test_case_t *tc);
+int  test_analytics_event_trigger_disconnection_analytics(const analytics_event_trigger_disconnection_analytics_test_case_t *tc);
+void run_all_tests_analytics_event_trigger_disconnection_analytics(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
