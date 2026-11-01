@@ -1486,6 +1486,32 @@ void construct_ovsdb_get_update_result_count_off_input(const ovsdb_get_update_re
 int  test_ovsdb_get_update_result_count_off(const ovsdb_get_update_result_count_off_test_case_t *tc);
 void run_all_tests_ovsdb_get_update_result_count_off(void);
 
+// --- ovsdb_sync_get_uuid_and_count harness (OneWifi lib/ovsdb/ovsdb_sync_api.c) ---
+#define OGC_SLOT_SZ   128     // = WHERE_STR_SIZE (where_str)
+#define OGC_SLOT_PAD  64
+#define OGC_STR_SZ    64
+typedef struct {
+	const char *test_name;      // case name
+	int         uuid_null;      // uuid argument NULL
+	int         rows;           // select result shape (-1 NULL, see construct file)
+	int         where_len;      // -1 where NULL, 0 small, else dump length
+	int         expect_count;   // expected return
+	int         expect_uuid_len;// uuid length after call (-1 = uuid NULL)
+	int         expect_where;   // where_str length (-1 = any < 128)
+} ovsdb_sync_get_uuid_and_count_test_case_t;
+
+extern char   ogc_slot[OGC_SLOT_SZ + OGC_SLOT_PAD];
+extern size_t ogc_where_len;
+extern void  *ogc_rows;
+extern char   ogc_uuid_buf[sizeof(ovs_uuid_t) + 64];
+extern char   ogc_table[OGC_STR_SZ];
+extern char   ogc_sock[OGC_STR_SZ];
+extern ovsdb_sync_get_uuid_and_count_test_case_t ovsdb_sync_get_uuid_and_count_suite[];
+
+void construct_ovsdb_sync_get_uuid_and_count_input(const ovsdb_sync_get_uuid_and_count_test_case_t *tc);
+int  test_ovsdb_sync_get_uuid_and_count(const ovsdb_sync_get_uuid_and_count_test_case_t *tc);
+void run_all_tests_ovsdb_sync_get_uuid_and_count(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

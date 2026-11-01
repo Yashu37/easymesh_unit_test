@@ -188,5 +188,8 @@ int main() {
 
 	// ovsdb_get_update_result_count_off OOB check (OneWifi lib/ovsdb/ovsdb_sync_api.c).
 //	run_all_tests_ovsdb_get_update_result_count_off();
+
+	// ovsdb_sync_get_uuid_and_count OOB check (OneWifi lib/ovsdb/ovsdb_sync_api.c).
+//	run_all_tests_ovsdb_sync_get_uuid_and_count();
 	return 0;
 }
