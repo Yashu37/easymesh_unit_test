@@ -8,7 +8,7 @@
  *   - the write slots of the internal arrays past their real sizes:
  *       aad_slot_mac past 32 (client_mac), aad_slot_tmp past 64 (temp_str).
  * The arrays themselves are internal (auto-guarded by ASan).
- * PASS = RETURN_OK, the right station is stored/updated with the lower-case
+ * PASS = RETURN_OK (RETURN_ERR when malloc fails), the right station is stored/updated with the lower-case
  * key, and temp_str length matches (< 64).
  */
 
@@ -48,7 +48,8 @@ int test_analytics_event_hal_assoc_device(const analytics_event_hal_assoc_device
     for (const char *p = aad_put_key; *p; p++) if (*p >= 'A' && *p <= 'F') lower = 0;
     printf("    ap_index=%d -> ret=%d put_key=\"%s\" stored=%d temp_str_len=%zu \"%s\"\n",
            tc->ap_index, ret, aad_put_key, stored, aad_tmp_len, aad_slot_tmp);
-    return ret == 0 && (aad_put_data != NULL) == (tc->expect_put != 0) && stored && lower &&
+    if (tc->malloc_fail) stored = 1;   /* nothing is stored when malloc fails */
+    return ret == (tc->malloc_fail ? -1 : 0) && (aad_put_data != NULL) == (tc->expect_put != 0) && stored && lower &&
            aad_tmp_len == (size_t)tc->expect_tmp_len;
 }
 

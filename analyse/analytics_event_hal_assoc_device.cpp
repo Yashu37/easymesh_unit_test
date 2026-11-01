@@ -1,14 +1,15 @@
 /*
  * HANDLER: analytics_event_hal_assoc_device
  *
- * Function copied VERBATIM from OneWifi source/apps/analytics/wifi_analytics.c.
- * No fixes. Local arrays and their writers:
+ * Function copied VERBATIM from OneWifi source/apps/analytics/wifi_analytics.c,
+ * plus one FIX. Local arrays and their writers:
  *   - client_mac[32] <- to_mac_str(mac, client_mac)  (snprintf(key, 18)),
  *                       then str_tolower(client_mac) in place
  *   - temp_str[64]   <- sprintf(temp_str, "\"%s\" vap index:%d", ...)
  *                       (NO size: longest is 2+17+11+11 = 41 chars)
- * Note: malloc(sizeof(analytics_sta_info_t)) is used without a NULL check
- * (checked by the last case).
+ * malloc(sizeof(analytics_sta_info_t)) was used without a NULL check
+ * (sta_info->ap_index on NULL). FIX APPLIED: "if (sta_info == NULL) return
+ * RETURN_ERR;" right after the malloc. Only that line was added.
  *
  * Redirects (write into runner slots of the SAME size, then copy back):
  *   - to_mac_str() -> aad_to_mac_str(): verbatim to_mac_str on aad_slot_mac (32).
@@ -35,6 +36,7 @@
 
 /* --- scaffolding --- */
 #define RETURN_OK 0
+#define RETURN_ERR -1
 #define WIFI_ANALYTICS 0
 #define analytics_format_hal_core    "HAL -> CORE : %s : %s\r\n"     /* wifi_analytics.h */
 
@@ -135,6 +137,7 @@ int analytics_event_hal_assoc_device(wifi_app_t *apps, void *arg)
 
     if ((sta_info = (analytics_sta_info_t *)hash_map_get(sta_map, client_mac)) == NULL) {
         sta_info = malloc(sizeof(analytics_sta_info_t));
+        if (sta_info == NULL) return RETURN_ERR;   /* FIX: malloc result was used unchecked */
         sta_info->ap_index = assoc_data->ap_index;
         memcpy(sta_info->sta_mac, assoc_data->dev_stats.cli_MACAddress, sizeof(mac_address_t));
         hash_map_put(sta_map, strdup(client_mac), sta_info);

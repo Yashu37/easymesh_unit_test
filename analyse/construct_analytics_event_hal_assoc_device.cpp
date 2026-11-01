@@ -8,7 +8,8 @@
  *
  * Cases: new station, station already known (updated in place), upper-case
  * hex in the MAC (lowered), ap_index INT_MIN / INT_MAX (longest temp_str =
- * 41 chars), and LAST malloc returning NULL (no check in the function).
+ * 41 chars), and malloc returning NULL (crashed before the fix; now
+ * returns RETURN_ERR).
  */
 
 #include <stdio.h>
@@ -37,7 +38,7 @@ analytics_event_hal_assoc_device_test_case_t analytics_event_hal_assoc_device_su
     { "mac_upper_hex",        3,     0,       0,         1,    1,   31 },
     { "ap_index_int_min",  INT_MIN,  0,       0,         1,    1,   41 },
     { "ap_index_int_max",  INT_MAX,  0,       0,         1,    1,   40 },
-    { "malloc_fails",         4,     0,       1,         0,    0,   31 },   /* NULL deref expected */
+    { "malloc_fails",         4,     0,       1,         0,    0,   31 },   /* RETURN_ERR after the fix */
 
     { NULL, 0, 0, 0, 0, 0, 0 }  /* sentinel */
 };
