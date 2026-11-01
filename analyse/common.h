@@ -2138,6 +2138,26 @@ void construct_is_blaster_device_associated_input(const is_blaster_device_associ
 int  test_is_blaster_device_associated(const is_blaster_device_associated_test_case_t *tc);
 void run_all_tests_is_blaster_device_associated(void);
 
+// --- DeviceCpuUtil_DataGet harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define DCU_SLOT_SZ  256     // = sizeof(buff)
+#define DCU_PAD      64
+typedef struct {
+	const char  *test_name;     // case name
+	const char  *content;       // /proc/stat content (NULL = file missing)
+	bool         expect_ret;    // expected return
+	unsigned int expect_util;   // expected *util_cpu
+} DeviceCpuUtil_DataGet_test_case_t;
+
+extern char dcu_path[64];
+extern char dcu_slot[DCU_SLOT_SZ + DCU_PAD];
+extern int  dcu_lines;
+extern char dcu_util_buf[sizeof(unsigned int) + DCU_PAD];
+extern DeviceCpuUtil_DataGet_test_case_t DeviceCpuUtil_DataGet_suite[];
+
+void construct_DeviceCpuUtil_DataGet_input(const DeviceCpuUtil_DataGet_test_case_t *tc);
+int  test_DeviceCpuUtil_DataGet(const DeviceCpuUtil_DataGet_test_case_t *tc);
+void run_all_tests_DeviceCpuUtil_DataGet(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

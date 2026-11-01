@@ -245,5 +245,8 @@ int main() {
 
 	// is_blaster_device_associated OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_is_blaster_device_associated();
+
+	// DeviceCpuUtil_DataGet OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_DeviceCpuUtil_DataGet();
 	return 0;
 }
