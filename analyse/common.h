@@ -1186,6 +1186,27 @@ void construct_ovsdb_cache_upsert_input(const ovsdb_cache_upsert_test_case_t *tc
 int  test_ovsdb_cache_upsert(const ovsdb_cache_upsert_test_case_t *tc);
 void run_all_tests_ovsdb_cache_upsert(void);
 
+// --- onewifi_ovsdb_method_send_s harness (OneWifi lib/ovsdb/ovsdb_sync.c) ---
+typedef enum { MT_ECHO, MT_MONITOR, MT_TRANS } ovsdb_mt_t;   // lib/ovsdb/ovsdb.h
+typedef struct {
+	const char *test_name;      // case name
+	int         mt;             // ovsdb_mt_t value (0 echo, 1 monitor, 2 transact, other = unknown)
+	const char *reply;          // JSON reply from ovsdb_write_s (NULL = none, "ERR<n>" = error with n-char message)
+	int         sock_fill;      // >0: socket path = sock_fill x 's'
+	int         expect_result;  // a result object is returned
+	int         expect_writes;  // ovsdb_write_s calls
+} ovsdb_method_send_s_test_case_t;
+
+extern char        oms_sock[256];
+extern size_t      oms_sock_len, oms_sock_seen;
+extern int         oms_writes;
+extern const char *oms_reply;
+extern ovsdb_method_send_s_test_case_t ovsdb_method_send_s_suite[];
+
+void construct_ovsdb_method_send_s_input(const ovsdb_method_send_s_test_case_t *tc);
+int  test_ovsdb_method_send_s(const ovsdb_method_send_s_test_case_t *tc);
+void run_all_tests_ovsdb_method_send_s(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
