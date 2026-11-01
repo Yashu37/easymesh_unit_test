@@ -2383,6 +2383,22 @@ void construct_SetActiveMsmtStepDstMac_input(const SetActiveMsmtStepDstMac_test_
 int  test_SetActiveMsmtStepDstMac(const SetActiveMsmtStepDstMac_test_case_t *tc);
 void run_all_tests_SetActiveMsmtStepDstMac(void);
 
+// --- SetActiveMsmtStepSrcMac harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+#define SSM_PAD  64
+typedef struct {
+	const char   *test_name;    // case name
+	const char   *src_mac;      // SrcMac input string
+	unsigned char expect_mac[6];// expected Step[STEP].SrcMac
+} SetActiveMsmtStepSrcMac_test_case_t;
+
+extern char ssm_mgr_buf[sizeof(wifi_actvie_msmt_t) + SSM_PAD];
+extern char ssm_src_buf[64 + SSM_PAD];
+extern SetActiveMsmtStepSrcMac_test_case_t SetActiveMsmtStepSrcMac_suite[];
+
+void construct_SetActiveMsmtStepSrcMac_input(const SetActiveMsmtStepSrcMac_test_case_t *tc);
+int  test_SetActiveMsmtStepSrcMac(const SetActiveMsmtStepSrcMac_test_case_t *tc);
+void run_all_tests_SetActiveMsmtStepSrcMac(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

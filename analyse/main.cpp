@@ -266,5 +266,8 @@ int main() {
 
 	// SetActiveMsmtStepDstMac OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_SetActiveMsmtStepDstMac();
+
+	// SetActiveMsmtStepSrcMac OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_SetActiveMsmtStepSrcMac();
 	return 0;
 }
