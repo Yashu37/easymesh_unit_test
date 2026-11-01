@@ -278,5 +278,8 @@ int main() {
 
 	// DeviceMemory_DataGet OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_DeviceMemory_DataGet();
+
+	// WiFiBlastClient OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+	run_all_tests_WiFiBlastClient();
 	return 0;
 }
