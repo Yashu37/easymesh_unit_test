@@ -1348,6 +1348,31 @@ void construct_ovsdb_table_monitor_columns_input(const ovsdb_table_monitor_colum
 int  test_ovsdb_table_monitor_columns(const ovsdb_table_monitor_columns_test_case_t *tc);
 void run_all_tests_ovsdb_table_monitor_columns(void);
 
+// --- onewifi_ovsdb_table_monitor_filter harness (OneWifi lib/ovsdb/ovsdb_table.c) ---
+#define OTF2_MAX  63
+typedef struct {
+	const char *test_name;      // case name
+	int         schema_n;       // number of schema columns in table->columns
+	int         filter_null;    // filter = NULL
+	const char *filter;         // space-separated filter argv (NULL = empty argv {NULL}, "EMPTYOP" = {""})
+	int         expect_null;    // monitor_columns got columns == NULL
+	int         expect_count;   // columns given to monitor_columns
+	int         expect_version; // "_version" among them
+} ovsdb_table_monitor_filter_test_case_t;
+
+extern char  otf2_schema_strs[OTF2_MAX][16];
+extern char *otf2_schema_argv[OTF2_MAX + 1];
+extern char  otf2_filter_strs[OTF2_MAX][16];
+extern char *otf2_filter_argv[OTF2_MAX + 1];
+extern int   otf2_schema_n, otf2_filter_n;
+extern int   otf2_called, otf2_got_null, otf2_got_count, otf2_has_version;
+extern ovsdb_table_t otf2_table;
+extern ovsdb_table_monitor_filter_test_case_t ovsdb_table_monitor_filter_suite[];
+
+void construct_ovsdb_table_monitor_filter_input(const ovsdb_table_monitor_filter_test_case_t *tc);
+int  test_ovsdb_table_monitor_filter(const ovsdb_table_monitor_filter_test_case_t *tc);
+void run_all_tests_ovsdb_table_monitor_filter(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
