@@ -152,5 +152,8 @@ int main() {
 
 	// onewifi_ovsdb_method_send_s OOB check (OneWifi lib/ovsdb/ovsdb_sync.c).
 //	run_all_tests_ovsdb_method_send_s();
+
+	// onewifi_ovsdb_sync_update_one_get_uuid OOB check (OneWifi lib/ovsdb/ovsdb_sync_api.c).
+//	run_all_tests_ovsdb_sync_update_one_get_uuid();
 	return 0;
 }

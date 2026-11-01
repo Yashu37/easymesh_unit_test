@@ -1207,6 +1207,29 @@ void construct_ovsdb_method_send_s_input(const ovsdb_method_send_s_test_case_t *
 int  test_ovsdb_method_send_s(const ovsdb_method_send_s_test_case_t *tc);
 void run_all_tests_ovsdb_method_send_s(void);
 
+// --- onewifi_ovsdb_sync_update_one_get_uuid harness (OneWifi lib/ovsdb/ovsdb_sync_api.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         where_len;      // encoded JSON length of where (-1 = NULL)
+	int         select_count;   // ovsdb_sync_get_uuid_and_count result
+	int         update_count;   // onewifi_ovsdb_sync_update_where result
+	int         uuid_fill;      // >0: uuid from db = uuid_fill x 'u'
+	int         table_fill;     // >0: table name = table_fill x 't'
+	int         expect_ret;     // expected return
+	int         expect_updates; // update_where calls
+} ovsdb_sync_update_one_get_uuid_test_case_t;
+
+extern char   osu_table[256];
+extern size_t osu_table_len, osu_table_seen;
+extern unsigned char osu_uuidbuf[64];
+extern int    osu_select_count, osu_update_count, osu_updates;
+extern char   osu_db_uuid[256];
+extern ovsdb_sync_update_one_get_uuid_test_case_t ovsdb_sync_update_one_get_uuid_suite[];
+
+void construct_ovsdb_sync_update_one_get_uuid_input(const ovsdb_sync_update_one_get_uuid_test_case_t *tc);
+int  test_ovsdb_sync_update_one_get_uuid(const ovsdb_sync_update_one_get_uuid_test_case_t *tc);
+void run_all_tests_ovsdb_sync_update_one_get_uuid(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
