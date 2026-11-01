@@ -1249,6 +1249,30 @@ void construct_ovsdb_sync_update_where_input(const ovsdb_sync_update_where_test_
 int  test_ovsdb_sync_update_where(const ovsdb_sync_update_where_test_case_t *tc);
 void run_all_tests_ovsdb_sync_update_where(void);
 
+// --- onewifi_ovsdb_sync_upsert_where harness (OneWifi lib/ovsdb/ovsdb_sync_api.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	int         where_len;      // encoded JSON length of where (-1 = NULL)
+	int         update_count;   // onewifi_ovsdb_sync_update_one_get_uuid result
+	int         insert_ok;      // onewifi_ovsdb_sync_insert succeeds
+	int         use_uuid;       // pass a uuid output (0 = NULL)
+	int         uuid_fill;      // >0: uuid from db = uuid_fill x 'u'
+	int         table_fill;     // >0: table name = table_fill x 't'
+	int         expect_ret;     // expected return (1 = true)
+	int         expect_inserts; // insert calls
+} ovsdb_sync_upsert_where_test_case_t;
+
+extern char   osp_table[256];
+extern size_t osp_table_len, osp_table_seen;
+extern unsigned char osp_uuidbuf[64];
+extern int    osp_update_count, osp_insert_ok, osp_updates, osp_inserts;
+extern char   osp_db_uuid[256];
+extern ovsdb_sync_upsert_where_test_case_t ovsdb_sync_upsert_where_suite[];
+
+void construct_ovsdb_sync_upsert_where_input(const ovsdb_sync_upsert_where_test_case_t *tc);
+int  test_ovsdb_sync_upsert_where(const ovsdb_sync_upsert_where_test_case_t *tc);
+void run_all_tests_ovsdb_sync_upsert_where(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
