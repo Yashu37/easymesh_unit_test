@@ -110,5 +110,14 @@ int main() {
 
 	// mlog OOB check (OneWifi lib/log/log.c).
 //	run_all_tests_mlog();
+
+	// os_file_open OOB check (OneWifi lib/osa/os_file_ops.c).
+//	run_all_tests_os_file_open();
+
+	// os_name_to_pid OOB check (OneWifi lib/osa/os_proc.c).
+//	run_all_tests_os_name_pid();
+
+	// os_nif_gateway_del OOB check (OneWifi lib/osa/os_nif_linux.c).
+//	run_all_tests_os_nif_gateway_del();
 	return 0;
 }

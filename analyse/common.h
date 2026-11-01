@@ -787,6 +787,73 @@ void construct_mlog_input(const mlog_test_case_t *tc);
 int  test_mlog(const mlog_test_case_t *tc);
 void run_all_tests_mlog(void);
 
+// --- os_file_open harness (OneWifi lib/osa/os_file_ops.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *location;       // directory
+	const char *prefix;         // file prefix
+	int         pre_fill;       // pad prefix to this length (0 = use prefix)
+	int         loc_fill;       // (reserved)
+	int         expect_fp;      // expect fopen to succeed (1) or not (0)
+} os_file_open_test_case_t;
+
+extern char        ofo_location[256];
+extern char        ofo_prefix[256];
+extern size_t      ofo_loc_len, ofo_pre_len;
+extern const char *ofo_case_name;
+extern os_file_open_test_case_t os_file_open_suite[];
+
+void construct_os_file_open_input(const os_file_open_test_case_t *tc);
+int  test_os_file_open(const os_file_open_test_case_t *tc);
+void run_all_tests_os_file_open(void);
+
+// --- os_name_to_pid harness (OneWifi lib/osa/os_proc.c) ---
+#define ONP_SELF     0
+#define ONP_LITERAL  1
+#define ONP_EMPTY    2
+#define ONP_LONG     3
+typedef struct {
+	const char *test_name;      // case name
+	int         which;          // ONP_SELF / ONP_LITERAL / ONP_EMPTY / ONP_LONG
+	int         expect_found;   // expect a pid (1) or not (0)
+} os_name_pid_test_case_t;
+
+extern char        onp_name[256];
+extern size_t      onp_name_len;
+extern char        onp_self_comm[64];
+extern const char *onp_case_name;
+extern os_name_pid_test_case_t os_name_pid_suite[];
+
+void construct_os_name_pid_input(const os_name_pid_test_case_t *tc);
+int  test_os_name_pid(const os_name_pid_test_case_t *tc);
+void run_all_tests_os_name_pid(void);
+
+// --- os_ipaddr_t / os_macaddr_t (verbatim from OneWifi lib/osa/os_types.h + lib/const/const.h) ---
+typedef struct { uint8_t addr[6]; } os_macaddr_t;
+typedef struct { uint8_t addr[4]; } os_ipaddr_t;
+#define PRI(type)               PRI_ ## type
+#define FMT(type, x)            FMT_ ## type (x)
+#define PRI_os_macaddr_t        "%02X:%02X:%02X:%02X:%02X:%02X"
+#define FMT_os_macaddr_t(x)     (x).addr[0], (x).addr[1], (x).addr[2], (x).addr[3], (x).addr[4], (x).addr[5]
+#define PRI_os_ipaddr_t         "%d.%d.%d.%d"
+#define FMT_os_ipaddr_t(x)      (x).addr[0], (x).addr[1], (x).addr[2], (x).addr[3]
+
+// --- os_nif_gateway_set / os_nif_gateway_del harnesses (OneWifi lib/osa/os_nif_linux.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *ifname;         // literal ifname (used when fill == 0)
+	int         fill;           // >0: ifname = fill x 'w'
+	os_ipaddr_t gw;             // gateway address
+} os_nif_gw_test_case_t;
+
+extern char        ogd_ifname[256];
+extern size_t      ogd_ifname_len;
+extern os_ipaddr_t ogd_gw;
+extern os_nif_gw_test_case_t os_nif_gateway_del_suite[];
+void construct_os_nif_gateway_del_input(const os_nif_gw_test_case_t *tc);
+int  test_os_nif_gateway_del(const os_nif_gw_test_case_t *tc);
+void run_all_tests_os_nif_gateway_del(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
