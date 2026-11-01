@@ -1437,6 +1437,32 @@ void construct_ovsdb_tran_comment_input(const ovsdb_tran_comment_test_case_t *tc
 int  test_ovsdb_tran_comment(const ovsdb_tran_comment_test_case_t *tc);
 void run_all_tests_ovsdb_tran_comment(void);
 
+// --- onewifi_ovsdb_update_changed harness (OneWifi lib/ovsdb/ovsdb_update.c) ---
+#define OUC_SLOT_SZ   256     // = sizeof(v_old) / sizeof(v_new)
+#define OUC_SLOT_PAD  64
+#define OUC_STR_SZ    64
+typedef struct {
+	const char *test_name;      // case name
+	int         mon_type;       // OVSDB_UPDATE_* (or invalid)
+	int         old_kind;       // 0 field absent in old, 1 in both, 2 missing in new, 3 array value
+	int         val_len;        // string length / array elements
+	int         expect_changed; // expected return
+	int         expect_old;     // v_old length (-1 = any < 256)
+	int         expect_new;     // v_new length (-1 = any < 256)
+} ovsdb_update_changed_test_case_t;
+
+extern char   oucg_slot[2][OUC_SLOT_SZ + OUC_SLOT_PAD];
+extern size_t oucg_len[2];
+extern int    oucg_next;
+extern char   ouc_field[OUC_STR_SZ];
+extern char   ouc_table[OUC_STR_SZ];
+extern ovsdb_update_monitor_t ouc_mon;
+extern ovsdb_update_changed_test_case_t ovsdb_update_changed_suite[];
+
+void construct_ovsdb_update_changed_input(const ovsdb_update_changed_test_case_t *tc);
+int  test_ovsdb_update_changed(const ovsdb_update_changed_test_case_t *tc);
+void run_all_tests_ovsdb_update_changed(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
