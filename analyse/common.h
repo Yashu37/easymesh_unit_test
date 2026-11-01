@@ -1013,6 +1013,7 @@ void run_all_tests_os_pid_to_name(void);
 typedef char pjs_errmsg_t[128];                                              // lib/pjs/pjs_common.h
 typedef bool schema_from_json_t(void *out, void *js, bool update, pjs_errmsg_t err);  // ovsdb_table.h
 typedef void schema_mark_changed_t(void *old, void *rec);                    // ovsdb_table.h
+typedef void *schema_to_json_t(void *in, pjs_errmsg_t err);                 // ovsdb_table.h (returns json_t *)
 #define PJS_OVS_UUID_SZ             37      /* Max OVS UUID size */  // lib/pjs/pjs_common.h
 typedef struct
 {
@@ -1062,6 +1063,7 @@ typedef struct ovsdb_table
     int                     key2_offset; // optional alternate key2, example: radio_config
     char                    key2_name[OVSDB_TABLE_KEY_SIZE];
     schema_from_json_t      *from_json;
+    schema_to_json_t        *to_json;
     schema_mark_changed_t   *mark_changed;
     bool                    partial_update;
     // cache:
@@ -1156,6 +1158,33 @@ extern ovsdb_cache_update_cb_test_case_t ovsdb_cache_update_cb_suite[];
 void construct_ovsdb_cache_update_cb_input(const ovsdb_cache_update_cb_test_case_t *tc);
 int  test_ovsdb_cache_update_cb(const ovsdb_cache_update_cb_test_case_t *tc);
 void run_all_tests_ovsdb_cache_update_cb(void);
+
+// --- onewifi_ovsdb_cache_upsert harness (OneWifi lib/ovsdb/ovsdb_cache.c) ---
+#define OCS_SLOT_SZ  OCU_SLOT_SZ
+typedef struct {
+	const char *test_name;      // case name
+	int         no_key;         // key_offset = -1
+	int         cached;         // find_row_by_key returns the cached row
+	const char *rec_name;       // if_name in the caller record (NULL = 63 x 'n')
+	int         tj_fail;        // to_json fails
+	int         upsert_ok;      // onewifi_ovsdb_sync_upsert succeeds
+	int         db_uuid_fill;   // >0: uuid from db = db_uuid_fill x 'u'
+	int         expect_ret;     // expected return (0 / -1)
+	int         expect_upserts; // db upsert calls
+	int         expect_insert;  // new row inserted
+} ovsdb_cache_upsert_test_case_t;
+
+extern unsigned char ocs_pool[2][OCS_SLOT_SZ];
+extern char   ocs_rec[OCU_SCHEMA_SZ + 64];
+extern int    ocs_cached, ocs_upserts, ocs_asked_uuid, ocs_upsert_ok, ocs_tj_fail;
+extern size_t ocs_perr_len;
+extern char   ocs_db_uuid[256];
+extern ovsdb_table_t ocs_table;
+extern ovsdb_cache_upsert_test_case_t ovsdb_cache_upsert_suite[];
+
+void construct_ovsdb_cache_upsert_input(const ovsdb_cache_upsert_test_case_t *tc);
+int  test_ovsdb_cache_upsert(const ovsdb_cache_upsert_test_case_t *tc);
+void run_all_tests_ovsdb_cache_upsert(void);
 
 // PCAP Global Header
 struct pcap_global_header {
