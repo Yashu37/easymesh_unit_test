@@ -945,6 +945,28 @@ void construct_os_nif_macaddr_from_str_input(const os_nif_macaddr_test_case_t *t
 int  test_os_nif_macaddr_from_str(const os_nif_macaddr_test_case_t *tc);
 void run_all_tests_os_nif_macaddr_from_str(void);
 
+// --- os_nif_softwds_create harness (OneWifi lib/osa/os_nif_linux.c) ---
+typedef struct {
+	const char *test_name;      // case name
+	const char *ifname;         // literal ifname (used when if_fill == 0)
+	int         if_fill;        // >0: ifname = if_fill x 'i'
+	const char *parent;         // literal parent (used when par_fill == 0)
+	int         par_fill;       // >0: parent = par_fill x 'p'
+	int         wrap;           // wrap flag
+	int         create_exit;    // exit status the stubbed cmd_log returns for create
+	int         expect_ret;     // expected return (1 = true)
+} os_nif_softwds_test_case_t;
+
+extern char   osc_ifname[256], osc_parent[256];
+extern size_t osc_ifname_len, osc_parent_len;
+extern size_t osc_max_cmd_len;
+extern int    osc_calls, osc_create_exit;
+extern os_nif_softwds_test_case_t os_nif_softwds_create_suite[];
+
+void construct_os_nif_softwds_create_input(const os_nif_softwds_test_case_t *tc);
+int  test_os_nif_softwds_create(const os_nif_softwds_test_case_t *tc);
+void run_all_tests_os_nif_softwds_create(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

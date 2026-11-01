@@ -128,5 +128,8 @@ int main() {
 
 	// os_nif_macaddr_from_str OOB check (OneWifi lib/osa/os_nif_linux.c).
 //	run_all_tests_os_nif_macaddr_from_str();
+
+	// os_nif_softwds_create OOB check (OneWifi lib/osa/os_nif_linux.c).
+//	run_all_tests_os_nif_softwds_create();
 	return 0;
 }
