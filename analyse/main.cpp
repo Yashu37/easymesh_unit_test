@@ -239,5 +239,8 @@ int main() {
 
 	// analytics_event_udhcp_ip_fail OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
 //	run_all_tests_analytics_event_udhcp_ip_fail();
+
+	// analytics_event_new_bssid OOB check (OneWifi source/apps/analytics/wifi_analytics.c).
+//	run_all_tests_analytics_event_new_bssid();
 	return 0;
 }

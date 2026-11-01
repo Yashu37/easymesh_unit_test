@@ -1966,7 +1966,10 @@ typedef struct {                             // subset of HAL wifi_bss_info_t (b
 	unsigned char bssid[6];                  // bssid_t
 	char          ssid[33];                  // ssid_t
 	int           rssi;
-	unsigned char rest[64];                  // remaining fields (not touched)
+	unsigned short caps;
+	unsigned int  beacon_int;
+	unsigned int  freq;
+	unsigned char rest[54];                  // ie[], ie_len, ... snr (not touched)
 } __attribute__((packed)) wifi_bss_info_t;
 typedef struct scan_result {                 // source/core/services/vap_svc.h
 	wifi_bss_info_t external_ap;
@@ -2062,6 +2065,32 @@ extern analytics_event_udhcp_ip_fail_test_case_t analytics_event_udhcp_ip_fail_s
 void construct_analytics_event_udhcp_ip_fail_input(const analytics_event_udhcp_ip_fail_test_case_t *tc);
 int  test_analytics_event_udhcp_ip_fail(const analytics_event_udhcp_ip_fail_test_case_t *tc);
 void run_all_tests_analytics_event_udhcp_ip_fail(void);
+
+// --- analytics_event_new_bssid harness (OneWifi source/apps/analytics/wifi_analytics.c) ---
+// reuses vap_svc_ext_t / bss_candidate_t / wifi_bss_info_t from the blocks above
+#define ANB_MAC_SZ   18      // = sizeof(bssid_str) (mac_addr_str_t)
+#define ANB_TMP_SZ   512     // = sizeof(temp_str)
+#define ANB_PAD      64
+typedef struct {
+	const char   *test_name;    // case name
+	int           arg_null;     // arg = NULL
+	unsigned int  vap_index;    // ext->new_bss.vap_index
+	unsigned int  freq;         // ext->new_bss.external_ap.freq
+	unsigned char bssid0;       // first new_bss BSSID byte (others +1..+5)
+	int           expect_ret;   // expected return
+	const char   *expect;       // expected temp_str
+} analytics_event_new_bssid_test_case_t;
+
+extern char   anb_slot_mac[ANB_MAC_SZ + ANB_PAD];
+extern char   anb_slot_tmp[ANB_TMP_SZ + ANB_PAD];
+extern size_t anb_tmp_len;
+extern int    anb_mac_calls;
+extern char   anb_arg_buf[sizeof(vap_svc_ext_t) + ANB_PAD];
+extern analytics_event_new_bssid_test_case_t analytics_event_new_bssid_suite[];
+
+void construct_analytics_event_new_bssid_input(const analytics_event_new_bssid_test_case_t *tc);
+int  test_analytics_event_new_bssid(const analytics_event_new_bssid_test_case_t *tc);
+void run_all_tests_analytics_event_new_bssid(void);
 
 // PCAP Global Header
 struct pcap_global_header {
