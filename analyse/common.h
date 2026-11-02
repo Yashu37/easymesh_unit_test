@@ -1732,6 +1732,19 @@ extern em_gvb_test_case_t em_get_vap_index_from_bssid_suite[];
 void construct_em_get_vap_index_from_bssid_input(const em_gvb_test_case_t *tc);
 void run_all_tests_em_get_vap_index_from_bssid(void);
 
+/* --- em_match_radio_index_to_policy_index harness --- */
+#define EMM_PAD 64
+typedef struct { unsigned char ruid[6]; } emm_radio_policy_t;
+typedef struct { int radio_count; emm_radio_policy_t radio_metrics_policy[8]; } radio_metrics_policies_t;
+extern char emm_mgr_buf[];
+extern char emm_pol_buf[];
+extern int  emm_found_index, emm_grifm_calls;
+struct em_mri_test_case { const char *test_name; int radio_index; int want_ret; };
+typedef struct em_mri_test_case em_mri_test_case_t;
+extern em_mri_test_case_t em_match_radio_index_to_policy_index_suite[];
+void construct_em_match_radio_index_to_policy_index_input(const em_mri_test_case_t *tc);
+void run_all_tests_em_match_radio_index_to_policy_index(void);
+
 #define APR_SLOT_SZ     32    // = sizeof(key_str)
 #define APR_SLOT_PAD    64
 #define APR_POOL_SLOTS  8

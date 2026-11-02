@@ -341,5 +341,6 @@ int main() {
 //	run_all_tests_easyconnect_init();
 //	run_all_tests_em_get_radio_index_from_mac();
 //	run_all_tests_em_get_vap_index_from_bssid();
+//	run_all_tests_em_match_radio_index_to_policy_index();
 	return 0;
 }
