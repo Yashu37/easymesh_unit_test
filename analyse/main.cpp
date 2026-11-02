@@ -317,5 +317,8 @@ int main() {
 
 	// csi_start_fn OOB check (OneWifi source/apps/csi/wifi_csi.c).
 //	run_all_tests_csi_start_fn();
+
+	// csi_stop_fn OOB check (OneWifi source/apps/csi/wifi_csi.c).
+//	run_all_tests_csi_stop_fn();
 	return 0;
 }

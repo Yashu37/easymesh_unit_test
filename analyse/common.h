@@ -2798,6 +2798,23 @@ void construct_csi_start_fn_input(const csi_start_fn_test_case_t *tc);
 int  test_csi_start_fn(const csi_start_fn_test_case_t *tc);
 void run_all_tests_csi_start_fn(void);
 
+// --- csi_stop_fn harness (OneWifi source/apps/csi/wifi_csi.c) ---
+#define CSP_MAC_SZ 18
+#define CSP_PAD    64
+typedef struct { const char *test_name; int app_null; int map_null; int found; int first_match; int sub_apps; int sounding; unsigned char mac0; int expect_ret; int expect_remove; } csi_stop_fn_test_case_t;
+extern char   csp_slot_mac[CSP_MAC_SZ + CSP_PAD];
+extern char   csp_key_seen[64];
+extern wifi_app_t *csp_app;
+extern void  *csp_entry, *csp_first;
+extern int    csp_remove_calls;
+extern wifi_app_t *csp_app;
+extern char   csp_app_buf[sizeof(wifi_app_t) + CSP_PAD];
+extern unsigned char csp_mac_buf[6 + CSP_PAD];
+extern csi_stop_fn_test_case_t csi_stop_fn_suite[];
+void construct_csi_stop_fn_input(const csi_stop_fn_test_case_t *tc);
+int  test_csi_stop_fn(const csi_stop_fn_test_case_t *tc);
+void run_all_tests_csi_stop_fn(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
