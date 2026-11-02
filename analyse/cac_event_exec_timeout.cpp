@@ -32,7 +32,6 @@
 #define WLAN_STATUS_DENIED_POOR_CHANNEL_CONDITIONS 34
 typedef enum { status_ok, status_deny } cac_status_t;
 
-typedef struct { unsigned int ap_index; mac_address_t sta_mac; int rssi_avg; int snr_avg; int uplink_rate_avg; int sampling_count; int sampling_interval; } cac_associated_devices_t;
 typedef struct { char rssi_up_threshold[129]; char snr_threshold[129]; char cu_threshold[129]; char sampling_count[129]; char sampling_interval[129]; } wifi_postassoc_control_t;
 typedef struct { char minimum_advertised_mcs[129]; char basic_data_transmit_rates[129]; } wifi_preassoc_control_t;
 typedef struct { int radio_NoiseFloor; } wifi_radioTrafficStats2_t;

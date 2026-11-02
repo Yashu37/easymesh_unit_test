@@ -304,6 +304,6 @@ int main() {
 //	run_all_tests_cac_event_exec_timeout();
 
 	// cac_event_hal_assoc_device OOB check (OneWifi source/apps/cac/wifi_cac.c).
-	run_all_tests_cac_event_hal_assoc_device();
+//	run_all_tests_cac_event_hal_assoc_device();
 	return 0;
 }

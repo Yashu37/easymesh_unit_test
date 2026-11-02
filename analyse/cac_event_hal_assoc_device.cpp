@@ -1,12 +1,11 @@
 /*
  * HANDLER: cac_event_hal_assoc_device
  *
- * Function copied VERBATIM from OneWifi source/apps/cac/wifi_cac.c. No fixes.
+ * Function from OneWifi source/apps/cac/wifi_cac.c with ONE FIX.
  * Local arrays: vap_name[32] (convert_vap_index_to_name), client_mac[32]
  * (to_mac_str + str_tolower), temp_str[64] (snprintf) -- all bounded.
- * NOTE: sta_info = malloc(sizeof(cac_associated_devices_t)) is dereferenced
- * with NO NULL check (sta_info->ap_index ...), so a failing malloc is a NULL
- * deref -- exercised by the last case.
+ * FIX APPLIED: sta_info = malloc(...) now has a NULL check (if NULL return
+ * RETURN_OK); previously it was dereferenced unchecked (NULL deref on OOM).
  *
  * Redirects: to_mac_str()->cad slot(32); snprintf()->cad slot(64); malloc()->
  * runner pool. The RUNNER poisons client_mac slot past 32, temp_str slot past
@@ -100,6 +99,7 @@ int cac_event_hal_assoc_device(wifi_app_t *apps, void *arg)
 
     if ((sta_info = (cac_associated_devices_t *)hash_map_get(sta_map, client_mac)) == NULL) {
         sta_info = malloc(sizeof(cac_associated_devices_t));
+        if (sta_info == NULL) return RETURN_OK;   /* FIX: malloc result was used unchecked */
         sta_info->ap_index = assoc_data->ap_index;
         sta_info->sampling_count = sampling_count_conf;
         sta_info->sampling_interval = sampling_interval_conf;
