@@ -2367,7 +2367,7 @@ void run_all_tests_blaster_str_to_mac_bytes(void);
 
 // --- active_msmt_log_message harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
 typedef enum { BLASTER_INFO_LOG = 0, BLASTER_DEBUG_LOG } blaster_log_level_t;  // wifi_blaster.h
-typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; unsigned int webconfig_state; } wifi_ctrl_t;   // subset (apps_mgr + mode + webconfig_state)
+typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; unsigned int webconfig_state; int webconfig; } wifi_ctrl_t;   // subset (apps_mgr + mode + webconfig_state + webconfig)
 typedef struct {                               // stand-in: CCSP trace hooks + ctrl + hal_cap used by blaster
 	struct {
 		struct {
@@ -3693,7 +3693,7 @@ typedef struct {
 	unsigned int   scan_type;
 	neighbor_bss_t neighbors[EM_MAX_NEIGHBORS];
 } channel_scan_result_t;
-typedef struct {
+typedef struct channel_scan_response_t {
 	unsigned char       ruid[6];
 	unsigned int        num_results;
 	channel_scan_result_t results[EM_MAX_RESULTS];
@@ -3720,6 +3720,22 @@ typedef struct em_epsr_test_case em_epsr_test_case_t;
 extern em_epsr_test_case_t em_prepare_scan_response_data_suite[];
 void construct_em_prepare_scan_response_data_input(const em_epsr_test_case_t *tc);
 void run_all_tests_em_prepare_scan_response_data(void);
+
+/* --- em_publish_stats_data harness (uses channel_scan_response_t + wifi_ctrl_t) --- */
+#ifndef MAX_EVENT_NAME_SIZE
+#define MAX_EVENT_NAME_SIZE 200
+#endif
+#define EPS_PAD 64
+extern char eps_ctrl_buf[];
+extern char eps_scanresp_buf[];
+extern int  eps_encode_fail, eps_publish_fail;
+extern char eps_published_event[256];
+extern int  eps_publish_calls;
+struct em_eps_test_case { const char *test_name; int encode_fail; int publish_fail; int want_ret; };
+typedef struct em_eps_test_case em_eps_test_case_t;
+extern em_eps_test_case_t em_publish_stats_data_suite[];
+void construct_em_publish_stats_data_input(const em_eps_test_case_t *tc);
+void run_all_tests_em_publish_stats_data(void);
 
 typedef struct {
 	bssid_t bssid;
