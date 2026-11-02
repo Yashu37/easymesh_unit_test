@@ -2720,6 +2720,23 @@ void construct_cac_event_hal_assoc_device_input(const cac_event_hal_assoc_device
 int  test_cac_event_hal_assoc_device(const cac_event_hal_assoc_device_test_case_t *tc);
 void run_all_tests_cac_event_hal_assoc_device(void);
 
+// --- cac_event_hal_disassoc_device harness (OneWifi source/apps/cac/wifi_cac.c) ---
+#define CDD_MAC_SZ 32
+#define CDD_TMP_SZ 64
+#define CDD_PAD    64
+typedef struct { const char *test_name; int existing; unsigned char mac0; int reason; int expect_remove; } cac_event_hal_disassoc_device_test_case_t;
+extern char   cdd_slot_mac[CDD_MAC_SZ + CDD_PAD];
+extern char   cdd_slot_tmp[CDD_TMP_SZ + CDD_PAD];
+extern size_t cdd_tmp_len;
+extern char   cdd_key_seen[64], cdd_existing_key[32];
+extern int    cdd_existing, cdd_remove_calls;
+extern char   cdd_arg_buf[sizeof(assoc_dev_data_t) + CDD_PAD];
+extern char   cdd_apps_buf[sizeof(wifi_app_t) + CDD_PAD];
+extern cac_event_hal_disassoc_device_test_case_t cac_event_hal_disassoc_device_suite[];
+void construct_cac_event_hal_disassoc_device_input(const cac_event_hal_disassoc_device_test_case_t *tc);
+int  test_cac_event_hal_disassoc_device(const cac_event_hal_disassoc_device_test_case_t *tc);
+void run_all_tests_cac_event_hal_disassoc_device(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
