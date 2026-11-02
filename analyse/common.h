@@ -3737,6 +3737,38 @@ extern em_eps_test_case_t em_publish_stats_data_suite[];
 void construct_em_publish_stats_data_input(const em_eps_test_case_t *tc);
 void run_all_tests_em_publish_stats_data(void);
 
+/* --- em_process_neighbour_data harness (uses wifi_neighbor_ap2_t + channel_scan_response_t) --- */
+#ifndef MAX_LOCAL_SSIDS
+#define MAX_LOCAL_SSIDS 16
+#endif
+#ifndef MAX_SSID_LEN
+#define MAX_SSID_LEN 33
+#endif
+#define EPND_PAD 64
+typedef struct { wifi_neighbor_ap2_t base; unsigned char opClass; int score; } neighbor_with_opclass_t;
+typedef struct {
+	neighbor_with_opclass_t neighbors[16];
+	int           ap_index;
+	unsigned int  num_neighbors;
+	unsigned char sta_mac[6];
+	unsigned char dialog_token;
+	unsigned char query_reason;
+	unsigned char request_mode;
+	bool          neighbor_list_present;
+} em_btm_req_ctrl_msg_t;
+extern char epnd_mgr_buf[];
+extern char epnd_resp_buf[];
+extern int  epnd_mgr_null, epnd_prepare_fail, epnd_num_results, epnd_num_neighbors;
+extern int  epnd_publish_fail, epnd_publish_calls, epnd_vap_ssid_count, epnd_ssid_match_all;
+extern int  epnd_push_calls, epnd_stop_calls;
+extern bool g_btm_pending_valid;
+extern em_btm_req_ctrl_msg_t g_pending_btm;
+struct em_epnd_test_case { const char *test_name; int mgr_null; int prepare_fail; int num_results; int num_neighbors; int btm_pending; int ssid_match_all; int vap_ssid_count; int publish_fail; int want_ret; int want_num_neighbors; };
+typedef struct em_epnd_test_case em_epnd_test_case_t;
+extern em_epnd_test_case_t em_process_neighbour_data_suite[];
+void construct_em_process_neighbour_data_input(const em_epnd_test_case_t *tc);
+void run_all_tests_em_process_neighbour_data(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
