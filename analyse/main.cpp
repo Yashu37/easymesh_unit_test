@@ -311,5 +311,8 @@ int main() {
 
 	// cac_mgmt_frame_hook OOB check (OneWifi source/apps/cac/wifi_cac.c).
 //	run_all_tests_cac_mgmt_frame_hook();
+
+	// process_csi OOB check (OneWifi source/apps/csi/wifi_csi.c).
+//	run_all_tests_process_csi();
 	return 0;
 }

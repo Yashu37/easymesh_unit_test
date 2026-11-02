@@ -1658,6 +1658,9 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				void *assoc_req_map;      // hash_map_t *
 				void *sta_map;            // hash_map_t *
 			} cac;
+			struct {                      // data.u.csi (subset used by process_csi)
+				void *csi_sounding_mac_map;  // hash_map_t *
+			} csi;
 		} u;
 	} data;
 	void                 *ctrl;
@@ -2749,6 +2752,27 @@ extern cac_mgmt_frame_hook_test_case_t cac_mgmt_frame_hook_suite[];
 void construct_cac_mgmt_frame_hook_input(const cac_mgmt_frame_hook_test_case_t *tc);
 int  test_cac_mgmt_frame_hook(const cac_mgmt_frame_hook_test_case_t *tc);
 void run_all_tests_cac_mgmt_frame_hook(void);
+
+typedef struct { unsigned char raw[256]; } wifi_csi_data_t;
+typedef struct { unsigned char sta_mac[6]; wifi_csi_data_t csi; } wifi_csi_dev_t;
+typedef struct { union { wifi_csi_dev_t *csi; } u; } wifi_event_t;
+// --- process_csi harness (OneWifi source/apps/csi/wifi_csi.c) ---
+#define PCS_MAC_SZ 18
+#define PCS_PAD    64
+typedef struct { const char *test_name; int ctrl_null; int app_null; int have_entry; int is_mlo; unsigned char mac0; int expect_ret; } process_csi_test_case_t;
+extern char   pcs_slot_mac[PCS_MAC_SZ + PCS_PAD];
+extern char   pcs_key_seen[64];
+extern int    pcs_ctrl_null;
+extern void  *pcs_entry;
+extern wifi_app_t *pcs_app;
+extern char   pcs_ctrl_buf[sizeof(wifi_ctrl_t) + PCS_PAD];
+extern char   pcs_app_buf[sizeof(wifi_app_t) + PCS_PAD];
+extern unsigned char pcs_mac_buf[6 + PCS_PAD];
+extern char   pcs_csi_buf[256 + PCS_PAD];
+extern process_csi_test_case_t process_csi_suite[];
+void construct_process_csi_input(const process_csi_test_case_t *tc);
+int  test_process_csi(const process_csi_test_case_t *tc);
+void run_all_tests_process_csi(void);
 
 // PCAP Global Header
 struct pcap_global_header {
