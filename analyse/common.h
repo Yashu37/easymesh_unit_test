@@ -2867,6 +2867,32 @@ void construct_webconfig_hal_csi_data_apply_input(const webconfig_hal_csi_data_a
 int  test_webconfig_hal_csi_data_apply(const webconfig_hal_csi_data_apply_test_case_t *tc);
 void run_all_tests_webconfig_hal_csi_data_apply(void);
 
+// --- set_bus_csi_sub_enable_status harness (OneWifi source/apps/csi/wifi_csi_analytics.c) ---
+#define SES_NAME_SZ 128
+#define SES_PAD     64
+typedef struct { const char *test_name; unsigned int session; int status; int fail; int expect_ret; } set_bus_csi_sub_enable_status_test_case_t;
+extern char   ses_slot[SES_NAME_SZ + SES_PAD];
+extern size_t ses_name_len;
+extern char   ses_name_seen[256];
+extern int    ses_set_calls, ses_fail, ses_last_bool;
+extern char   ses_bh_buf[16 + SES_PAD];
+extern set_bus_csi_sub_enable_status_test_case_t set_bus_csi_sub_enable_status_suite[];
+void construct_set_bus_csi_sub_enable_status_input(const set_bus_csi_sub_enable_status_test_case_t *tc);
+int  test_set_bus_csi_sub_enable_status(const set_bus_csi_sub_enable_status_test_case_t *tc);
+void run_all_tests_set_bus_csi_sub_enable_status(void);
+
+// --- pipe_read_oper_thread_func harness (OneWifi source/apps/csi/wifi_csi_analytics.c) ---
+#define PRT_PATH_SZ 64
+#define PRT_PAD     64
+typedef struct { const char *test_name; int session; int make_file; int expect_decode; } pipe_read_oper_thread_func_test_case_t;
+extern char prt_slot[PRT_PATH_SZ + PRT_PAD];
+extern int  prt_decode_calls, prt_process_calls, prt_clean_calls;
+extern char prt_app_buf[sizeof(wifi_app_t) + PRT_PAD];
+extern pipe_read_oper_thread_func_test_case_t pipe_read_oper_thread_func_suite[];
+void construct_pipe_read_oper_thread_func_input(const pipe_read_oper_thread_func_test_case_t *tc);
+int  test_pipe_read_oper_thread_func(const pipe_read_oper_thread_func_test_case_t *tc);
+void run_all_tests_pipe_read_oper_thread_func(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

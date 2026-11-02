@@ -326,5 +326,11 @@ int main() {
 
 	// webconfig_hal_csi_data_apply OOB check (OneWifi source/apps/csi/wifi_csi_analytics.c).
 //	run_all_tests_webconfig_hal_csi_data_apply();
+
+	// set_bus_csi_sub_enable_status OOB check (OneWifi source/apps/csi/wifi_csi_analytics.c).
+//	run_all_tests_set_bus_csi_sub_enable_status();
+
+	// pipe_read_oper_thread_func OOB check (OneWifi source/apps/csi/wifi_csi_analytics.c).
+//	run_all_tests_pipe_read_oper_thread_func();
 	return 0;
 }
