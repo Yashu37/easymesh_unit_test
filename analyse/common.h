@@ -5,6 +5,7 @@
 #include <stddef.h>  /* offsetof (os_nif_list_get ds_list stub) */
 #include <stdlib.h>
 #include <stdarg.h>
+#include <time.h>        /* struct timespec (em stats timestamp types) */
 #include <sys/types.h>   /* ssize_t (used by the base64_decode harness) */
 #include <string>
 #include <utility>
@@ -1768,6 +1769,30 @@ void run_all_tests_em_client_stats_store(void);
 void ecs_store_reset(void);
 void ecs_store_prepopulate(const char *key);
 
+/* shared em stats-timestamp type defined after wifi_associated_dev3_t (see below) */
+
+/* --- prepare_sta_lins_metrics_data harness --- */
+#ifndef STA_MAX_BSS_ASSOCIATIONS
+#define STA_MAX_BSS_ASSOCIATIONS 1
+#endif
+#define PSL_PAD 64
+typedef struct { unsigned char bssid[6]; unsigned int time_delta, est_mac_rate_down, est_mac_rate_up, rcpi; } psl_link_data_t;
+typedef struct { int num_bssid; psl_link_data_t assoc_sta_link_metrics_data[STA_MAX_BSS_ASSOCIATIONS]; } psl_link_t;
+typedef struct { unsigned char bssid[6]; int last_data_downlink_rate, last_data_uplink_rate, utilization_receive, utilization_transmit; } psl_ext_data_t;
+typedef struct { int num_bssid; psl_ext_data_t assoc_sta_ext_link_metrics_data[STA_MAX_BSS_ASSOCIATIONS]; } psl_ext_t;
+typedef struct { int reason_code; unsigned char sta_mac[6]; } psl_err_t;
+typedef struct { unsigned char sta_mac[6]; unsigned char client_type[32]; psl_link_t assoc_sta_link_metrics; psl_err_t error_code; psl_ext_t assoc_sta_ext_link_metrics; } per_sta_metrics_t;
+typedef struct { unsigned char client_type[32]; } sta_client_info_t;
+extern char psl_data_buf[];
+extern char psl_stats_buf[];
+extern int  psl_getvap_null, psl_has_clitype;
+struct em_psl_test_case { const char *test_name; int data_null; int stats_null; int getvap_null; int has_clitype; int last_update_nonzero; int want_ret; };
+typedef struct em_psl_test_case em_psl_test_case_t;
+extern em_psl_test_case_t prepare_sta_lins_metrics_data_suite[];
+void construct_prepare_sta_lins_metrics_data_input(const em_psl_test_case_t *tc);
+void run_all_tests_prepare_sta_lins_metrics_data(void);
+void psl_set_clitype(const char *s);
+
 #define APR_SLOT_SZ     32    // = sizeof(key_str)
 #define APR_SLOT_PAD    64
 #define APR_POOL_SLOTS  8
@@ -1815,6 +1840,8 @@ typedef struct {                                                    // subset of
 	char          cli_OperatingStandard[64];
 	char          cli_OperatingChannelBandwidth[64];
 } wifi_associated_dev3_t;
+/* shared em stats-timestamp type (used by em_client_stats_store + prepare_sta_lins_metrics_data) */
+typedef struct { wifi_associated_dev3_t associated_dev3; struct timespec last_update_time; } wifi_associated_dev3_timestamp_t;
 typedef struct {
 	unsigned int            good_rssi_time;
 	unsigned int            bad_rssi_time;

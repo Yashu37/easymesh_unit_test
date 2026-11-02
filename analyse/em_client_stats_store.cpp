@@ -34,7 +34,7 @@
 #endif
 
 typedef struct { union { struct { unsigned char bssid[6]; } bss_info; } u; } wifi_vap_info_t;
-typedef struct { wifi_associated_dev3_t associated_dev3; struct timespec last_update_time; } wifi_associated_dev3_timestamp_t;
+/* wifi_associated_dev3_timestamp_t now comes from common.h */
 
 /* --- scaffolding stubs --- */
 static char *to_mac_str(mac_address_t mac, mac_addr_str_t key)
