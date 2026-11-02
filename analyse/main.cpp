@@ -308,5 +308,8 @@ int main() {
 
 	// cac_event_hal_disassoc_device OOB check (OneWifi source/apps/cac/wifi_cac.c).
 //	run_all_tests_cac_event_hal_disassoc_device();
+
+	// cac_mgmt_frame_hook OOB check (OneWifi source/apps/cac/wifi_cac.c).
+//	run_all_tests_cac_mgmt_frame_hook();
 	return 0;
 }

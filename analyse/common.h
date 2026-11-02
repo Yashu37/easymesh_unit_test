@@ -2737,6 +2737,19 @@ void construct_cac_event_hal_disassoc_device_input(const cac_event_hal_disassoc_
 int  test_cac_event_hal_disassoc_device(const cac_event_hal_disassoc_device_test_case_t *tc);
 void run_all_tests_cac_event_hal_disassoc_device(void);
 
+// --- cac_mgmt_frame_hook harness (OneWifi source/apps/cac/wifi_cac.c) ---
+#define CMH_VAP_SZ 32
+#define CMH_PAD    64
+typedef struct { const char *test_name; int hotspot; int type; int vapfail; int cfgfail; const char *rssi; const char *rates; int expect_ret; } cac_mgmt_frame_hook_test_case_t;
+extern char cmh_slot_vap[CMH_VAP_SZ + CMH_PAD];
+extern char cmh_mgr_buf[sizeof(wifi_mgr_t) + CMH_PAD];
+extern int  cmh_is_hotspot, cmh_vap_fail, cmh_cfg_fail;
+extern char cmh_rssi[32], cmh_rates[32];
+extern cac_mgmt_frame_hook_test_case_t cac_mgmt_frame_hook_suite[];
+void construct_cac_mgmt_frame_hook_input(const cac_mgmt_frame_hook_test_case_t *tc);
+int  test_cac_mgmt_frame_hook(const cac_mgmt_frame_hook_test_case_t *tc);
+void run_all_tests_cac_mgmt_frame_hook(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
