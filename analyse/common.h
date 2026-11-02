@@ -1685,8 +1685,20 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 			csi_analytics_info_t csi_analytics;   // data.u.csi_analytics (webconfig_hal_csi_data_apply)
 		} u;
 	} data;
-	void                 *ctrl;
+	struct { unsigned char handle[256]; } *ctrl;   // real: wifi_ctrl_t* (needs ->handle for easyconnect_init)
 };
+
+/* --- easyconnect_init harness globals (defined in construct_easyconnect_init.cpp) --- */
+#define EC_PAD 64
+extern int  ec_app_init_ret, ec_app_init_calls;
+extern int  ec_bus_reg_ret,  ec_bus_reg_calls, ec_bus_reg_n;
+extern char ec_elem0_name[128], ec_elem1_name[128];
+extern void *ec_elem1_set_cb;
+struct easyconnect_init_test_case { const char *test_name; int app_init_ret; int bus_reg_ret; int want_ret; int want_bus_calls; };
+typedef struct easyconnect_init_test_case easyconnect_init_test_case_t;
+extern easyconnect_init_test_case_t easyconnect_init_suite[];
+void construct_easyconnect_init_input(const easyconnect_init_test_case_t *tc);
+void run_all_tests_easyconnect_init(void);
 #define APR_SLOT_SZ     32    // = sizeof(key_str)
 #define APR_SLOT_PAD    64
 #define APR_POOL_SLOTS  8
