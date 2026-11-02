@@ -1658,8 +1658,9 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				void *assoc_req_map;      // hash_map_t *
 				void *sta_map;            // hash_map_t *
 			} cac;
-			struct {                      // data.u.csi (subset used by process_csi)
+			struct {                      // data.u.csi (subset used by process_csi / csi_start_fn)
 				void *csi_sounding_mac_map;  // hash_map_t *
+				int   num_current_sounding;
 			} csi;
 		} u;
 	} data;
@@ -1816,6 +1817,8 @@ typedef struct {                             // leading fields of include/wifi_b
 	int ap_index;
 	wifi_associated_dev3_t dev_stats;
 	int reason;
+	bool association_link;                   // (used by csi_start_fn)
+	unsigned char link_address[6];
 } assoc_dev_data_t;
 #define AAD_MAC_SZ      32    // = sizeof(client_mac)
 #define AAD_TMP_SZ      64    // = sizeof(temp_str)
@@ -2753,6 +2756,7 @@ void construct_cac_mgmt_frame_hook_input(const cac_mgmt_frame_hook_test_case_t *
 int  test_cac_mgmt_frame_hook(const cac_mgmt_frame_hook_test_case_t *tc);
 void run_all_tests_cac_mgmt_frame_hook(void);
 
+typedef struct { unsigned int ap_index; unsigned char mac_addr[6]; unsigned char link_addr[6]; bool is_mlo; int subscribed_apps; } csi_mac_data_t;  // superset for process_csi + csi_start/stop_fn
 typedef struct { unsigned char raw[256]; } wifi_csi_data_t;
 typedef struct { unsigned char sta_mac[6]; wifi_csi_data_t csi; } wifi_csi_dev_t;
 typedef struct { union { wifi_csi_dev_t *csi; } u; } wifi_event_t;
@@ -2773,6 +2777,26 @@ extern process_csi_test_case_t process_csi_suite[];
 void construct_process_csi_input(const process_csi_test_case_t *tc);
 int  test_process_csi(const process_csi_test_case_t *tc);
 void run_all_tests_process_csi(void);
+
+// --- csi_start_fn harness (OneWifi source/apps/csi/wifi_csi.c) ---
+#define CSF_MAC_SZ 18
+#define CSF_PAD    64
+typedef struct { const char *test_name; int app_null; int vap_null; int map_null; int mlo; int evict; int sounding_app; unsigned char mac0; int expect_ret; } csi_start_fn_test_case_t;
+extern char   csf_slot_mac[CSF_MAC_SZ + CSF_PAD];
+extern char   csf_put_key[64];
+extern void  *csf_put_data;
+extern int    csf_put_calls, csf_remove_calls;
+
+extern wifi_app_t *csf_app;
+extern rdk_wifi_vap_info_t *csf_vap;
+extern void  *csf_assoc, *csf_csi_entry, *csf_victim;
+extern char   csf_app_buf[sizeof(wifi_app_t) + CSF_PAD];
+extern char   csf_vap_buf[sizeof(rdk_wifi_vap_info_t) + CSF_PAD];
+extern unsigned char csf_mac_buf[6 + CSF_PAD];
+extern csi_start_fn_test_case_t csi_start_fn_suite[];
+void construct_csi_start_fn_input(const csi_start_fn_test_case_t *tc);
+int  test_csi_start_fn(const csi_start_fn_test_case_t *tc);
+void run_all_tests_csi_start_fn(void);
 
 // PCAP Global Header
 struct pcap_global_header {

@@ -28,7 +28,6 @@
 #define wifi_app_inst_csi 0x10
 #define wifi_event_type_csi 0
 #define wifi_event_type_csi_data 0
-typedef struct { bool is_mlo; unsigned char mac_addr[6]; } csi_mac_data_t;
 
 static pthread_mutex_t g_csi_map_lock = PTHREAD_MUTEX_INITIALIZER;
 static void pcs_print(int m,const char*f,...){char sc[512];va_list ap;(void)m;va_start(ap,f);vsnprintf(sc,sizeof(sc),f,ap);va_end(ap);}

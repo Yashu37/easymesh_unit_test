@@ -314,5 +314,8 @@ int main() {
 
 	// process_csi OOB check (OneWifi source/apps/csi/wifi_csi.c).
 //	run_all_tests_process_csi();
+
+	// csi_start_fn OOB check (OneWifi source/apps/csi/wifi_csi.c).
+//	run_all_tests_csi_start_fn();
 	return 0;
 }
