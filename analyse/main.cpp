@@ -344,5 +344,6 @@ int main() {
 //	run_all_tests_em_match_radio_index_to_policy_index();
 //	run_all_tests_em_client_stats_store();
 //	run_all_tests_prepare_sta_lins_metrics_data();
+	run_all_tests_assoc_client_response();
 	return 0;
 }

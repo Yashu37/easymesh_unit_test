@@ -1850,6 +1850,35 @@ typedef struct {
 	unsigned char           sta_mac[6];       // (used by sample_blaster)
 	bool                    assoc_link;
 } sta_data_t;
+
+/* --- assoc_client_response harness (uses sta_data_t above) --- */
+#ifndef BSS_MAX_NUM_STATIONS
+#define BSS_MAX_NUM_STATIONS 100
+#endif
+#define ACR_PAD 64
+typedef struct {
+	sta_data_t   assoc_stats[BSS_MAX_NUM_STATIONS];
+	bool         threshold_hit[BSS_MAX_NUM_STATIONS];
+	unsigned int hit_count;
+	size_t       stat_array_size;
+} client_assoc_data_t;
+typedef struct {
+	client_assoc_data_t client_assoc_data[MAX_NUM_VAP_PER_RADIO];
+	unsigned int assoc_stats_vap_presence_mask;
+	unsigned int req_stats_vap_mask;
+} client_assoc_stats_t;
+extern client_assoc_stats_t client_assoc_stats[MAX_NUM_RADIOS];
+extern char  acr_mgr_buf[];
+extern char  acr_resp_buf[];
+extern void *acr_stat_pointer;
+extern int   acr_vap_array_index;   /* convert_vap_name_to_array_index returns this */
+extern int   acr_convert_name_ok;   /* convert_vap_index_to_name success */
+extern int   acr_ready_calls;
+struct em_acr_test_case { const char *test_name; unsigned int radio_index; unsigned int vap_index; int stat_array_size; int convert_name_ok; int vap_array_index; int req_mask_set; int want_ret; int expect_crash; };
+typedef struct em_acr_test_case em_acr_test_case_t;
+extern em_acr_test_case_t assoc_client_response_suite[];
+void construct_assoc_client_response_input(const em_acr_test_case_t *tc);
+void run_all_tests_assoc_client_response(void);
 typedef struct {
 	unsigned int            primary_radio_channel;
 	char                    channel_bandwidth[64];
@@ -2684,7 +2713,7 @@ int  test_process_request(const process_request_test_case_t *tc);
 void run_all_tests_process_request(void);
 
 // --- sample_blaster harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
-typedef struct { void *stat_pointer; unsigned int stat_array_size; struct { unsigned int vap_index; } args; } wifi_provider_response_t;
+typedef struct { void *stat_pointer; unsigned int stat_array_size; struct { unsigned int radio_index; unsigned int vap_index; unsigned int app_info; } args; } wifi_provider_response_t;
 #define SB_MSG_SZ   256   // = sizeof(msg)
 #define SB_OPER_SZ  65    // = OPER_BUFFER_LEN + 1 (Operating_* fields)
 #define SB_PAD      64
