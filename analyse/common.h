@@ -2596,6 +2596,35 @@ void construct_printBlastMetricData_input(const printBlastMetricData_test_case_t
 int  test_printBlastMetricData(const printBlastMetricData_test_case_t *tc);
 void run_all_tests_printBlastMetricData(void);
 
+// --- stream_client_msmt_data harness (OneWifi source/apps/blaster/wifi_single_client_msmt.c) ---
+#define SCM_KEY_SZ  18    // = sizeof(sta_key_t) = STA_KEY_LEN
+#define SCM_PAD     64
+typedef struct {
+	const char   *test_name;    // case name
+	int           flag;         // ActiveMsmtFlag
+	int           mgr_null;     // get_wifi_blaster returns NULL
+	int           no_map;       // active_msmt_map NULL
+	int           found;        // station in the map
+	int           gw;           // network_mode gw (upload) vs ext (pod)
+	unsigned char mac0;         // first DestMac byte
+	int           expect_up;    // upload_single_client calls
+	int           expect_pod;   // pod_upload calls
+} stream_client_msmt_data_test_case_t;
+
+extern char   scm_slot_key[SCM_KEY_SZ + SCM_PAD];
+extern size_t scm_key_len;
+extern char   scm_key_seen[64];
+extern char   scm_existing_key[32];
+extern void  *scm_existing;
+extern int    scm_mgr_null, scm_upload_calls, scm_pod_calls;
+extern char   scm_mgr_buf[sizeof(wifi_actvie_msmt_t) + SCM_PAD];
+extern char   scm_wctrl_buf[sizeof(wifi_ctrl_t) + SCM_PAD];
+extern stream_client_msmt_data_test_case_t stream_client_msmt_data_suite[];
+
+void construct_stream_client_msmt_data_input(const stream_client_msmt_data_test_case_t *tc);
+int  test_stream_client_msmt_data(const stream_client_msmt_data_test_case_t *tc);
+void run_all_tests_stream_client_msmt_data(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
