@@ -80,6 +80,11 @@ int assoc_client_response(wifi_app_t *app, wifi_provider_response_t *provider_re
         return RETURN_ERR;
     }
 
+    if (radio_index >= MAX_NUM_RADIOS) {   /* FIX: bound the peer-supplied radio_index */
+        wifi_util_error_print(WIFI_EM, "%s:%d: invalid radio_index: %d\n", __func__, __LINE__, radio_index);
+        return RETURN_ERR;
+    }
+
     if (convert_vap_index_to_name(&wifi_mgr->hal_cap.wifi_prop, vap_index, vap_name) != RETURN_OK) {
         wifi_util_error_print(WIFI_EM,
             "%s:%d: convert_vap_index_to_name failed for vap_index : %d\r\n", __func__, __LINE__,
@@ -95,12 +100,19 @@ int assoc_client_response(wifi_app_t *app, wifi_provider_response_t *provider_re
         return RETURN_ERR;
     }
 
+    /* FIX: clamp the peer-supplied count to the fixed assoc_stats capacity */
+    unsigned int num_stats = provider_response->stat_array_size;
+    if (num_stats > BSS_MAX_NUM_STATIONS) {
+        wifi_util_error_print(WIFI_EM, "%s:%d: stat_array_size %u exceeds %d, clamping\n",
+            __func__, __LINE__, num_stats, BSS_MAX_NUM_STATIONS);
+        num_stats = BSS_MAX_NUM_STATIONS;
+    }
     memset(client_assoc_stats[radio_index].client_assoc_data[vap_array_index].assoc_stats, 0,
         sizeof(client_assoc_stats[radio_index].client_assoc_data[vap_array_index].assoc_stats));
     memcpy(client_assoc_stats[radio_index].client_assoc_data[vap_array_index].assoc_stats,
-        provider_response->stat_pointer, (sizeof(sta_data_t) * provider_response->stat_array_size));
+        provider_response->stat_pointer, (sizeof(sta_data_t) * num_stats));
     client_assoc_stats[radio_index].client_assoc_data[vap_array_index].stat_array_size =
-        provider_response->stat_array_size;
+        num_stats;
     client_assoc_stats[radio_index].assoc_stats_vap_presence_mask |= (1 << vap_index);
 
     wifi_util_dbg_print(WIFI_EM, "%s:%d: vap_index : %d client array size : %d \r\n", __func__,
