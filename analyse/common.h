@@ -2625,6 +2625,26 @@ void construct_stream_client_msmt_data_input(const stream_client_msmt_data_test_
 int  test_stream_client_msmt_data(const stream_client_msmt_data_test_case_t *tc);
 void run_all_tests_stream_client_msmt_data(void);
 
+// --- cac_print harness (OneWifi source/apps/cac/wifi_cac.c) ---
+#define CAC_FMT_MAX  32
+#define CAC_ARG_MAX  512
+#define CAC_PAD      64
+typedef struct {
+	const char *test_name;   // case name
+	const char *fmt;         // format string
+	int         arg_len;     // length of the %s arg (0 = no arg)
+	int         overflow;    // 1 = buff[256] overflow expected
+} cac_print_test_case_t;
+
+extern char cac_log_path[64];
+extern char cac_fmt_buf[CAC_FMT_MAX + CAC_PAD];
+extern char cac_arg_buf[CAC_ARG_MAX + CAC_PAD];
+extern cac_print_test_case_t cac_print_suite[];
+
+void construct_cac_print_input(const cac_print_test_case_t *tc);
+int  test_cac_print(const cac_print_test_case_t *tc);
+void run_all_tests_cac_print(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
