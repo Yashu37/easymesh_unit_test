@@ -2815,6 +2815,39 @@ void construct_csi_stop_fn_input(const csi_stop_fn_test_case_t *tc);
 int  test_csi_stop_fn(const csi_stop_fn_test_case_t *tc);
 void run_all_tests_csi_stop_fn(void);
 
+// --- csi analytics shared types (OneWifi source/apps/csi/wifi_csi_analytics.h) ---
+#ifndef MAX_MACLIST_SIZE
+#define MAX_MACLIST_SIZE 512
+#define MAX_MAC_STR_SIZE 18
+#endif
+typedef struct bus_handle bus_handle_t;   // opaque (csi bus handlers)
+typedef struct csi_analytics_info {
+	int           pipe_read_fd;
+	bool          is_read_oper_thread_enabled;
+	unsigned int  csi_session_index;
+	bool          is_csi_capture_enabled;
+	pthread_mutex_t maclist_lock;
+	char          sta_mac[MAX_MACLIST_SIZE];
+	int           sta_maclist_sched_id;
+	int           csi_analytics_enable_sched_id;
+	void         *csi_analytics_map;       // hash_map_t *
+} csi_analytics_info_t;
+
+// --- set_bus_csi_sta_maclist harness (OneWifi source/apps/csi/wifi_csi_analytics.c) ---
+#define SBM_NAME_SZ 128
+#define SBM_PAD     64
+typedef struct { const char *test_name; unsigned int session; const char *mac; int fail; int expect_ret; } set_bus_csi_sta_maclist_test_case_t;
+extern char   sbm_slot[SBM_NAME_SZ + SBM_PAD];
+extern size_t sbm_name_len;
+extern char   sbm_name_seen[256], sbm_val_seen[512];
+extern int    sbm_set_calls, sbm_fail;
+extern char   sbm_info_buf[sizeof(csi_analytics_info_t) + SBM_PAD];
+extern char   sbm_bh_buf[16 + SBM_PAD];
+extern set_bus_csi_sta_maclist_test_case_t set_bus_csi_sta_maclist_suite[];
+void construct_set_bus_csi_sta_maclist_input(const set_bus_csi_sta_maclist_test_case_t *tc);
+int  test_set_bus_csi_sta_maclist(const set_bus_csi_sta_maclist_test_case_t *tc);
+void run_all_tests_set_bus_csi_sta_maclist(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

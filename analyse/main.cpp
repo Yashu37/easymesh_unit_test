@@ -320,5 +320,8 @@ int main() {
 
 	// csi_stop_fn OOB check (OneWifi source/apps/csi/wifi_csi.c).
 //	run_all_tests_csi_stop_fn();
+
+	// set_bus_csi_sta_maclist OOB check (OneWifi source/apps/csi/wifi_csi_analytics.c).
+//	run_all_tests_set_bus_csi_sta_maclist();
 	return 0;
 }
