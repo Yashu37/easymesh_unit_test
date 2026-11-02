@@ -1703,7 +1703,7 @@ void run_all_tests_easyconnect_init(void);
 /* --- em_get_radio_index_from_mac harness --- */
 #define ERM_PAD 64
 typedef struct { unsigned char bssid[6]; } erm_bss_info_t;
-typedef struct { int radio_index; union { erm_bss_info_t bss_info; } u; } erm_vap_info_t;
+typedef struct { int radio_index; unsigned int vap_index; union { erm_bss_info_t bss_info; } u; } erm_vap_info_t;
 typedef struct { unsigned int num_vaps; erm_vap_info_t vap_array[8]; } wifi_vap_info_map_t;
 extern int  erm_num_radios;
 extern char erm_mgr_buf[];
@@ -1718,6 +1718,19 @@ typedef struct em_gri_test_case em_gri_test_case_t;
 extern em_gri_test_case_t em_get_radio_index_from_mac_suite[];
 void construct_em_get_radio_index_from_mac_input(const em_gri_test_case_t *tc);
 void run_all_tests_em_get_radio_index_from_mac(void);
+
+/* --- em_get_vap_index_from_bssid harness (reuses wifi_vap_info_map_t) --- */
+#define EVB_PAD 64
+extern int  evb_num_radios;
+extern unsigned char evb_bssid_buf[];
+extern int  evb_vap_present[8];
+extern wifi_vap_info_map_t evb_vap_maps[8];
+extern int  evb_mesh_vap[64];   /* evb_mesh_vap[vap_index] != 0 -> isVapSTAMesh true */
+struct em_gvb_test_case { const char *test_name; int want_ret; };
+typedef struct em_gvb_test_case em_gvb_test_case_t;
+extern em_gvb_test_case_t em_get_vap_index_from_bssid_suite[];
+void construct_em_get_vap_index_from_bssid_input(const em_gvb_test_case_t *tc);
+void run_all_tests_em_get_vap_index_from_bssid(void);
 
 #define APR_SLOT_SZ     32    // = sizeof(key_str)
 #define APR_SLOT_PAD    64

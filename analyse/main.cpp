@@ -340,5 +340,6 @@ int main() {
 //	run_all_tests_start_sta_channel_scan();
 //	run_all_tests_easyconnect_init();
 //	run_all_tests_em_get_radio_index_from_mac();
+//	run_all_tests_em_get_vap_index_from_bssid();
 	return 0;
 }
