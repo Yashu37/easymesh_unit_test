@@ -2698,6 +2698,28 @@ void construct_cac_event_exec_timeout_input(const cac_event_exec_timeout_test_ca
 int  test_cac_event_exec_timeout(const cac_event_exec_timeout_test_case_t *tc);
 void run_all_tests_cac_event_exec_timeout(void);
 
+// --- cac_event_hal_assoc_device harness (OneWifi source/apps/cac/wifi_cac.c) ---
+typedef struct { unsigned int ap_index; mac_address_t sta_mac; int rssi_avg; int snr_avg; int uplink_rate_avg; int sampling_count; int sampling_interval; } cac_associated_devices_t;
+#define CAD_MAC_SZ  32
+#define CAD_TMP_SZ  64
+#define CAD_PAD     64
+#define CAD_POOL    4
+typedef struct { const char *test_name; int hotspot; int vapfail; int cfgfail; int existing; int mallocfail; unsigned char mac0; int expect_ret; int expect_put; } cac_event_hal_assoc_device_test_case_t;
+extern char   cad_slot_mac[CAD_MAC_SZ + CAD_PAD];
+extern char   cad_slot_tmp[CAD_TMP_SZ + CAD_PAD];
+extern size_t cad_tmp_len;
+extern char   cad_key_seen[64], cad_put_key[64], cad_existing_key[32];
+extern void  *cad_existing, *cad_put_data;
+extern int    cad_is_hotspot, cad_vap_fail, cad_cfg_fail, cad_malloc_fail, cad_pool_used;
+extern unsigned char cad_pool[CAD_POOL][sizeof(cac_associated_devices_t) + CAD_PAD];
+extern char   cad_mgr_buf[sizeof(wifi_mgr_t) + CAD_PAD];
+extern char   cad_arg_buf[sizeof(assoc_dev_data_t) + CAD_PAD];
+extern char   cad_apps_buf[sizeof(wifi_app_t) + CAD_PAD];
+extern cac_event_hal_assoc_device_test_case_t cac_event_hal_assoc_device_suite[];
+void construct_cac_event_hal_assoc_device_input(const cac_event_hal_assoc_device_test_case_t *tc);
+int  test_cac_event_hal_assoc_device(const cac_event_hal_assoc_device_test_case_t *tc);
+void run_all_tests_cac_event_hal_assoc_device(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
