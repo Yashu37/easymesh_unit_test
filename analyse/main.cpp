@@ -345,5 +345,6 @@ int main() {
 //	run_all_tests_em_client_stats_store();
 //	run_all_tests_prepare_sta_lins_metrics_data();
 //	run_all_tests_assoc_client_response();
+//	run_all_tests_em_prepare_scan_response_data();
 	return 0;
 }

@@ -2713,7 +2713,7 @@ int  test_process_request(const process_request_test_case_t *tc);
 void run_all_tests_process_request(void);
 
 // --- sample_blaster harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
-typedef struct { void *stat_pointer; unsigned int stat_array_size; struct { unsigned int radio_index; unsigned int vap_index; unsigned int app_info; } args; } wifi_provider_response_t;
+typedef struct { void *stat_pointer; unsigned int stat_array_size; struct { unsigned int radio_index; unsigned int vap_index; unsigned int app_info; int dwell_time; } args; } wifi_provider_response_t;
 #define SB_MSG_SZ   256   // = sizeof(msg)
 #define SB_OPER_SZ  65    // = OPER_BUFFER_LEN + 1 (Operating_* fields)
 #define SB_PAD      64
@@ -3660,6 +3660,66 @@ typedef enum
 } wifi_channelBandwidth_t;
 
 typedef char ssid_t[32];
+
+/* --- em_prepare_scan_response_data harness (uses ssid_t/bssid_t above) --- */
+#ifndef EM_MAX_RESULTS
+#define EM_MAX_RESULTS 32
+#endif
+#ifndef EM_MAX_CHANNEL_BW_LEN
+#define EM_MAX_CHANNEL_BW_LEN 16
+#endif
+#define EM_BSS_COLOR_DEFAULT 0
+#define EM_SCAN_TYPE_ACTIVE 1
+#define EPSR_PAD 64
+typedef struct {
+	bssid_t        bssid;
+	ssid_t         ssid;
+	char           signal_strength;
+	char           channel_bandwidth[EM_MAX_CHANNEL_BW_LEN];
+	unsigned char  bss_load_element_present;
+	unsigned char  bss_color;
+	unsigned char  channel_utilization;
+	unsigned short station_count;
+} neighbor_bss_t;
+typedef struct {
+	unsigned int   operating_class;
+	unsigned int   channel;
+	unsigned int   scan_status;
+	char           time_stamp[32];
+	unsigned int   utilization;
+	unsigned int   noise;
+	unsigned int   num_neighbors;
+	unsigned int   aggregate_scan_duration;
+	unsigned int   scan_type;
+	neighbor_bss_t neighbors[EM_MAX_NEIGHBORS];
+} channel_scan_result_t;
+typedef struct {
+	unsigned char       ruid[6];
+	unsigned int        num_results;
+	channel_scan_result_t results[EM_MAX_RESULTS];
+} channel_scan_response_t;
+/* subset of wifi_neighbor_ap2_t (fields the handler reads) */
+typedef struct {
+	unsigned int  ap_freq;
+	char          ap_SSID[64];
+	unsigned int  ap_Channel;
+	int           ap_ChannelUtilization;
+	int           ap_Noise;
+	char          ap_BSSID[32];
+	int           ap_SignalStrength;
+	char          ap_OperatingChannelBandwidth[32];
+	unsigned char bss_load_element_present;
+	unsigned int  ap_StaCount;
+} wifi_neighbor_ap2_t;
+extern char  epsr_mgr_buf[];
+extern char  epsr_resp_buf[];
+extern char  epsr_scanresp_buf[];
+extern void *epsr_stat_pointer;
+struct em_epsr_test_case { const char *test_name; unsigned int radio_index; int scan_count; int mode; int want_ret; int want_num_results; };
+typedef struct em_epsr_test_case em_epsr_test_case_t;
+extern em_epsr_test_case_t em_prepare_scan_response_data_suite[];
+void construct_em_prepare_scan_response_data_input(const em_epsr_test_case_t *tc);
+void run_all_tests_em_prepare_scan_response_data(void);
 
 typedef struct {
 	bssid_t bssid;
