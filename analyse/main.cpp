@@ -287,5 +287,8 @@ int main() {
 
 	// sample_blaster OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_sample_blaster();
+
+	// printBlastMetricData OOB check (OneWifi source/apps/blaster/wifi_single_client_msmt.c).
+//	run_all_tests_printBlastMetricData();
 	return 0;
 }

@@ -1719,6 +1719,10 @@ typedef struct {
 	int                     NoiseFloor;
 	int                     channelUtil;
 	int                     channelInterference;
+	int                     RadioActivityFactor;              // (used by printBlastMetricData)
+	int                     CarrierSenseThreshold_Exceeded;
+	char                    ChannelsInUse[64];
+	char                    frequency_band[64];
 } radio_data_t;
 typedef struct {
 	unsigned int    ap_index;
@@ -2199,8 +2203,9 @@ typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; unsigned int webcon
 typedef struct {                               // stand-in: CCSP trace hooks + ctrl + hal_cap used by blaster
 	struct {
 		struct {
-			void (*CcspTraceInfoRdkb_fn)(char *);
-			void (*CcspTraceDebugRdkb_fn)(char *);
+			void (*CcspTraceInfoRdkb_fn)(const char *, ...);
+			void (*CcspTraceDebugRdkb_fn)(const char *, ...);
+			void (*CcspTraceErrorRdkb_fn)(const char *, ...);
 		} desc;
 	} wifi_ccsp;
 	wifi_ctrl_t ctrl;
@@ -2567,6 +2572,29 @@ extern sample_blaster_test_case_t sample_blaster_suite[];
 void construct_sample_blaster_input(const sample_blaster_test_case_t *tc);
 int  test_sample_blaster(const sample_blaster_test_case_t *tc);
 void run_all_tests_sample_blaster(void);
+
+// --- printBlastMetricData harness (OneWifi source/apps/blaster/wifi_single_client_msmt.c) ---
+typedef enum { single_client_msmt_type_all, single_client_msmt_type_all_per_bssid, single_client_msmt_type_one } single_client_msmt_type_t;
+#define PBM_PAD  64
+typedef struct {
+	const char *test_name;        // case name
+	int         gw;               // network_mode gw (PlanId 16) vs ext (36)
+	int         null_data;        // staData NULL (error + early return)
+	int         expect_info_ge;   // CcspTraceInfo called >=1
+	int         expect_err;       // CcspTraceError called
+} printBlastMetricData_test_case_t;
+
+extern char pbm_wmgr_buf[sizeof(wifi_mgr_t) + PBM_PAD];
+extern char pbm_wctrl_buf[sizeof(wifi_ctrl_t) + PBM_PAD];
+extern char pbm_bs_buf[sizeof(wifi_actvie_msmt_t) + PBM_PAD];
+extern char pbm_sd_buf[sizeof(blaster_hashmap_t) + PBM_PAD];
+extern unsigned int pbm_num_samples, pbm_num_radios;
+extern int pbm_info_calls, pbm_debug_calls, pbm_err_calls;
+extern printBlastMetricData_test_case_t printBlastMetricData_suite[];
+
+void construct_printBlastMetricData_input(const printBlastMetricData_test_case_t *tc);
+int  test_printBlastMetricData(const printBlastMetricData_test_case_t *tc);
+void run_all_tests_printBlastMetricData(void);
 
 // PCAP Global Header
 struct pcap_global_header {

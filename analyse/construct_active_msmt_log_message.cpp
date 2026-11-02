@@ -25,8 +25,8 @@ int    aml_trace_calls;
 alignas(16) char aml_arg_buf[AML_ARG_MAX + AML_PAD];
 alignas(16) char aml_mgr_buf[sizeof(wifi_mgr_t) + AML_PAD];
 
-static void aml_trace_info(char *m)  { aml_trace_calls++; snprintf(aml_trace_out, sizeof(aml_trace_out), "INFO:%s", m); }
-static void aml_trace_debug(char *m) { aml_trace_calls++; snprintf(aml_trace_out, sizeof(aml_trace_out), "DBG:%s", m); }
+static void aml_trace_info(const char *m, ...)  { aml_trace_calls++; snprintf(aml_trace_out, sizeof(aml_trace_out), "INFO:%s", m); }
+static void aml_trace_debug(const char *m, ...) { aml_trace_calls++; snprintf(aml_trace_out, sizeof(aml_trace_out), "DBG:%s", m); }
 
 blaster_log_level_t aml_levels[] = { BLASTER_INFO_LOG, BLASTER_DEBUG_LOG, (blaster_log_level_t)9, BLASTER_DEBUG_LOG, BLASTER_DEBUG_LOG };
 
