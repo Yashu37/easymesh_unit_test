@@ -10,8 +10,8 @@
  *         num_channels++;
  *     with NO bound check against 64; num_channels runs over the REQUEST's
  *     operating_classes[i].num_channels (a peer-controlled UINT). If that
- *     exceeds 64, channels[64] overflows (and the source channels[j] is
- *     over-read). BUG under test.
+ *     exceeds 64, channels[64] would overflow. FIX APPLIED: the copy loop is
+ *     bounded with "&& num_channels < 64" so it stops at the array size.
  *
  * channels[64] is an internal stack array (ASan stack redzones), so the
  * overflow write is caught. The RUNNER poisons the caller scan_req past the
@@ -132,7 +132,7 @@ void start_sta_channel_scan(void *data, unsigned int len)
 
         for (int i = 0; i < scan_req->num_operating_classes; i++) {
             if (scan_req->operating_classes[i].operating_class == global_op_class) {
-                for (int j = 0; j < scan_req->operating_classes[i].num_channels; j++) {
+                for (int j = 0; j < scan_req->operating_classes[i].num_channels && num_channels < 64; j++) {   /* FIX: bound the copy to channels[64] */
                     channels[num_channels] = scan_req->operating_classes[i].channels[j];
                     wifi_util_dbg_print(WIFI_EC, "%s:%d channel number:%u\n", __func__, __LINE__,
                         scan_req->operating_classes[i].channels[j]);

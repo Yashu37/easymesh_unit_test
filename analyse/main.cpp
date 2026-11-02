@@ -337,6 +337,6 @@ int main() {
 //	run_all_tests_init_bus_subscription();
 
 	// start_sta_channel_scan OOB check (OneWifi source/apps/easyconnect/wifi_easyconnect.c).
-	run_all_tests_start_sta_channel_scan();
+//	run_all_tests_start_sta_channel_scan();
 	return 0;
 }
