@@ -284,5 +284,8 @@ int main() {
 
 	// process_request OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
 //	run_all_tests_process_request();
+
+	// sample_blaster OOB check (OneWifi source/apps/blaster/wifi_blaster.c).
+//	run_all_tests_sample_blaster();
 	return 0;
 }

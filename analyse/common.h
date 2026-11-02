@@ -1650,8 +1650,8 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				void        *sta_map;     // hash_map_t *
 				struct rusage last_usage;
 			} analytics;
-			struct {                      // data.u.blaster (subset used by WiFiBlastClient)
-				void         *frameCountSample;   // pktGenFrameCountSamples *
+			struct {                      // data.u.blaster (subset used by WiFiBlastClient / sample_blaster)
+				struct _pktGenFrameCountSamples *frameCountSample;
 				unsigned long blaster_start;
 			} blaster;
 		} u;
@@ -1693,12 +1693,25 @@ typedef struct {                                                    // subset of
 	unsigned char cli_MACAddress[6];                                // first field in wifi_hal_ap.h
 	int           cli_RSSI;
 	bool          cli_MLDEnable;                                    // wifi_hal_generic.h
+	unsigned long cli_LastDataDownlinkRate;                         // (fields below used by sample_blaster)
+	unsigned long cli_LastDataUplinkRate;
+	int           cli_SNR;
+	unsigned int  cli_Retransmissions;
+	unsigned int  cli_MaxDownlinkRate;
+	unsigned int  cli_MaxUplinkRate;
+	unsigned long cli_DataFramesSentAck;
+	unsigned long cli_PacketsSent;
+	unsigned long cli_DataFramesSentNoAck;
+	char          cli_OperatingStandard[64];
+	char          cli_OperatingChannelBandwidth[64];
 } wifi_associated_dev3_t;
 typedef struct {
 	unsigned int            good_rssi_time;
 	unsigned int            bad_rssi_time;
 	unsigned int            rapid_reconnects;
 	wifi_associated_dev3_t  dev_stats;
+	unsigned char           sta_mac[6];       // (used by sample_blaster)
+	bool                    assoc_link;
 } sta_data_t;
 typedef struct {
 	unsigned int            primary_radio_channel;
@@ -2191,7 +2204,7 @@ typedef struct {                               // stand-in: CCSP trace hooks + c
 		} desc;
 	} wifi_ccsp;
 	wifi_ctrl_t ctrl;
-	int         hal_cap;
+	struct { int wifi_prop; } hal_cap;
 } wifi_mgr_t;
 #define AML_SLOT_SZ  1024    // = sizeof(msg)
 #define AML_ARG_MAX  2112    // room for a 2000-char argument
@@ -2464,7 +2477,7 @@ int  test_DeviceMemory_DataGet(const DeviceMemory_DataGet_test_case_t *tc);
 void run_all_tests_DeviceMemory_DataGet(void);
 
 // --- WiFiBlastClient harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
-typedef struct { unsigned long WaitAndLatencyInMs; unsigned long pad; } pktGenFrameCountSamples;  // subset
+typedef struct _pktGenFrameCountSamples { unsigned long PacketsSentAck[MAX_NUM_RADIOS]; unsigned long PacketsSentTotal[MAX_NUM_RADIOS]; int WaitAndLatencyInMs; } pktGenFrameCountSamples;  // wifi_blaster.h
 #define WBC_MAC_SZ  18    // = sizeof(macStr)
 #define WBC_MSG_SZ  256   // = sizeof(msg)
 #define WBC_PAD     64
@@ -2519,6 +2532,41 @@ extern process_request_test_case_t process_request_suite[];
 void construct_process_request_input(const process_request_test_case_t *tc);
 int  test_process_request(const process_request_test_case_t *tc);
 void run_all_tests_process_request(void);
+
+// --- sample_blaster harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
+typedef struct { void *stat_pointer; unsigned int stat_array_size; struct { unsigned int vap_index; } args; } wifi_provider_response_t;
+#define SB_MSG_SZ   256   // = sizeof(msg)
+#define SB_OPER_SZ  65    // = OPER_BUFFER_LEN + 1 (Operating_* fields)
+#define SB_PAD      64
+#define SB_SAMPLES  4
+typedef struct {
+	const char *test_name;     // case name
+	int         app_null;      // get_app_by_inst returns NULL
+	int         radio_err;     // get_radio_index_for_vap_index returns RETURN_ERR
+	int         ext;           // network_mode ext
+	const char *want_msg_sub;  // substring msg must contain ("" = none)
+} sample_blaster_test_case_t;
+
+extern char   sb_slot_msg[SB_MSG_SZ + SB_PAD];
+extern char   sb_slot_oper[SB_OPER_SZ + SB_PAD];
+extern size_t sb_msg_len;
+extern char   sb_last_err[256];
+extern int    sb_statusdesc_calls, sb_done_notify, sb_radio_err, sb_calc_throughput;
+extern unsigned int sb_num_samples, sb_sample_count;
+extern char   sb_wctrl_buf[sizeof(wifi_ctrl_t) + SB_PAD];
+extern char   sb_wmgr_buf[sizeof(wifi_mgr_t) + SB_PAD];
+extern char   sb_mgr_buf[sizeof(wifi_actvie_msmt_t) + SB_PAD];
+extern char   sb_app_buf[sizeof(wifi_app_t) + SB_PAD];
+extern char   sb_fcs_buf[SB_SAMPLES * sizeof(pktGenFrameCountSamples) + SB_PAD];
+extern char   sb_amd_buf[SB_SAMPLES * sizeof(active_msmt_data_t) + SB_PAD];
+extern char   sb_resp_buf[sizeof(wifi_provider_response_t) + SB_PAD];
+extern char   sb_stats_buf[4 * sizeof(sta_data_t) + SB_PAD];
+extern wifi_app_t *sb_app;
+extern sample_blaster_test_case_t sample_blaster_suite[];
+
+void construct_sample_blaster_input(const sample_blaster_test_case_t *tc);
+int  test_sample_blaster(const sample_blaster_test_case_t *tc);
+void run_all_tests_sample_blaster(void);
 
 // PCAP Global Header
 struct pcap_global_header {
