@@ -1745,6 +1745,29 @@ extern em_mri_test_case_t em_match_radio_index_to_policy_index_suite[];
 void construct_em_match_radio_index_to_policy_index_input(const em_mri_test_case_t *tc);
 void run_all_tests_em_match_radio_index_to_policy_index(void);
 
+/* --- em_client_stats_store harness --- */
+#ifndef MAX_NUM_VAP_PER_RADIO
+#define MAX_NUM_VAP_PER_RADIO 8
+#endif
+#ifndef MAX_NUM_RADIOS
+#define MAX_NUM_RADIOS 3
+#endif
+#define ECS_PAD 64
+typedef struct { unsigned int vap_index; int sta_count; void *client_stats_map; } ecs_ap_data_t;
+typedef struct { ecs_ap_data_t ap_data[MAX_NUM_VAP_PER_RADIO]; } ecs_radio_report_t;
+typedef struct { ecs_radio_report_t radio_report[MAX_NUM_RADIOS]; } ecs_cache_t;
+extern ecs_cache_t em_ap_metrics_report_cache;
+extern char ecs_dev3_buf[];
+extern int  ecs_getvap_null;    /* 1 -> getVapInfo returns NULL */
+extern int  ecs_prepopulate;    /* 1 -> pre-put an entry so the update path runs */
+struct em_css_test_case { const char *test_name; unsigned int radio_index; unsigned int vap_index; int sta_cnt; int dev3_null; int getvap_null; int prepopulate; int want_ret; };
+typedef struct em_css_test_case em_css_test_case_t;
+extern em_css_test_case_t em_client_stats_store_suite[];
+void construct_em_client_stats_store_input(const em_css_test_case_t *tc);
+void run_all_tests_em_client_stats_store(void);
+void ecs_store_reset(void);
+void ecs_store_prepopulate(const char *key);
+
 #define APR_SLOT_SZ     32    // = sizeof(key_str)
 #define APR_SLOT_PAD    64
 #define APR_POOL_SLOTS  8
