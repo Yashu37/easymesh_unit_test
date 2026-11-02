@@ -1,14 +1,14 @@
 /*
  * HANDLER: cac_print
  *
- * Function copied VERBATIM from OneWifi source/apps/cac/wifi_cac.c. No fixes.
+ * Function copied from OneWifi source/apps/cac/wifi_cac.c with ONE FIX.
  * Local buff[256]:
  *   - get_formatted_time(buff)                 -> ~22-char timestamp
  *   - strncat(buff, " ", strlen(buff))         -> appends one space
  *   - vsprintf(&buff[strlen(buff)], format, …) -> UNBOUNDED write into buff
  *
- * The vsprintf is unbounded: a caller format/args longer than the remaining
- * space overflows buff[256]. buff is an internal stack array (ASan stack
+ * FIX APPLIED: the unbounded vsprintf is now vsnprintf(&buff[off], sizeof(buff)-off, ...)
+ * so a long format/args TRUNCATES instead of overflowing buff[256]. buff is an internal stack array (ASan stack
  * redzones). The RUNNER poisons the caller's format-arg buffer tail; the
  * log file path is redirected to a scratch temp file.
  *
@@ -54,7 +54,8 @@ void cac_print(char *format, ...)
     strncat(buff, " ", strlen(buff));
 
     va_start(list, format);
-    vsprintf(&buff[strlen(buff)], format, list);
+    size_t _off = strlen(buff);
+    vsnprintf(&buff[_off], sizeof(buff) - _off, format, list);   /* FIX: was unbounded vsprintf -> buff[256] overflow */
     va_end(list);
 
     fpg = fopen(CAC_LOG_PATH, "a+");

@@ -23,7 +23,7 @@ cac_print_test_case_t cac_print_suite[] = {
     { "short_lit",  "hello\n",  0,       0 },
     { "short_s",    "%s\n",     10,      0 },
     { "medium_s",   "%s\n",     150,     0 },
-    { "long_s",     "%s\n",     400,     1 },   /* unbounded vsprintf overflows buff[256] */
+    { "long_s",     "%s\n",     400,     0 },   /* after fix: vsnprintf truncates, no overflow */
 
     { NULL, NULL, 0, 0 }  /* sentinel */
 };

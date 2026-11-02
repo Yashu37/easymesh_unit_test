@@ -33,7 +33,8 @@ static void scm_print(int module, const char *fmt, ...)
 
 static void *get_wifictrl_obj(void) { return scm_wctrl_buf; }
 static void *get_wifi_blaster(void) { return scm_mgr_null ? NULL : scm_mgr_buf; }
-static char *active_msmt_status_to_str(active_msmt_status_t s) { (void)s; return (char *)"SUCCEED"; }
+static char *scm_status_to_str(active_msmt_status_t s) { (void)s; return (char *)"SUCCEED"; }
+#define active_msmt_status_to_str scm_status_to_str
 static void upload_single_client_active_msmt_data(blaster_hashmap_t *sta) { (void)sta; scm_upload_calls++; }
 static void pod_upload_single_client_active_msmt_data(blaster_hashmap_t *sta) { (void)sta; scm_pod_calls++; }
 
