@@ -299,5 +299,8 @@ int main() {
 
 	// telemetry_event_cac OOB check (OneWifi source/apps/cac/wifi_cac.c).
 //	run_all_tests_telemetry_event_cac();
+
+	// cac_event_exec_timeout OOB check (OneWifi source/apps/cac/wifi_cac.c).
+//	run_all_tests_cac_event_exec_timeout();
 	return 0;
 }

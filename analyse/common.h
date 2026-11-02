@@ -1654,6 +1654,10 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				struct _pktGenFrameCountSamples *frameCountSample;
 				unsigned long blaster_start;
 			} blaster;
+			struct {                      // data.u.cac (subset used by cac_event_exec_timeout)
+				void *assoc_req_map;      // hash_map_t *
+				void *sta_map;            // hash_map_t *
+			} cac;
 		} u;
 	} data;
 	void                 *ctrl;
@@ -2210,6 +2214,11 @@ typedef struct {                               // stand-in: CCSP trace hooks + c
 	} wifi_ccsp;
 	wifi_ctrl_t ctrl;
 	struct { int wifi_prop; } hal_cap;
+	struct {                                  // radio_config[].vaps.rdk_vap_array[].{map,lock}
+		struct {
+			struct { void *associated_devices_map; pthread_mutex_t *associated_devices_lock; } rdk_vap_array[8];
+		} vaps;
+	} radio_config[3];                       /* MAX_NUM_RADIOS; literal to avoid use-before-define */
 } wifi_mgr_t;
 #define AML_SLOT_SZ  1024    // = sizeof(msg)
 #define AML_ARG_MAX  2112    // room for a 2000-char argument
@@ -2672,6 +2681,22 @@ extern telemetry_event_cac_test_case_t telemetry_event_cac_suite[];
 void construct_telemetry_event_cac_input(const telemetry_event_cac_test_case_t *tc);
 int  test_telemetry_event_cac(const telemetry_event_cac_test_case_t *tc);
 void run_all_tests_telemetry_event_cac(void);
+
+// --- cac_event_exec_timeout harness (OneWifi source/apps/cac/wifi_cac.c) ---
+typedef struct { unsigned int ap_index; char mac_addr[18]; int num_frames; int rssi_avg; int snr_avg; int uplink_rate_avg; int seconds_alive; } cac_sta_info_t;
+#define CET_MAC_SZ  18
+#define CET_PAD     64
+typedef struct { const char *test_name; int has_assoc; int seconds_alive; unsigned char mac0; int expect_remove; } cac_event_exec_timeout_test_case_t;
+extern char   cet_mgr_buf[sizeof(wifi_mgr_t) + CET_PAD];
+extern char   cet_slot_mac[CET_MAC_SZ + CET_PAD];
+extern void  *cet_first;
+extern char   cet_removed_key[64];
+extern int    cet_remove_calls;
+extern char   cet_apps_buf[sizeof(wifi_app_t) + CET_PAD];
+extern cac_event_exec_timeout_test_case_t cac_event_exec_timeout_suite[];
+void construct_cac_event_exec_timeout_input(const cac_event_exec_timeout_test_case_t *tc);
+int  test_cac_event_exec_timeout(const cac_event_exec_timeout_test_case_t *tc);
+void run_all_tests_cac_event_exec_timeout(void);
 
 // PCAP Global Header
 struct pcap_global_header {
