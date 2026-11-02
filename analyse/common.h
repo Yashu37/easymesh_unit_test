@@ -1639,6 +1639,24 @@ typedef struct {                             // source/apps/wifi_apps_mgr.h (fn 
 	void *update_fn;
 } wifi_app_descriptor_t;
 #include <sys/resource.h>
+// --- csi analytics shared types (OneWifi source/apps/csi/wifi_csi_analytics.h) ---
+#ifndef MAX_MACLIST_SIZE
+#define MAX_MACLIST_SIZE 512
+#define MAX_MAC_STR_SIZE 18
+#endif
+typedef struct bus_handle bus_handle_t;   // opaque (csi bus handlers)
+typedef struct csi_analytics_info {
+	int           pipe_read_fd;
+	bool          is_read_oper_thread_enabled;
+	unsigned int  csi_session_index;
+	bool          is_csi_capture_enabled;
+	pthread_mutex_t maclist_lock;
+	char          sta_mac[MAX_MACLIST_SIZE];
+	int           sta_maclist_sched_id;
+	int           csi_analytics_enable_sched_id;
+	void         *csi_analytics_map;       // hash_map_t *
+} csi_analytics_info_t;
+
 struct wifi_app {                            // subset: desc first, ctrl last (as in source)
 	wifi_app_descriptor_t desc;
 	unsigned char         rest[512];        // lock, cond, queue, tid, handle, ... (not touched)
@@ -1662,6 +1680,7 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				void *csi_sounding_mac_map;  // hash_map_t *
 				int   num_current_sounding;
 			} csi;
+			csi_analytics_info_t csi_analytics;   // data.u.csi_analytics (webconfig_hal_csi_data_apply)
 		} u;
 	} data;
 	void                 *ctrl;
@@ -2815,23 +2834,6 @@ void construct_csi_stop_fn_input(const csi_stop_fn_test_case_t *tc);
 int  test_csi_stop_fn(const csi_stop_fn_test_case_t *tc);
 void run_all_tests_csi_stop_fn(void);
 
-// --- csi analytics shared types (OneWifi source/apps/csi/wifi_csi_analytics.h) ---
-#ifndef MAX_MACLIST_SIZE
-#define MAX_MACLIST_SIZE 512
-#define MAX_MAC_STR_SIZE 18
-#endif
-typedef struct bus_handle bus_handle_t;   // opaque (csi bus handlers)
-typedef struct csi_analytics_info {
-	int           pipe_read_fd;
-	bool          is_read_oper_thread_enabled;
-	unsigned int  csi_session_index;
-	bool          is_csi_capture_enabled;
-	pthread_mutex_t maclist_lock;
-	char          sta_mac[MAX_MACLIST_SIZE];
-	int           sta_maclist_sched_id;
-	int           csi_analytics_enable_sched_id;
-	void         *csi_analytics_map;       // hash_map_t *
-} csi_analytics_info_t;
 
 // --- set_bus_csi_sta_maclist harness (OneWifi source/apps/csi/wifi_csi_analytics.c) ---
 #define SBM_NAME_SZ 128
@@ -2847,6 +2849,23 @@ extern set_bus_csi_sta_maclist_test_case_t set_bus_csi_sta_maclist_suite[];
 void construct_set_bus_csi_sta_maclist_input(const set_bus_csi_sta_maclist_test_case_t *tc);
 int  test_set_bus_csi_sta_maclist(const set_bus_csi_sta_maclist_test_case_t *tc);
 void run_all_tests_set_bus_csi_sta_maclist(void);
+
+typedef struct webconfig_subdoc_decoded_data { void *csi_data_queue; } webconfig_subdoc_decoded_data_t;
+// --- webconfig_hal_csi_data_apply harness (OneWifi source/apps/csi/wifi_csi_analytics.c) ---
+#define WHC_MAC_SZ 18
+#define WHC_PAD    64
+typedef struct { const char *test_name; int null_queue; int nsess; int clients_each; int expect_update; } webconfig_hal_csi_data_apply_test_case_t;
+extern char   whc_slot_mac[WHC_MAC_SZ + WHC_PAD];
+extern char   whc_result[600];
+extern unsigned int whc_count;
+extern void  *whc_items[8];
+extern int    whc_update_calls, whc_null_queue;
+extern char   whc_apps_buf[sizeof(wifi_app_t) + WHC_PAD];
+extern char   whc_dec_buf[sizeof(void*) + WHC_PAD];
+extern webconfig_hal_csi_data_apply_test_case_t webconfig_hal_csi_data_apply_suite[];
+void construct_webconfig_hal_csi_data_apply_input(const webconfig_hal_csi_data_apply_test_case_t *tc);
+int  test_webconfig_hal_csi_data_apply(const webconfig_hal_csi_data_apply_test_case_t *tc);
+void run_all_tests_webconfig_hal_csi_data_apply(void);
 
 // PCAP Global Header
 struct pcap_global_header {

@@ -323,5 +323,8 @@ int main() {
 
 	// set_bus_csi_sta_maclist OOB check (OneWifi source/apps/csi/wifi_csi_analytics.c).
 //	run_all_tests_set_bus_csi_sta_maclist();
+
+	// webconfig_hal_csi_data_apply OOB check (OneWifi source/apps/csi/wifi_csi_analytics.c).
+//	run_all_tests_webconfig_hal_csi_data_apply();
 	return 0;
 }
