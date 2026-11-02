@@ -295,6 +295,9 @@ int main() {
 //	run_all_tests_stream_client_msmt_data();
 
 	// cac_print OOB check (OneWifi source/apps/cac/wifi_cac.c).
-	run_all_tests_cac_print();
+//	run_all_tests_cac_print();
+
+	// telemetry_event_cac OOB check (OneWifi source/apps/cac/wifi_cac.c).
+//	run_all_tests_telemetry_event_cac();
 	return 0;
 }

@@ -2645,6 +2645,34 @@ void construct_cac_print_input(const cac_print_test_case_t *tc);
 int  test_cac_print(const cac_print_test_case_t *tc);
 void run_all_tests_cac_print(void);
 
+// --- telemetry_event_cac harness (OneWifi source/apps/cac/wifi_cac.c) ---
+#define TEC_BUFF_SZ  64    // = sizeof(telemetry_buff)
+#define TEC_VAL_SZ   128   // = sizeof(telemetry_val)
+#define TEC_PAD      64
+typedef struct {
+	const char *test_name;    // case name
+	int         band;         // 1 s5g, 2 o5g, 3 s6g, 4 o6g, 0 none
+	const char *deny_type;    // deny_type arg
+	const char *deny_reason;  // deny_reason arg
+	const char *mac;          // mac arg
+	int         null_mac;     // pass mac = NULL
+	int         expect_t2;    // t2_event_s_fn call count
+} telemetry_event_cac_test_case_t;
+
+extern char   tec_slot_buff[TEC_BUFF_SZ + TEC_PAD];
+extern char   tec_slot_val[TEC_VAL_SZ + TEC_PAD];
+extern size_t tec_buff_len, tec_val_len;
+extern char   tec_t2_marker[128], tec_t2_val[256];
+extern int    tec_t2_calls, tec_band;
+extern char   tec_type_buf[64 + TEC_PAD];
+extern char   tec_reason_buf[64 + TEC_PAD];
+extern char   tec_mac_buf[32 + TEC_PAD];
+extern telemetry_event_cac_test_case_t telemetry_event_cac_suite[];
+
+void construct_telemetry_event_cac_input(const telemetry_event_cac_test_case_t *tc);
+int  test_telemetry_event_cac(const telemetry_event_cac_test_case_t *tc);
+void run_all_tests_telemetry_event_cac(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;
