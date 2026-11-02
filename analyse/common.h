@@ -2893,6 +2893,22 @@ void construct_pipe_read_oper_thread_func_input(const pipe_read_oper_thread_func
 int  test_pipe_read_oper_thread_func(const pipe_read_oper_thread_func_test_case_t *tc);
 void run_all_tests_pipe_read_oper_thread_func(void);
 
+// --- init_bus_subscription harness (OneWifi source/apps/csi/wifi_csi_analytics.c) ---
+#define IBS_NAME_SZ 128
+#define IBS_PAD     64
+typedef struct { const char *test_name; int session; int open_fail; int addrow_fail; int sub_fail; int expect_ret; } init_bus_subscription_test_case_t;
+extern char   ibs_slot[IBS_NAME_SZ + IBS_PAD];
+extern size_t ibs_name_len;
+extern char   ibs_sub_name[256];
+extern int    ibs_open_fail, ibs_addrow_fail, ibs_sub_fail, ibs_added_index;
+extern int    ibs_close_calls, ibs_sub_calls, ibs_timer_calls;
+extern char   ibs_bh_buf[16 + IBS_PAD];
+extern char   ibs_app_buf[sizeof(wifi_app_t) + IBS_PAD];
+extern init_bus_subscription_test_case_t init_bus_subscription_suite[];
+void construct_init_bus_subscription_input(const init_bus_subscription_test_case_t *tc);
+int  test_init_bus_subscription(const init_bus_subscription_test_case_t *tc);
+void run_all_tests_init_bus_subscription(void);
+
 // PCAP Global Header
 struct pcap_global_header {
 	uint32_t magic_number;

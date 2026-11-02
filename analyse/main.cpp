@@ -332,5 +332,8 @@ int main() {
 
 	// pipe_read_oper_thread_func OOB check (OneWifi source/apps/csi/wifi_csi_analytics.c).
 //	run_all_tests_pipe_read_oper_thread_func();
+
+	// init_bus_subscription OOB check (OneWifi source/apps/csi/wifi_csi_analytics.c).
+//	run_all_tests_init_bus_subscription();
 	return 0;
 }
