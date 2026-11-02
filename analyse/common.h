@@ -1657,6 +1657,8 @@ typedef struct csi_analytics_info {
 	void         *csi_analytics_map;       // hash_map_t *
 } csi_analytics_info_t;
 
+typedef struct { char interface_name[32]; int radio_index; } radio_interface_mapping_t;   // subset (easyconnect)
+typedef struct { radio_interface_mapping_t radio_interface_map[8]; } wifi_platform_property_t;
 struct wifi_app {                            // subset: desc first, ctrl last (as in source)
 	wifi_app_descriptor_t desc;
 	unsigned char         rest[512];        // lock, cond, queue, tid, handle, ... (not touched)
@@ -2238,11 +2240,12 @@ typedef struct {                               // stand-in: CCSP trace hooks + c
 		} desc;
 	} wifi_ccsp;
 	wifi_ctrl_t ctrl;
-	struct { int wifi_prop; } hal_cap;
+	struct { wifi_platform_property_t wifi_prop; } hal_cap;
 	struct {                                  // radio_config[].vaps.rdk_vap_array[].{map,lock}
 		struct {
 			struct { void *associated_devices_map; pthread_mutex_t *associated_devices_lock; } rdk_vap_array[8];
 		} vaps;
+		struct { int countryCode; int operatingClass; } oper;
 	} radio_config[3];                       /* MAX_NUM_RADIOS; literal to avoid use-before-define */
 } wifi_mgr_t;
 #define AML_SLOT_SZ  1024    // = sizeof(msg)
@@ -2908,6 +2911,25 @@ extern init_bus_subscription_test_case_t init_bus_subscription_suite[];
 void construct_init_bus_subscription_input(const init_bus_subscription_test_case_t *tc);
 int  test_init_bus_subscription(const init_bus_subscription_test_case_t *tc);
 void run_all_tests_init_bus_subscription(void);
+
+// --- start_sta_channel_scan harness (OneWifi source/apps/easyconnect/wifi_easyconnect.c) ---
+#ifndef EM_MAX_CHANNELS
+#define EM_MAX_CHANNELS 64
+#define EM_MAX_OPERATING_CLASS 48
+#endif
+typedef struct { unsigned char operating_class; unsigned int num_channels; unsigned char channels[EM_MAX_CHANNELS]; } operating_class_t;
+typedef struct { int perform_fresh_scan; unsigned int num_radios; unsigned char ruid[6]; unsigned int num_operating_classes; operating_class_t operating_classes[EM_MAX_OPERATING_CLASS]; } channel_scan_request_t;
+#define SSC_CH_SZ   64
+#define SSC_PAD     64
+typedef struct { const char *test_name; int match_class; unsigned int num_channels; int expect_overflow; } start_sta_channel_scan_test_case_t;
+extern char   ssc_mgr_buf[sizeof(wifi_mgr_t) + SSC_PAD];
+extern char   ssc_req_buf[sizeof(channel_scan_request_t) + SSC_PAD];
+extern int    ssc_global_op_class;
+extern int    ssc_scan_calls, ssc_scan_num;
+extern start_sta_channel_scan_test_case_t start_sta_channel_scan_suite[];
+void construct_start_sta_channel_scan_input(const start_sta_channel_scan_test_case_t *tc);
+int  test_start_sta_channel_scan(const start_sta_channel_scan_test_case_t *tc);
+void run_all_tests_start_sta_channel_scan(void);
 
 // PCAP Global Header
 struct pcap_global_header {
