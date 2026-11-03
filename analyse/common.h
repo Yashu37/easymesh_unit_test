@@ -1703,7 +1703,7 @@ void run_all_tests_easyconnect_init(void);
 
 /* --- em_get_radio_index_from_mac harness --- */
 #define ERM_PAD 64
-typedef struct { unsigned char bssid[6]; } erm_bss_info_t;
+typedef struct { unsigned char bssid[6]; struct { struct { unsigned char mld_addr[6]; } common_info; } mld_info; } erm_bss_info_t;   // +mld_info for em_send_action_frame (135)
 typedef struct { int radio_index; unsigned int vap_index; union { erm_bss_info_t bss_info; } u; } erm_vap_info_t;
 typedef struct { unsigned int num_vaps; erm_vap_info_t vap_array[8]; } wifi_vap_info_map_t;
 extern int  erm_num_radios;
@@ -3941,6 +3941,29 @@ typedef struct em_ehcs_test_case em_ehcs_test_case_t;
 extern em_ehcs_test_case_t em_handle_connection_status_suite[];
 void construct_em_handle_connection_status_input(const em_ehcs_test_case_t *tc);
 void run_all_tests_em_handle_connection_status(void);
+
+/* --- em_send_action_frame harness (uses wifi_vap_info_map_t) --- */
+#define ESAF_PAD 64
+typedef struct {
+	unsigned char bssid[6];
+	unsigned int  opClass;
+	unsigned int  channel;
+	unsigned int  duration;
+	int           channelReportPresent;
+	struct { unsigned int opClass; } channelReport;
+} wifi_BeaconRequest_t;
+typedef struct { unsigned char sta_mac[6]; wifi_BeaconRequest_t data; } beacon_query_params_t;
+typedef struct { unsigned int countryCode; unsigned int operatingClass; unsigned int channel; } wifi_radio_operationParam_t;
+extern char esaf_mgr_buf[];
+extern char esaf_query_buf[];
+extern int  esaf_num_radios, esaf_vap_present[8], esaf_radio_index, esaf_radio_null, esaf_country_fail, esaf_send_fail, esaf_send_calls;
+extern wifi_vap_info_map_t esaf_vap_maps[8];
+extern wifi_radio_operationParam_t esaf_radio_oper;
+struct em_esaf_test_case { const char *test_name; int radio_null; int country_fail; int send_fail; int bssid_sel; int want_rc; };
+typedef struct em_esaf_test_case em_esaf_test_case_t;
+extern em_esaf_test_case_t em_send_action_frame_suite[];
+void construct_em_send_action_frame_input(const em_esaf_test_case_t *tc);
+void run_all_tests_em_send_action_frame(void);
 
 typedef struct {
 	bssid_t bssid;

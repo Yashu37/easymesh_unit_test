@@ -358,5 +358,6 @@ int main() {
 //	run_all_tests_em_process_beacon_rep();
 //	run_all_tests_em_handle_action_frame();
 //	run_all_tests_em_handle_connection_status();
+//	run_all_tests_em_send_action_frame();
 	return 0;
 }
