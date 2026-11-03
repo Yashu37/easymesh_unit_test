@@ -5415,3 +5415,15 @@ typedef struct lv_lpr_test_case lv_lpr_test_case_t;
 extern lv_lpr_test_case_t apps_probe_req_frame_event_suite[];
 void construct_apps_probe_req_frame_event_input(const lv_lpr_test_case_t *tc);
 void run_all_tests_apps_probe_req_frame_event(void);
+
+/* --- apps_auth_frame_event harness --- */
+#define AAF_PAD 64
+extern char aaf_app_buf[];
+extern char aaf_msg_buf[];
+extern char aaf_sent_ns[256];
+extern int  aaf_send_calls;
+struct lv_aaf_test_case { const char *test_name; int ap_index; const char *want_ns; };
+typedef struct lv_aaf_test_case lv_aaf_test_case_t;
+extern lv_aaf_test_case_t apps_auth_frame_event_suite[];
+void construct_apps_auth_frame_event_input(const lv_aaf_test_case_t *tc);
+void run_all_tests_apps_auth_frame_event(void);
