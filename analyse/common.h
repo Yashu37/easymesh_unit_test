@@ -4083,6 +4083,17 @@ extern em_men_test_case_t monitor_enable_instant_msmt_suite[];
 void construct_monitor_enable_instant_msmt_input(const em_men_test_case_t *tc);
 void run_all_tests_monitor_enable_instant_msmt(void);
 
+/* --- harvester_str_to_mac_bytes harness --- */
+#define HSM_PAD 64
+#define HSM_KEY_SZ (64 + HSM_PAD)
+extern char hsm_key_buf[];
+extern unsigned char hsm_bmac_buf[];
+struct harv_hsm_test_case { const char *test_name; const char *key; int expect_changed; unsigned char expect[6]; };
+typedef struct harv_hsm_test_case harv_hsm_test_case_t;
+extern harv_hsm_test_case_t harvester_str_to_mac_bytes_suite[];
+void construct_harvester_str_to_mac_bytes_input(const harv_hsm_test_case_t *tc);
+void run_all_tests_harvester_str_to_mac_bytes(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
