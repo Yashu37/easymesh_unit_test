@@ -4060,6 +4060,17 @@ extern em_pims_test_case_t process_instant_msmt_stop_suite[];
 void construct_process_instant_msmt_stop_input(const em_pims_test_case_t *tc);
 void run_all_tests_process_instant_msmt_stop(void);
 
+/* --- process_instant_msmt_start harness --- */
+#define PIST_PAD 64
+#define PIST_SINK_SZ (16 + PIST_PAD)
+extern int  pist_cfg_push, pist_ctrl_push, pist_ctrl_len, pist_mon_push;
+extern char pist_sink[];
+struct em_pist_test_case { const char *test_name; int ttl; int poll; int want_maxcount; };
+typedef struct em_pist_test_case em_pist_test_case_t;
+extern em_pist_test_case_t process_instant_msmt_start_suite[];
+void construct_process_instant_msmt_start_input(const em_pist_test_case_t *tc);
+void run_all_tests_process_instant_msmt_start(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
