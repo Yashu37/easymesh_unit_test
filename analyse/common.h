@@ -3928,6 +3928,20 @@ extern em_ehaf_test_case_t em_handle_action_frame_suite[];
 void construct_em_handle_action_frame_input(const em_ehaf_test_case_t *tc);
 void run_all_tests_em_handle_action_frame(void);
 
+/* --- em_handle_connection_status harness --- */
+#define EHCS_PAD 64
+typedef struct { unsigned char sta_mac[6]; unsigned char bssid[6]; unsigned int status_code; int reason_code_present; unsigned int reason_code; } em_connection_status_event_t;
+extern char ehcs_conn_buf[];
+extern char ehcs_app_buf[];
+extern char ehcs_appctrl_buf[];
+extern int  ehcs_publish_fail, ehcs_publish_calls, ehcs_last_len;
+extern char ehcs_published_event[128];
+struct em_ehcs_test_case { const char *test_name; int app_null; int conn_null; int publish_fail; int want_ret; };
+typedef struct em_ehcs_test_case em_ehcs_test_case_t;
+extern em_ehcs_test_case_t em_handle_connection_status_suite[];
+void construct_em_handle_connection_status_input(const em_ehcs_test_case_t *tc);
+void run_all_tests_em_handle_connection_status(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
