@@ -1659,7 +1659,7 @@ typedef struct csi_analytics_info {
 } csi_analytics_info_t;
 
 typedef struct { char interface_name[32]; int radio_index; } radio_interface_mapping_t;   // subset (easyconnect)
-typedef struct { radio_interface_mapping_t radio_interface_map[8]; } wifi_platform_property_t;
+typedef struct { radio_interface_mapping_t radio_interface_map[8]; bool radio_presence[8]; } wifi_platform_property_t;   // +radio_presence for monitor_enable_instant_msmt
 /* minimal em_config_t (policy scalars used by em_init); self-contained to avoid
  * ordering issues with the later radio_metrics_policies_t */
 typedef struct {
@@ -4036,6 +4036,7 @@ typedef struct {
 	int  poll_period;
 	int  inst_msmt_id;
 	int  instantPollPeriod;
+	pthread_mutex_t queue_lock;
 } harvester_ctx_t;
 /* wifi_monitor_data_t: minimal (only u.msg.data is touched) */
 typedef struct { union { struct { unsigned char data[MAX_FRAME_SZ]; } msg; } u; } wifi_monitor_data_t;
@@ -4070,6 +4071,17 @@ typedef struct em_pist_test_case em_pist_test_case_t;
 extern em_pist_test_case_t process_instant_msmt_start_suite[];
 void construct_process_instant_msmt_start_input(const em_pist_test_case_t *tc);
 void run_all_tests_process_instant_msmt_start(void);
+
+/* --- monitor_enable_instant_msmt harness --- */
+#define MEN_PAD 64
+extern char men_mgr_buf[];
+extern unsigned char men_mac_buf[];
+extern int  men_num_vaps, men_found_vap, men_assoc_checks, men_start_calls, men_stop_calls;
+struct em_men_test_case { const char *test_name; int active; int enable; int mac_match; int found_vap; int want_start; int want_stop; };
+typedef struct em_men_test_case em_men_test_case_t;
+extern em_men_test_case_t monitor_enable_instant_msmt_suite[];
+void construct_monitor_enable_instant_msmt_input(const em_men_test_case_t *tc);
+void run_all_tests_monitor_enable_instant_msmt(void);
 
 typedef struct {
 	bssid_t bssid;
