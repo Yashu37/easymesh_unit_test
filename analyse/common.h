@@ -3884,7 +3884,16 @@ typedef struct { unsigned char dialog_token; size_t size; void *beacon_repo; } w
  * IEEE80211_HDRLEN + 1 + sizeof(rrm) == min_len (matches the handler). */
 struct epbr_rrm    { unsigned char action; unsigned char dialog; unsigned char variable[]; };
 struct epbr_action { unsigned char category; union { struct epbr_rrm rrm; } u; };
-struct ieee80211_mgmt { unsigned char hdr[IEEE80211_HDRLEN]; union { struct epbr_action action; } u; };
+/* named 24-byte 802.11 header (sa used by em_handle_action_frame); total == IEEE80211_HDRLEN */
+struct ieee80211_mgmt {
+	unsigned char frame_control[2];
+	unsigned char duration[2];
+	unsigned char da[6];
+	unsigned char sa[6];
+	unsigned char bssid[6];
+	unsigned char seq_ctrl[2];
+	union { struct epbr_action action; } u;
+};
 extern char epbr_mgmt_buf[];
 extern char epbr_rep_buf[];
 extern unsigned char epbr_sta_mac[];
@@ -3898,6 +3907,26 @@ typedef struct em_epbr_test_case em_epbr_test_case_t;
 extern em_epbr_test_case_t em_process_beacon_rep_suite[];
 void construct_em_process_beacon_rep_input(const em_epbr_test_case_t *tc);
 void run_all_tests_em_process_beacon_rep(void);
+
+/* --- em_handle_action_frame harness (uses ieee80211_mgmt + wifi_hal_rrm_report_t) --- */
+#ifndef ETH_ALEN
+#define ETH_ALEN 6
+#endif
+#define EHAF_PAD 64
+#ifndef RDK_DEV_MODE_TYPE_DEFINED
+#define RDK_DEV_MODE_TYPE_DEFINED
+typedef enum { rdk_dev_mode_type_gw = 0, rdk_dev_mode_type_ext = 1, rdk_dev_mode_type_em_node = 2, rdk_dev_mode_type_em_colocated_node = 3 } rdk_dev_mode_type_t;
+#endif
+typedef struct { int ap_index; unsigned int len; } ehaf_frame_t;   /* subset of wifi_frame_t (ap_index + len used) */
+typedef struct { ehaf_frame_t frame; unsigned char data[MAX_FRAME_SZ]; } frame_data_t;
+extern char ehaf_ctrl_buf[];
+extern char ehaf_arg_buf[];
+extern int  ehaf_ctrl_null, ehaf_parse_fail, ehaf_process_calls;
+struct em_ehaf_test_case { const char *test_name; int arg_null; int ctrl_null; int short_len; int action; int mode; int parse_fail; int want_rc; int want_proc; };
+typedef struct em_ehaf_test_case em_ehaf_test_case_t;
+extern em_ehaf_test_case_t em_handle_action_frame_suite[];
+void construct_em_handle_action_frame_input(const em_ehaf_test_case_t *tc);
+void run_all_tests_em_handle_action_frame(void);
 
 typedef struct {
 	bssid_t bssid;
