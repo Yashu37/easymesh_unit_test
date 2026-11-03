@@ -3823,6 +3823,17 @@ extern em_pfc_test_case_t em_publish_failed_connection_suite[];
 void construct_em_publish_failed_connection_input(const em_pfc_test_case_t *tc);
 void run_all_tests_em_publish_failed_connection(void);
 
+/* --- em_handle_failed_connection harness (uses wifi_em_failed_conn_t) --- */
+#define HFC_PAD 64
+typedef struct { int ap_index; unsigned char sta_mac[6]; unsigned int status; unsigned int reason; } sta_fail_data_t;
+extern char hfc_arg_buf[];
+extern int  hfc_vap_null, hfc_publish_fail, hfc_publish_calls;
+struct em_hfc_test_case { const char *test_name; int arg_null; int vap_null; int publish_fail; int want_ret; };
+typedef struct em_hfc_test_case em_hfc_test_case_t;
+extern em_hfc_test_case_t em_handle_failed_connection_suite[];
+void construct_em_handle_failed_connection_input(const em_hfc_test_case_t *tc);
+void run_all_tests_em_handle_failed_connection(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
