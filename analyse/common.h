@@ -4024,7 +4024,7 @@ void run_all_tests_is_harvester_device_associated(void);
 #define PIM_PAD 64
 #define PIM_STATS_SZ (8 * sizeof(sta_data_t) + PIM_PAD)   /* size of pim_stats_buf */
 /* radio_data_t comes from above (line ~1907) */
-typedef struct { int ap_index; unsigned char sta_mac[6]; } pim_inst_msmt_t;
+typedef struct { int ap_index; unsigned char sta_mac[6]; bool active; } pim_inst_msmt_t;
 typedef struct {
 	int  count;
 	int  maxCount;
@@ -4033,7 +4033,12 @@ typedef struct {
 	void *radio_data[MAX_NUM_RADIOS];
 	char instantMac[32];
 	pim_inst_msmt_t inst_msmt;
+	int  poll_period;
+	int  inst_msmt_id;
+	int  instantPollPeriod;
 } harvester_ctx_t;
+/* wifi_monitor_data_t: minimal (only u.msg.data is touched) */
+typedef struct { union { struct { unsigned char data[MAX_FRAME_SZ]; } msg; } u; } wifi_monitor_data_t;
 extern harvester_ctx_t g_harvester_module;
 extern char pim_resp_buf[];
 extern char pim_stats_buf[];
@@ -4043,6 +4048,17 @@ typedef struct em_pim_test_case em_pim_test_case_t;
 extern em_pim_test_case_t process_instant_msmt_monitor_suite[];
 void construct_process_instant_msmt_monitor_input(const em_pim_test_case_t *tc);
 void run_all_tests_process_instant_msmt_monitor(void);
+
+/* --- process_instant_msmt_stop harness --- */
+#define PIMS_PAD 64
+#define PIMS_SINK_SZ (16 + PIMS_PAD)
+extern int  pims_num_radios, pims_cfg_push, pims_ctrl_push, pims_ctrl_len, pims_mon_push;
+extern char pims_sink[];
+struct em_pims_test_case { const char *test_name; int inst_msmt_id; int want_ctrl_push; };
+typedef struct em_pims_test_case em_pims_test_case_t;
+extern em_pims_test_case_t process_instant_msmt_stop_suite[];
+void construct_process_instant_msmt_stop_input(const em_pims_test_case_t *tc);
+void run_all_tests_process_instant_msmt_stop(void);
 
 typedef struct {
 	bssid_t bssid;

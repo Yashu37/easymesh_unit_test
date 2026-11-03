@@ -363,5 +363,6 @@ int main() {
 //	run_all_tests_em_deinit();
 //	run_all_tests_is_harvester_device_associated();
 //	run_all_tests_process_instant_msmt_monitor();
+//	run_all_tests_process_instant_msmt_stop();
 	return 0;
 }
