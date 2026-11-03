@@ -1787,7 +1787,7 @@ typedef struct { unsigned char bssid[6]; int last_data_downlink_rate, last_data_
 typedef struct { int num_bssid; psl_ext_data_t assoc_sta_ext_link_metrics_data[STA_MAX_BSS_ASSOCIATIONS]; } psl_ext_t;
 typedef struct { int reason_code; unsigned char sta_mac[6]; } psl_err_t;
 typedef struct { unsigned char sta_mac[6]; unsigned char client_type[32]; psl_link_t assoc_sta_link_metrics; psl_err_t error_code; psl_ext_t assoc_sta_ext_link_metrics; } per_sta_metrics_t;
-typedef struct { unsigned char client_type[32]; } sta_client_info_t;
+typedef struct { unsigned char mac_addr[6]; unsigned char client_type[32]; } sta_client_info_t;   // mac_addr added for handle_sta_client_info (124)
 extern char psl_data_buf[];
 extern char psl_stats_buf[];
 extern int  psl_getvap_null, psl_has_clitype;
@@ -3796,6 +3796,18 @@ typedef struct em_rcs_test_case em_rcs_test_case_t;
 extern em_rcs_test_case_t radio_chan_stats_response_suite[];
 void construct_radio_chan_stats_response_input(const em_rcs_test_case_t *tc);
 void run_all_tests_radio_chan_stats_response(void);
+
+/* --- handle_sta_client_info harness (uses sta_client_info_t) --- */
+#define HSCI_PAD 64
+extern char hsci_sta_buf[];
+struct em_hsci_test_case { const char *test_name; int sta_null; int prepopulate; int want_ret; };
+typedef struct em_hsci_test_case em_hsci_test_case_t;
+extern em_hsci_test_case_t handle_sta_client_info_suite[];
+void construct_handle_sta_client_info_input(const em_hsci_test_case_t *tc);
+void run_all_tests_handle_sta_client_info(void);
+void hsci_store_reset(void);
+void hsci_store_prepopulate(const char *key);
+void *hsci_store_get(void);
 
 typedef struct {
 	bssid_t bssid;
