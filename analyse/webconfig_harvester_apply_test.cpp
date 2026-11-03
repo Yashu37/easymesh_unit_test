@@ -3,7 +3,7 @@
  *
  * Poisoned around the call:
  *   - the decoded mac_address field past its NUL (up to its 13 bytes);
- *   - the WHA_PAD tail after the webconfig_subdoc_data_t (wha_wd_buf).
+ *   - the WHA_PAD tail after the wha_subdoc_data_t (wha_wd_buf).
  * sta_mac (mac_address_t) is an internal stack array guarded by ASan redzones.
  *
  * PASS = all five sibling calls happened once, and the mac handed to
@@ -21,7 +21,7 @@ void webconfig_harvester_apply(wifi_app_t *app, wifi_event_t *event);
 
 int test_webconfig_harvester_apply(const harv_wha_test_case_t *tc)
 {
-    webconfig_subdoc_data_t *wd = (webconfig_subdoc_data_t *)wha_wd_buf;
+    wha_subdoc_data_t *wd = (wha_subdoc_data_t *)wha_wd_buf;
     wifi_event_t ev;
     ev.u.webconfig_data = wd;
 
@@ -31,12 +31,12 @@ int test_webconfig_harvester_apply(const harv_wha_test_case_t *tc)
 
     /* POISON */
     __asan_poison_memory_region(&mac[len + 1], cap - (len + 1));
-    __asan_poison_memory_region(&wha_wd_buf[sizeof(webconfig_subdoc_data_t)], WHA_PAD);
+    __asan_poison_memory_region(&wha_wd_buf[sizeof(wha_subdoc_data_t)], WHA_PAD);
 
     webconfig_harvester_apply(NULL, &ev);
 
     /* UNPOISON */
-    __asan_unpoison_memory_region(&wha_wd_buf[sizeof(webconfig_subdoc_data_t)], WHA_PAD);
+    __asan_unpoison_memory_region(&wha_wd_buf[sizeof(wha_subdoc_data_t)], WHA_PAD);
     __asan_unpoison_memory_region(&mac[len + 1], cap - (len + 1));
 
     int ok = wha_rep_calls == 1 && wha_def_calls == 1 && wha_ttl_calls == 1 &&

@@ -23,6 +23,7 @@
 #endif
 
 void harvester_str_to_mac_bytes(char *key, mac_addr_t bmac);
+#define webconfig_subdoc_data_t wha_subdoc_data_t   /* shared harness type name (avoids clash with other TUs) */
 
 static void wha_rep(int v) { (void)v; wha_rep_calls++; }
 static void wha_def(int v) { (void)v; wha_def_calls++; }

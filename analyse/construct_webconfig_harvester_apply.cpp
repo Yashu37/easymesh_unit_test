@@ -10,7 +10,7 @@
 #include <string.h>
 #include "common.h"
 
-alignas(16) char wha_wd_buf[sizeof(webconfig_subdoc_data_t) + WHA_PAD];
+alignas(16) char wha_wd_buf[sizeof(wha_subdoc_data_t) + WHA_PAD];
 int wha_rep_calls, wha_def_calls, wha_ttl_calls, wha_mac_calls, wha_en_calls, wha_en_val;
 unsigned char wha_en_mac[6];
 
@@ -28,7 +28,7 @@ void construct_webconfig_harvester_apply_input(const harv_wha_test_case_t *tc)
     wha_rep_calls = wha_def_calls = wha_ttl_calls = wha_mac_calls = wha_en_calls = wha_en_val = 0;
     memset(wha_en_mac, 0xEE, sizeof(wha_en_mac));   /* sta_mac stays 0xEE if the string is empty */
 
-    webconfig_subdoc_data_t *wd = (webconfig_subdoc_data_t *)wha_wd_buf;
+    wha_subdoc_data_t *wd = (wha_subdoc_data_t *)wha_wd_buf;
     wd->u.decoded.harvester.b_inst_client_enabled = tc->enabled ? true : false;
     wd->u.decoded.harvester.u_inst_client_reporting_period = 30;
     wd->u.decoded.harvester.u_inst_client_def_reporting_period = 300;
