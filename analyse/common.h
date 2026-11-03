@@ -3871,6 +3871,34 @@ extern em_eccs_test_case_t em_config_channel_scan_suite[];
 void construct_em_config_channel_scan_input(const em_eccs_test_case_t *tc);
 void run_all_tests_em_config_channel_scan(void);
 
+/* --- em_process_beacon_rep harness --- */
+#ifndef IEEE80211_HDRLEN
+#define IEEE80211_HDRLEN 24
+#endif
+#ifndef MAX_FRAME_SZ
+#define MAX_FRAME_SZ 2048
+#endif
+#define EPBR_PAD 64
+typedef struct { unsigned char dialog_token; size_t size; void *beacon_repo; } wifi_hal_rrm_report_t;
+/* minimal 802.11 mgmt/action/rrm model: rrm.variable lands at
+ * IEEE80211_HDRLEN + 1 + sizeof(rrm) == min_len (matches the handler). */
+struct epbr_rrm    { unsigned char action; unsigned char dialog; unsigned char variable[]; };
+struct epbr_action { unsigned char category; union { struct epbr_rrm rrm; } u; };
+struct ieee80211_mgmt { unsigned char hdr[IEEE80211_HDRLEN]; union { struct epbr_action action; } u; };
+extern char epbr_mgmt_buf[];
+extern char epbr_rep_buf[];
+extern unsigned char epbr_sta_mac[];
+extern char epbr_app_buf[];
+extern char epbr_appctrl_buf[];
+extern int epbr_publish_ret, epbr_publish_calls;
+extern unsigned int epbr_last_data_len;
+extern size_t epbr_len;
+struct em_epbr_test_case { const char *test_name; int data_len; int publish_ret; int want_rc; int want_publish; };
+typedef struct em_epbr_test_case em_epbr_test_case_t;
+extern em_epbr_test_case_t em_process_beacon_rep_suite[];
+void construct_em_process_beacon_rep_input(const em_epbr_test_case_t *tc);
+void run_all_tests_em_process_beacon_rep(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
