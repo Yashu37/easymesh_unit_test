@@ -2382,7 +2382,7 @@ void run_all_tests_blaster_str_to_mac_bytes(void);
 
 // --- active_msmt_log_message harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
 typedef enum { BLASTER_INFO_LOG = 0, BLASTER_DEBUG_LOG } blaster_log_level_t;  // wifi_blaster.h
-typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; unsigned int webconfig_state; int webconfig; unsigned char handle[16]; } wifi_ctrl_t;   // subset (+ handle for em_publish_failed_connection)
+typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; unsigned int webconfig_state; int webconfig; unsigned char handle[16]; void *sched; } wifi_ctrl_t;   // subset (+ handle, + sched for em_deinit)
 typedef struct {                               // stand-in: CCSP trace hooks + ctrl + hal_cap used by blaster
 	struct {
 		struct {
@@ -3989,6 +3989,17 @@ typedef struct em_emi_test_case em_emi_test_case_t;
 extern em_emi_test_case_t em_init_suite[];
 void construct_em_init_input(const em_emi_test_case_t *tc);
 void run_all_tests_em_init(void);
+
+/* --- em_deinit harness (uses wifi_ctrl_t + sta_client_info_t) --- */
+#define EDI_PAD 64
+extern char edi_ctrl_buf[];
+extern int  edi_destroy_calls;
+void edi_store_build(int n);
+struct em_edi_test_case { const char *test_name; int num_entries; int want_ret; };
+typedef struct em_edi_test_case em_edi_test_case_t;
+extern em_edi_test_case_t em_deinit_suite[];
+void construct_em_deinit_input(const em_edi_test_case_t *tc);
+void run_all_tests_em_deinit(void);
 
 typedef struct {
 	bssid_t bssid;

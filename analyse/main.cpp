@@ -360,5 +360,6 @@ int main() {
 //	run_all_tests_em_handle_connection_status();
 //	run_all_tests_em_send_action_frame();
 //	run_all_tests_em_init();
+//	run_all_tests_em_deinit();
 	return 0;
 }
