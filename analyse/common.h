@@ -3846,6 +3846,18 @@ extern em_hdd_test_case_t em_handle_disassoc_device_suite[];
 void construct_em_handle_disassoc_device_input(const em_hdd_test_case_t *tc);
 void run_all_tests_em_handle_disassoc_device(void);
 
+/* --- em_handle_sta_conn_status harness (uses rdk_sta_data_t + wifi_ctrl_t) --- */
+#define HSCS_PAD 64
+extern char hscs_ctrl_buf[];
+extern char hscs_data_buf[];
+extern int  hscs_publish_calls, hscs_last_len;
+extern char hscs_published_event[128];
+struct em_hscs_test_case { const char *test_name; int data_null; int want_ret; };
+typedef struct em_hscs_test_case em_hscs_test_case_t;
+extern em_hscs_test_case_t em_handle_sta_conn_status_suite[];
+void construct_em_handle_sta_conn_status_input(const em_hscs_test_case_t *tc);
+void run_all_tests_em_handle_sta_conn_status(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
