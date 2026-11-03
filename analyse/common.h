@@ -5427,3 +5427,19 @@ typedef struct lv_aaf_test_case lv_aaf_test_case_t;
 extern lv_aaf_test_case_t apps_auth_frame_event_suite[];
 void construct_apps_auth_frame_event_input(const lv_aaf_test_case_t *tc);
 void run_all_tests_apps_auth_frame_event(void);
+
+/* --- apps_assoc_req_frame_event harness --- */
+#define AAR_PAD 64
+#define AAR_MAX_SENDS 4
+extern char aar_app_buf[];
+extern char aar_msg_buf[];
+extern char aar_sent_ns[AAR_MAX_SENDS][64];
+extern int  aar_send_calls;
+void aar_setup(const char *key, int n_frames, const int *aps);
+int  aar_remaining(void);
+void aar_teardown(void);
+struct lv_aar_test_case { const char *test_name; int n_frames; int aps[2]; int msg_ap; int want_sends; const char *want_ns0; const char *want_ns1; int want_remaining; };
+typedef struct lv_aar_test_case lv_aar_test_case_t;
+extern lv_aar_test_case_t apps_assoc_req_frame_event_suite[];
+void construct_apps_assoc_req_frame_event_input(const lv_aar_test_case_t *tc);
+void run_all_tests_apps_assoc_req_frame_event(void);
