@@ -369,5 +369,6 @@ int main() {
 //	run_all_tests_harvester_str_to_mac_bytes();
 //	run_all_tests_instant_msmt_macAddr();
 //	run_all_tests_webconfig_harvester_apply();
+//	run_all_tests_levl_csi_status_publish();
 	return 0;
 }

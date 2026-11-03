@@ -2934,8 +2934,8 @@ typedef struct { unsigned int ap_index; unsigned char mac_addr[6]; unsigned char
 typedef struct { unsigned char raw[256]; } wifi_csi_data_t;
 typedef struct { unsigned char sta_mac[6]; wifi_csi_data_t csi; } wifi_csi_dev_t;
 typedef struct { bool b_inst_client_enabled; unsigned long u_inst_client_reporting_period; unsigned long u_inst_client_def_reporting_period; unsigned long u_inst_client_def_override_ttl; char mac_address[13]; } instant_measurement_config_t;
-typedef struct { union { struct { instant_measurement_config_t harvester; } decoded; } u; } webconfig_subdoc_data_t;
-typedef struct { union { wifi_csi_dev_t *csi; webconfig_subdoc_data_t *webconfig_data; } u; } wifi_event_t;
+typedef struct { union { struct { instant_measurement_config_t harvester; } decoded; } u; } wha_subdoc_data_t;
+typedef struct { union { wifi_csi_dev_t *csi; wha_subdoc_data_t *webconfig_data; } u; } wifi_event_t;
 // --- process_csi harness (OneWifi source/apps/csi/wifi_csi.c) ---
 #define PCS_MAC_SZ 18
 #define PCS_PAD    64
@@ -5345,7 +5345,7 @@ void run_all_tests_instant_msmt_macAddr(void);
 
 /* --- webconfig_harvester_apply harness --- */
 #define WHA_PAD 64
-extern char wha_wd_buf[];     /* webconfig_subdoc_data_t + WHA_PAD */
+extern char wha_wd_buf[];     /* wha_subdoc_data_t + WHA_PAD */
 extern int  wha_rep_calls, wha_def_calls, wha_ttl_calls, wha_mac_calls, wha_en_calls;
 extern unsigned char wha_en_mac[6];
 extern int  wha_en_val;
@@ -5354,3 +5354,14 @@ typedef struct harv_wha_test_case harv_wha_test_case_t;
 extern harv_wha_test_case_t webconfig_harvester_apply_suite[];
 void construct_webconfig_harvester_apply_input(const harv_wha_test_case_t *tc);
 void run_all_tests_webconfig_harvester_apply(void);
+
+/* --- levl_csi_status_publish harness --- */
+#define LCSP_PAD 64
+extern unsigned char lcsp_mac_buf[];
+extern char lcsp_pub_name[256], lcsp_pub_value[256];
+extern int  lcsp_publish_calls, lcsp_publish_fail;
+struct lv_lcsp_test_case { const char *test_name; unsigned char mac[6]; unsigned int status; int publish_fail; int want_ret; const char *want_value; };
+typedef struct lv_lcsp_test_case lv_lcsp_test_case_t;
+extern lv_lcsp_test_case_t levl_csi_status_publish_suite[];
+void construct_levl_csi_status_publish_input(const lv_lcsp_test_case_t *tc);
+void run_all_tests_levl_csi_status_publish(void);
