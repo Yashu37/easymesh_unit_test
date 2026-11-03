@@ -350,5 +350,6 @@ int main() {
 //	run_all_tests_em_process_neighbour_data();
 //	run_all_tests_radio_chan_stats_response();
 //	run_all_tests_handle_sta_client_info();
+//	run_all_tests_em_publish_failed_connection();
 	return 0;
 }

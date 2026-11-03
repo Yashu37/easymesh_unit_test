@@ -2372,7 +2372,7 @@ void run_all_tests_blaster_str_to_mac_bytes(void);
 
 // --- active_msmt_log_message harness (OneWifi source/apps/blaster/wifi_blaster.c) ---
 typedef enum { BLASTER_INFO_LOG = 0, BLASTER_DEBUG_LOG } blaster_log_level_t;  // wifi_blaster.h
-typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; unsigned int webconfig_state; int webconfig; } wifi_ctrl_t;   // subset (apps_mgr + mode + webconfig_state + webconfig)
+typedef struct { wifi_apps_mgr_t apps_mgr; int network_mode; unsigned int webconfig_state; int webconfig; unsigned char handle[16]; } wifi_ctrl_t;   // subset (+ handle for em_publish_failed_connection)
 typedef struct {                               // stand-in: CCSP trace hooks + ctrl + hal_cap used by blaster
 	struct {
 		struct {
@@ -3808,6 +3808,20 @@ void run_all_tests_handle_sta_client_info(void);
 void hsci_store_reset(void);
 void hsci_store_prepopulate(const char *key);
 void *hsci_store_get(void);
+
+/* --- em_publish_failed_connection harness (uses wifi_ctrl_t) --- */
+#define PFC_PAD 64
+typedef struct { unsigned char bssid[6]; unsigned char sta_mac[6]; unsigned int status; unsigned int reason; } wifi_em_failed_conn_t;
+extern char pfc_ctrl_buf[];
+extern char pfc_fc_buf[];
+extern int  pfc_publish_fail, pfc_publish_calls;
+extern char pfc_published_json[256];
+extern char pfc_published_event[128];
+struct em_pfc_test_case { const char *test_name; int publish_fail; int want_ret; };
+typedef struct em_pfc_test_case em_pfc_test_case_t;
+extern em_pfc_test_case_t em_publish_failed_connection_suite[];
+void construct_em_publish_failed_connection_input(const em_pfc_test_case_t *tc);
+void run_all_tests_em_publish_failed_connection(void);
 
 typedef struct {
 	bssid_t bssid;
