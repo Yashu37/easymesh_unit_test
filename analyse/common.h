@@ -2933,7 +2933,9 @@ void run_all_tests_cac_mgmt_frame_hook(void);
 typedef struct { unsigned int ap_index; unsigned char mac_addr[6]; unsigned char link_addr[6]; bool is_mlo; int subscribed_apps; } csi_mac_data_t;  // superset for process_csi + csi_start/stop_fn
 typedef struct { unsigned char raw[256]; } wifi_csi_data_t;
 typedef struct { unsigned char sta_mac[6]; wifi_csi_data_t csi; } wifi_csi_dev_t;
-typedef struct { union { wifi_csi_dev_t *csi; } u; } wifi_event_t;
+typedef struct { bool b_inst_client_enabled; unsigned long u_inst_client_reporting_period; unsigned long u_inst_client_def_reporting_period; unsigned long u_inst_client_def_override_ttl; char mac_address[13]; } instant_measurement_config_t;
+typedef struct { union { struct { instant_measurement_config_t harvester; } decoded; } u; } webconfig_subdoc_data_t;
+typedef struct { union { wifi_csi_dev_t *csi; webconfig_subdoc_data_t *webconfig_data; } u; } wifi_event_t;
 // --- process_csi harness (OneWifi source/apps/csi/wifi_csi.c) ---
 #define PCS_MAC_SZ 18
 #define PCS_PAD    64
@@ -5340,3 +5342,15 @@ typedef struct harv_iam_test_case harv_iam_test_case_t;
 extern harv_iam_test_case_t instant_msmt_macAddr_suite[];
 void construct_instant_msmt_macAddr_input(const harv_iam_test_case_t *tc);
 void run_all_tests_instant_msmt_macAddr(void);
+
+/* --- webconfig_harvester_apply harness --- */
+#define WHA_PAD 64
+extern char wha_wd_buf[];     /* webconfig_subdoc_data_t + WHA_PAD */
+extern int  wha_rep_calls, wha_def_calls, wha_ttl_calls, wha_mac_calls, wha_en_calls;
+extern unsigned char wha_en_mac[6];
+extern int  wha_en_val;
+struct harv_wha_test_case { const char *test_name; const char *mac; int enabled; unsigned char want_mac[6]; };
+typedef struct harv_wha_test_case harv_wha_test_case_t;
+extern harv_wha_test_case_t webconfig_harvester_apply_suite[];
+void construct_webconfig_harvester_apply_input(const harv_wha_test_case_t *tc);
+void run_all_tests_webconfig_harvester_apply(void);

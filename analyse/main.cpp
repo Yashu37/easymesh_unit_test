@@ -368,5 +368,6 @@ int main() {
 //	run_all_tests_monitor_enable_instant_msmt();
 //	run_all_tests_harvester_str_to_mac_bytes();
 //	run_all_tests_instant_msmt_macAddr();
+//	run_all_tests_webconfig_harvester_apply();
 	return 0;
 }
