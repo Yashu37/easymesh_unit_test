@@ -3834,6 +3834,18 @@ extern em_hfc_test_case_t em_handle_failed_connection_suite[];
 void construct_em_handle_failed_connection_input(const em_hfc_test_case_t *tc);
 void run_all_tests_em_handle_failed_connection(void);
 
+/* --- em_handle_disassoc_device harness (uses assoc_dev_data_t + shared cache) --- */
+#define HDD_PAD 64
+extern char hdd_ctrl_buf[];
+extern char hdd_mgr_buf[];
+extern char hdd_arg_buf[];
+extern int  hdd_radio_index, hdd_vap_null, hdd_stats_present, hdd_clitype_present;
+struct em_hdd_test_case { const char *test_name; int radio_index; int vap_null; int stats_present; int clitype_present; int vap_in_cache; int want_ret; };
+typedef struct em_hdd_test_case em_hdd_test_case_t;
+extern em_hdd_test_case_t em_handle_disassoc_device_suite[];
+void construct_em_handle_disassoc_device_input(const em_hdd_test_case_t *tc);
+void run_all_tests_em_handle_disassoc_device(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;

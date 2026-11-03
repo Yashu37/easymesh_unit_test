@@ -352,5 +352,6 @@ int main() {
 //	run_all_tests_handle_sta_client_info();
 //	run_all_tests_em_publish_failed_connection();
 //	run_all_tests_em_handle_failed_connection();
+//	run_all_tests_em_handle_disassoc_device();
 	return 0;
 }
