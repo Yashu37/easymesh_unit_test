@@ -3858,6 +3858,19 @@ extern em_hscs_test_case_t em_handle_sta_conn_status_suite[];
 void construct_em_handle_sta_conn_status_input(const em_hscs_test_case_t *tc);
 void run_all_tests_em_handle_sta_conn_status(void);
 
+/* --- em_config_channel_scan harness (uses channel_scan_request_t) --- */
+#define ECCS_PAD 64
+extern char eccs_mgr_buf[];
+extern char eccs_req_buf[];
+extern int  eccs_mgr_null, eccs_iface_count, eccs_scan_init_calls, eccs_scan_init_radio;
+extern char eccs_iface_name[8][32];
+extern unsigned char eccs_iface_mac[8][6];
+struct em_eccs_test_case { const char *test_name; int data_null; int small_len; int mgr_null; int want_calls; int want_radio; };
+typedef struct em_eccs_test_case em_eccs_test_case_t;
+extern em_eccs_test_case_t em_config_channel_scan_suite[];
+void construct_em_config_channel_scan_input(const em_eccs_test_case_t *tc);
+void run_all_tests_em_config_channel_scan(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;

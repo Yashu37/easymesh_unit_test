@@ -354,5 +354,6 @@ int main() {
 //	run_all_tests_em_handle_failed_connection();
 //	run_all_tests_em_handle_disassoc_device();
 //	run_all_tests_em_handle_sta_conn_status();
+//	run_all_tests_em_config_channel_scan();
 	return 0;
 }
