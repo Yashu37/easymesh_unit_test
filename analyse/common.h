@@ -4017,6 +4017,33 @@ extern harv_ihd_test_case_t is_harvester_device_associated_suite[];
 void construct_is_harvester_device_associated_input(const harv_ihd_test_case_t *tc);
 void run_all_tests_is_harvester_device_associated(void);
 
+/* --- process_instant_msmt_monitor harness (uses wifi_provider_response_t + sta_data_t) --- */
+#ifndef MIN_MAC_LEN
+#define MIN_MAC_LEN 12
+#endif
+#define PIM_PAD 64
+#define PIM_STATS_SZ (8 * sizeof(sta_data_t) + PIM_PAD)   /* size of pim_stats_buf */
+/* radio_data_t comes from above (line ~1907) */
+typedef struct { int ap_index; unsigned char sta_mac[6]; } pim_inst_msmt_t;
+typedef struct {
+	int  count;
+	int  maxCount;
+	int  instantDefOverrideTTL;
+	bool instntMsmtenable;
+	void *radio_data[MAX_NUM_RADIOS];
+	char instantMac[32];
+	pim_inst_msmt_t inst_msmt;
+} harvester_ctx_t;
+extern harvester_ctx_t g_harvester_module;
+extern char pim_resp_buf[];
+extern char pim_stats_buf[];
+extern int  pim_num_radios, pim_devstats_fail, pim_stop_calls, pim_upload_calls;
+struct em_pim_test_case { const char *test_name; int count; int maxCount; int nstats; int match; int want_stop; int want_upload; };
+typedef struct em_pim_test_case em_pim_test_case_t;
+extern em_pim_test_case_t process_instant_msmt_monitor_suite[];
+void construct_process_instant_msmt_monitor_input(const em_pim_test_case_t *tc);
+void run_all_tests_process_instant_msmt_monitor(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
