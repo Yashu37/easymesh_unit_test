@@ -370,5 +370,6 @@ int main() {
 //	run_all_tests_instant_msmt_macAddr();
 //	run_all_tests_webconfig_harvester_apply();
 //	run_all_tests_levl_csi_status_publish();
+//	run_all_tests_schedule_from_pending_map_locked();
 	return 0;
 }

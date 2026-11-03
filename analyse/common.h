@@ -1694,6 +1694,16 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 			} csi;
 			csi_analytics_info_t csi_analytics;   // data.u.csi_analytics (webconfig_hal_csi_data_apply)
 			struct { em_config_t em_config; } em_data;   // data.u.em_data (em_init policy config)
+			struct {                      // data.u.levl (subset used by levl functions)
+				int max_num_csi_clients;
+				int num_current_sounding;
+				int sounding_duration;
+				int publish_interval;
+				void *probe_req_map;          // hash_map_t *
+				void *curr_sounding_mac_map;  // hash_map_t *
+				void *pending_mac_map;        // hash_map_t *
+				pthread_mutex_t lock;
+			} levl;
 		} u;
 	} data;
 	struct { unsigned char handle[256]; } *ctrl;   // real: wifi_ctrl_t* (needs ->handle for easyconnect_init)
@@ -5365,3 +5375,17 @@ typedef struct lv_lcsp_test_case lv_lcsp_test_case_t;
 extern lv_lcsp_test_case_t levl_csi_status_publish_suite[];
 void construct_levl_csi_status_publish_input(const lv_lcsp_test_case_t *tc);
 void run_all_tests_levl_csi_status_publish(void);
+
+/* --- schedule_from_pending_map_locked harness --- */
+#define LSP_PAD 64
+typedef struct { int sched_handler_id; mac_address_t mac_addr; unsigned int ap_index; int request_count; int duration; int interval; struct timeval last_time_publish; } levl_sched_data_t;
+extern char lsp_app_buf[];
+extern levl_sched_data_t *lsp_entries[8];
+extern int  lsp_n, lsp_sched_calls, lsp_sched_ap, lsp_sched_dur, lsp_sched_int;
+extern unsigned char lsp_sched_mac[6];
+struct lv_lsp_test_case { const char *test_name; int n; unsigned char mac5[3]; int num_cur; int max_cli; int null_mode; int want_ret; int want_sched; int want_ap; int want_remaining; };
+typedef struct lv_lsp_test_case lv_lsp_test_case_t;
+extern lv_lsp_test_case_t schedule_from_pending_map_locked_suite[];
+void construct_schedule_from_pending_map_locked_input(const lv_lsp_test_case_t *tc);
+void lsp_free_entries(void);
+void run_all_tests_schedule_from_pending_map_locked(void);
