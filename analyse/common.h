@@ -4001,6 +4001,22 @@ extern em_edi_test_case_t em_deinit_suite[];
 void construct_em_deinit_input(const em_edi_test_case_t *tc);
 void run_all_tests_em_deinit(void);
 
+/* --- is_harvester_device_associated harness (uses rdk_wifi_vap_info_t + sta_key_t) --- */
+#define IHD_PAD 64
+#define IHD_KEY_SZ STA_KEY_LEN
+extern rdk_wifi_vap_info_t *ihd_vap;
+extern int   ihd_vap_lookups, ihd_lookup_index, ihd_key_len;
+extern assoc_dev_data_t *ihd_sta;
+extern char  ihd_sta_key[64];
+extern char  ihd_key_seen[64];
+extern char  ihd_slot_key[];
+extern unsigned char ihd_mac_buf[];
+struct harv_ihd_test_case { const char *test_name; int vap_null; int map_null; int sta_present; bool want; };
+typedef struct harv_ihd_test_case harv_ihd_test_case_t;
+extern harv_ihd_test_case_t is_harvester_device_associated_suite[];
+void construct_is_harvester_device_associated_input(const harv_ihd_test_case_t *tc);
+void run_all_tests_is_harvester_device_associated(void);
+
 typedef struct {
 	bssid_t bssid;
 	ssid_t  ssid;
