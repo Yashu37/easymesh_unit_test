@@ -17,7 +17,7 @@
 #include <string.h>
 #include "common.h"
 
-ecs_cache_t em_ap_metrics_report_cache;
+em_ap_metrics_report_cache_t em_ap_metrics_report_cache;
 alignas(16) char ecs_dev3_buf[sizeof(wifi_associated_dev3_t) + ECS_PAD];
 int ecs_getvap_null;
 int ecs_prepopulate;

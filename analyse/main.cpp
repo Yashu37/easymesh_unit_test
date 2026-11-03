@@ -348,5 +348,6 @@ int main() {
 //	run_all_tests_em_prepare_scan_response_data();
 //	run_all_tests_em_publish_stats_data();
 //	run_all_tests_em_process_neighbour_data();
+//	run_all_tests_radio_chan_stats_response();
 	return 0;
 }

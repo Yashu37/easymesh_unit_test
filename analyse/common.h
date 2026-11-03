@@ -1754,10 +1754,15 @@ void run_all_tests_em_match_radio_index_to_policy_index(void);
 #define MAX_NUM_RADIOS 3
 #endif
 #define ECS_PAD 64
-typedef struct { unsigned int vap_index; int sta_count; void *client_stats_map; } ecs_ap_data_t;
-typedef struct { ecs_ap_data_t ap_data[MAX_NUM_VAP_PER_RADIO]; } ecs_radio_report_t;
-typedef struct { ecs_radio_report_t radio_report[MAX_NUM_RADIOS]; } ecs_cache_t;
-extern ecs_cache_t em_ap_metrics_report_cache;
+/* shared em_ap_metrics_report_cache: used by em_client_stats_store (117,
+ * vap_index/sta_count/client_stats_map) and radio_chan_stats_response (123,
+ * radio_metrics + ap_data[].ap_metrics). One global, one unified type. */
+typedef struct { unsigned char bssid[6]; unsigned char channel_util; } em_cache_ap_metrics_t;   // subset of ap_metrics_t
+typedef struct { int vap_index; em_cache_ap_metrics_t ap_metrics; int sta_count; void *client_stats_map; } ap_metrics_data_t;
+typedef struct { unsigned char ruid[6]; unsigned char transmit, receive_self, receive_other, noise; } radio_metrics_t;
+typedef struct { int radio_index; radio_metrics_t radio_metrics; ap_metrics_data_t ap_data[MAX_NUM_VAP_PER_RADIO]; } em_ap_radio_report_t;
+typedef struct { em_ap_radio_report_t radio_report[MAX_NUM_RADIOS]; } em_ap_metrics_report_cache_t;
+extern em_ap_metrics_report_cache_t em_ap_metrics_report_cache;
 extern char ecs_dev3_buf[];
 extern int  ecs_getvap_null;    /* 1 -> getVapInfo returns NULL */
 extern int  ecs_prepopulate;    /* 1 -> pre-put an entry so the update path runs */
@@ -3768,6 +3773,29 @@ typedef struct em_epnd_test_case em_epnd_test_case_t;
 extern em_epnd_test_case_t em_process_neighbour_data_suite[];
 void construct_em_process_neighbour_data_input(const em_epnd_test_case_t *tc);
 void run_all_tests_em_process_neighbour_data(void);
+
+/* --- radio_chan_stats_response harness (uses wifi_vap_info_map_t + shared cache) --- */
+#define RCS_PAD 64
+typedef struct {
+	unsigned int ch_number;
+	int          ch_noise;
+	unsigned long long ch_utilization_total, ch_utilization_busy, ch_utilization_busy_tx,
+	    ch_utilization_busy_self, ch_utilization_busy_rx, ch_utilization_busy_ext;
+} radio_chan_data_t;
+typedef struct { wifi_vap_info_map_t vap_map; unsigned int num_vaps; } rcs_vaps_t;
+typedef struct { rcs_vaps_t vaps; } rdk_wifi_radio_t;
+typedef struct { unsigned long long total, busy, busy_tx, busy_self, busy_rx; unsigned int chan; } em_chan_survey_prev_t;
+extern em_chan_survey_prev_t em_chan_survey_prev[MAX_NUM_RADIOS];
+extern char rcs_mgr_buf[];
+extern char rcs_resp_buf[];
+extern void *rcs_stat_pointer;
+extern rdk_wifi_radio_t rcs_radio;
+extern int  rcs_radio_null;
+struct em_rcs_test_case { const char *test_name; int radio_index; int stat_array_size; int num_vaps; int radio_null; int want_ret; };
+typedef struct em_rcs_test_case em_rcs_test_case_t;
+extern em_rcs_test_case_t radio_chan_stats_response_suite[];
+void construct_radio_chan_stats_response_input(const em_rcs_test_case_t *tc);
+void run_all_tests_radio_chan_stats_response(void);
 
 typedef struct {
 	bssid_t bssid;
