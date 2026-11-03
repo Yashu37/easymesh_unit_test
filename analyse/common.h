@@ -5389,3 +5389,15 @@ extern lv_lsp_test_case_t schedule_from_pending_map_locked_suite[];
 void construct_schedule_from_pending_map_locked_input(const lv_lsp_test_case_t *tc);
 void lsp_free_entries(void);
 void run_all_tests_schedule_from_pending_map_locked(void);
+
+/* --- get_max_probe_ttl_cnt harness --- */
+#define GMT_PAD 64
+#define GMT_FILE_SZ 512
+extern char gmt_file_buf[];      /* backing store of the fmemopen'ed ttl file (GMT_FILE_SZ + GMT_PAD) */
+extern size_t gmt_file_len;
+extern int gmt_have_file;
+struct lv_gmt_test_case { const char *test_name; const char *content; int repeat; int have_file; unsigned int want; };
+typedef struct lv_gmt_test_case lv_gmt_test_case_t;
+extern lv_gmt_test_case_t get_max_probe_ttl_cnt_suite[];
+void construct_get_max_probe_ttl_cnt_input(const lv_gmt_test_case_t *tc);
+void run_all_tests_get_max_probe_ttl_cnt(void);
