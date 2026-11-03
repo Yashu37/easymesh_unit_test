@@ -35,6 +35,9 @@
 #define UCHAR unsigned char
 #endif
 #define WIFI_HAL_SUCCESS 0
+/* the verbatim code names the radio-oper type wifi_radio_operationParam_t; the
+ * shared harness type is esaf_radio_oper_t (that name is taken by other TUs) */
+#define wifi_radio_operationParam_t esaf_radio_oper_t
 
 /* --- scaffolding stubs driven by esaf_* globals --- */
 static wifi_mgr_t *get_wifimgr_obj(void) { return (wifi_mgr_t *)esaf_mgr_buf; }

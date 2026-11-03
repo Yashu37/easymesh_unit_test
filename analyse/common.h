@@ -1660,9 +1660,18 @@ typedef struct csi_analytics_info {
 
 typedef struct { char interface_name[32]; int radio_index; } radio_interface_mapping_t;   // subset (easyconnect)
 typedef struct { radio_interface_mapping_t radio_interface_map[8]; } wifi_platform_property_t;
+/* minimal em_config_t (policy scalars used by em_init); self-contained to avoid
+ * ordering issues with the later radio_metrics_policies_t */
+typedef struct {
+	struct { int sta_count; } btm_steering_dslw_policy;
+	struct { int sta_count; } local_steering_dslw_policy;
+	struct { int radio_count; } radio_metrics_policies;
+} em_config_t;
+
 struct wifi_app {                            // subset: desc first, ctrl last (as in source)
 	wifi_app_descriptor_t desc;
 	unsigned char         rest[512];        // lock, cond, queue, tid, handle, ... (not touched)
+	unsigned char         handle[16];       // app->handle (used by em_init bus_open)
 	struct {                                 // data.u.analytics (same layout as analytics_data_t)
 		union {
 			struct {
@@ -1684,6 +1693,7 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				int   num_current_sounding;
 			} csi;
 			csi_analytics_info_t csi_analytics;   // data.u.csi_analytics (webconfig_hal_csi_data_apply)
+			struct { em_config_t em_config; } em_data;   // data.u.em_data (em_init policy config)
 		} u;
 	} data;
 	struct { unsigned char handle[256]; } *ctrl;   // real: wifi_ctrl_t* (needs ->handle for easyconnect_init)
@@ -3953,17 +3963,32 @@ typedef struct {
 	struct { unsigned int opClass; } channelReport;
 } wifi_BeaconRequest_t;
 typedef struct { unsigned char sta_mac[6]; wifi_BeaconRequest_t data; } beacon_query_params_t;
-typedef struct { unsigned int countryCode; unsigned int operatingClass; unsigned int channel; } wifi_radio_operationParam_t;
+/* named esaf_radio_oper_t (NOT wifi_radio_operationParam_t, which is a local
+ * typedef in start_sta_channel_scan.cpp / WiFiBlastClient.cpp) */
+typedef struct { unsigned int countryCode; unsigned int operatingClass; unsigned int channel; } esaf_radio_oper_t;
 extern char esaf_mgr_buf[];
 extern char esaf_query_buf[];
 extern int  esaf_num_radios, esaf_vap_present[8], esaf_radio_index, esaf_radio_null, esaf_country_fail, esaf_send_fail, esaf_send_calls;
 extern wifi_vap_info_map_t esaf_vap_maps[8];
-extern wifi_radio_operationParam_t esaf_radio_oper;
+extern esaf_radio_oper_t esaf_radio_oper;
 struct em_esaf_test_case { const char *test_name; int radio_null; int country_fail; int send_fail; int bssid_sel; int want_rc; };
 typedef struct em_esaf_test_case em_esaf_test_case_t;
 extern em_esaf_test_case_t em_send_action_frame_suite[];
 void construct_em_send_action_frame_input(const em_esaf_test_case_t *tc);
 void run_all_tests_em_send_action_frame(void);
+
+/* --- em_init harness (uses wifi_app_t + em_config_t) --- */
+#define EMI_PAD 64
+extern char emi_app_buf[];
+extern char emi_appctrl_buf[];
+extern int  emi_app_init_ret, emi_bus_open_fail, emi_bus_reg_fail;
+extern int  emi_reg_calls, emi_reg_num, emi_cache_init_calls;
+extern char emi_elem0_name[128];
+struct em_emi_test_case { const char *test_name; int app_init_ret; int bus_open_fail; int bus_reg_fail; int want_ret; };
+typedef struct em_emi_test_case em_emi_test_case_t;
+extern em_emi_test_case_t em_init_suite[];
+void construct_em_init_input(const em_emi_test_case_t *tc);
+void run_all_tests_em_init(void);
 
 typedef struct {
 	bssid_t bssid;

@@ -19,7 +19,7 @@ alignas(16) char esaf_mgr_buf[sizeof(wifi_mgr_t) + ESAF_PAD];
 alignas(16) char esaf_query_buf[sizeof(beacon_query_params_t) + ESAF_PAD];
 int esaf_num_radios, esaf_vap_present[8], esaf_radio_index, esaf_radio_null, esaf_country_fail, esaf_send_fail, esaf_send_calls;
 wifi_vap_info_map_t esaf_vap_maps[8];
-wifi_radio_operationParam_t esaf_radio_oper;
+esaf_radio_oper_t esaf_radio_oper;
 
 em_esaf_test_case_t em_send_action_frame_suite[] = {
     /* name          radio_null country_fail send_fail bssid_sel want_rc */
