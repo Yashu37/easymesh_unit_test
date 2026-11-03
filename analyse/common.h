@@ -4037,6 +4037,7 @@ typedef struct {
 	int  inst_msmt_id;
 	int  instantPollPeriod;
 	pthread_mutex_t queue_lock;
+	pthread_cond_t cond;
 } harvester_ctx_t;
 /* wifi_monitor_data_t: minimal (only u.msg.data is touched) */
 typedef struct { union { struct { unsigned char data[MAX_FRAME_SZ]; } msg; } u; } wifi_monitor_data_t;
@@ -5327,3 +5328,15 @@ public:
 	void fill_scan_result(dm_scan_result_t *scan_res, em_channel_scan_result_t *res, unsigned char *start, unsigned char *end);
 
 };
+
+/* --- instant_msmt_macAddr harness --- */
+#define IAM_PAD 64
+#define IAM_MAC_SZ (64 + IAM_PAD)
+extern char iam_mgr_buf[];
+extern char iam_mac_buf[];
+extern int  iam_num_vaps, iam_found_vap, iam_assoc_checks;
+struct harv_iam_test_case { const char *test_name; const char *mac; int found_vap; int want_ap; int want_found; unsigned char want_mac[6]; };
+typedef struct harv_iam_test_case harv_iam_test_case_t;
+extern harv_iam_test_case_t instant_msmt_macAddr_suite[];
+void construct_instant_msmt_macAddr_input(const harv_iam_test_case_t *tc);
+void run_all_tests_instant_msmt_macAddr(void);
