@@ -372,5 +372,6 @@ int main() {
 //	run_all_tests_levl_csi_status_publish();
 //	run_all_tests_schedule_from_pending_map_locked();
 //	run_all_tests_get_max_probe_ttl_cnt();
+//	run_all_tests_apps_probe_req_frame_event();
 	return 0;
 }

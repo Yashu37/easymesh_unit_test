@@ -5401,3 +5401,17 @@ typedef struct lv_gmt_test_case lv_gmt_test_case_t;
 extern lv_gmt_test_case_t get_max_probe_ttl_cnt_suite[];
 void construct_get_max_probe_ttl_cnt_input(const lv_gmt_test_case_t *tc);
 void run_all_tests_get_max_probe_ttl_cnt(void);
+
+/* --- apps_probe_req_frame_event harness --- */
+#define LPR_PAD 64
+extern char lpr_app_buf[];    /* struct wifi_app + LPR_PAD */
+extern char lpr_msg_buf[];    /* frame_data_t + LPR_PAD (caller-owned msg) */
+extern int  lpr_count_override;
+void lpr_setup(const char *key, int preexist, int pre_ap);
+int  lpr_result(char *key_out, size_t key_sz, int *update_calls, int *first_ap);
+void lpr_teardown(void);
+struct lv_lpr_test_case { const char *test_name; int map_null; int count_override; int preexist; int pre_ap; int msg_ap; int want_frames; int want_first_ap; int want_update; const char *want_key; };
+typedef struct lv_lpr_test_case lv_lpr_test_case_t;
+extern lv_lpr_test_case_t apps_probe_req_frame_event_suite[];
+void construct_apps_probe_req_frame_event_input(const lv_lpr_test_case_t *tc);
+void run_all_tests_apps_probe_req_frame_event(void);
