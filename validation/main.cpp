@@ -32,7 +32,10 @@ int main() {
 //	run_all_tests_get_processor_desc();
 
 	// rdk_hal_ipc_exec (rdk-wifi-hal hal_ipc/server/hal_ipc.c)
-	run_all_tests_rdk_hal_ipc_exec();
+//	run_all_tests_rdk_hal_ipc_exec();
+
+	// rdk_hal_server_func (rdk-wifi-hal hal_ipc/server/hal_ipc.c)
+	run_all_tests_rdk_hal_server_func();
 
 	return 0;
 }

@@ -5794,13 +5794,24 @@ typedef enum {
     hal_ipc_desc_type_max
 } hal_ipc_desc_type_t;
 #define HAL_IPC_DESCRIPTOR_NAME_LEN 128
+/* processor types / callback typedef: copied VERBATIM from hal_ipc.h:41-51 */
+typedef enum {
+    processor_type_ipc_client_input,
+    processor_type_ipc_client_output,
+    processor_type_ipc_server_output,
+    processor_type_ipc_client_notification_input,
+    processor_type_ipc_server_notification_output,
+    processor_type_ipc_max
+} hal_ipc_processor_type_t;
+struct hal_ipc_processor_desc;
+typedef int (*hal_ipc_processor_t)(struct hal_ipc_processor_desc *desc, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5);
 #define GPD_IN_PAD  4096                /* scaffold: stands in for the "in" union  */
 #define GPD_OUT_PAD 4096                /* scaffold: stands in for the "out" union */
 #pragma pack(1)
 typedef struct hal_ipc_processor_desc {
     hal_ipc_desc_type_t type;
     char                name[HAL_IPC_DESCRIPTOR_NAME_LEN];
-    void               *ipc_processor[5];
+    hal_ipc_processor_t ipc_processor[processor_type_ipc_max];
     unsigned int        len;
     int                 ret;
     unsigned char       in_pad[GPD_IN_PAD];
@@ -5864,3 +5875,29 @@ typedef struct hipc_exec_test_case hipc_exec_test_case_t;
 extern hipc_exec_test_case_t rdk_hal_ipc_exec_suite[];
 void construct_rdk_hal_ipc_exec_input(const hipc_exec_test_case_t *tc);
 void run_all_tests_rdk_hal_ipc_exec(void);
+
+/* --- rdk_hal_server_func harness (rdk-wifi-hal hal_ipc/server/hal_ipc.c) --- */
+#define HSRV_MAX_CLIENTS  4
+#define HSRV_STREAM_SZ    40000          /* runner-owned request stream per client; tail poisoned */
+#define HSRV_RESP_SZ      60000          /* runner-owned response capture per client            */
+extern unsigned char hsrv_stream[HSRV_MAX_CLIENTS][HSRV_STREAM_SZ];
+extern size_t        hsrv_stream_len[HSRV_MAX_CLIENTS];
+extern int           hsrv_nclients;
+int     hsrv_stub_socket(int domain, int type, int protocol);
+int     hsrv_stub_bind(int fd, const struct sockaddr *addr, socklen_t len);
+int     hsrv_stub_setsockopt(int fd, int level, int optname, const void *optval, socklen_t optlen);
+int     hsrv_stub_listen(int fd, int backlog);
+int     hsrv_stub_accept(int fd, struct sockaddr *addr, socklen_t *len);
+ssize_t hsrv_stub_recv(int fd, void *buf, size_t len, int flags);
+ssize_t hsrv_stub_send(int fd, const void *buf, size_t len, int flags);
+int     hsrv_stub_close(int fd);
+int     hsrv_stub_unlink(const char *path);
+void   *hsrv_stub_malloc(size_t n);
+void    hsrv_stub_free(void *p);
+void   *rdk_hal_server_func_entry(void *arg);
+extern void (*hsrv_poison_fn)(int on);   /* set by the runner; poisons/unpoisons the runner-owned buffers around the call */
+struct hsrv_test_case { const char *test_name; int (*scenario)(void); int expected_result; };
+typedef struct hsrv_test_case hsrv_test_case_t;
+extern hsrv_test_case_t rdk_hal_server_func_suite[];
+void construct_rdk_hal_server_func_input(const hsrv_test_case_t *tc);
+void run_all_tests_rdk_hal_server_func(void);
