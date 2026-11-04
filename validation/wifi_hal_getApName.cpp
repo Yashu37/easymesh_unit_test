@@ -17,7 +17,7 @@
 #include <string.h>
 
 /* 1 = with FIX 1 in the helpers, 0 = original unfixed code (set to 0 to reproduce the findings) */
-#define RDK_GAN_FIX  0
+#define RDK_GAN_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
