@@ -13,7 +13,7 @@
 #include "hwr_defs.h"
 
 /* 1 = with FIX 1..2, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_GRC_FIX  0
+#define RDK_GRC_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_getRadioChannelStats hwr_wifi_hal_getRadioChannelStats
