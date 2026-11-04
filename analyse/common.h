@@ -1691,6 +1691,7 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 			struct {                      // data.u.csi (subset used by process_csi / csi_start_fn)
 				void *csi_sounding_mac_map;  // hash_map_t *
 				int   num_current_sounding;
+				struct { void (*csi_stop_fn)(wifi_app_t *, int, unsigned char *, int); } csi_fns;
 			} csi;
 			csi_analytics_info_t csi_analytics;   // data.u.csi_analytics (webconfig_hal_csi_data_apply)
 			struct { em_config_t em_config; } em_data;   // data.u.em_data (em_init policy config)
@@ -1702,6 +1703,7 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				void *probe_req_map;          // hash_map_t *
 				void *curr_sounding_mac_map;  // hash_map_t *
 				void *pending_mac_map;        // hash_map_t *
+				struct wifi_app *csi_app;
 				pthread_mutex_t lock;
 			} levl;
 		} u;
@@ -5455,3 +5457,21 @@ typedef struct lv_arf_test_case lv_arf_test_case_t;
 extern lv_arf_test_case_t apps_reassoc_req_frame_event_suite[];
 void construct_apps_reassoc_req_frame_event_input(const lv_arf_test_case_t *tc);
 void run_all_tests_apps_reassoc_req_frame_event(void);
+
+/* --- process_levl_sounding_timeout harness --- */
+#define LST_PAD 64
+typedef struct { mac_address_t mac_addr; int ap_index; } timeout_data_t;
+extern char lst_ctrl_buf[];
+extern char lst_app_buf[];
+extern char lst_csi_buf[];
+extern timeout_data_t *lst_tdata;
+extern int  lst_null_ctrl, lst_null_app;
+extern int  lst_pub_calls, lst_pub_status, lst_sched_calls, lst_stop_calls, lst_stop_ap;
+extern unsigned char lst_pub_mac[6], lst_stop_mac[6];
+void lst_set_slot(const unsigned char *mac, int ap_index);
+int  lst_slot_present(void);
+struct lv_lst_test_case { const char *test_name; int null_tdata; int null_ctrl; int null_app; int null_csi; int null_map; int slot; int want_ret; int want_stop; int want_pub; int want_sched; };
+typedef struct lv_lst_test_case lv_lst_test_case_t;
+extern lv_lst_test_case_t process_levl_sounding_timeout_suite[];
+void construct_process_levl_sounding_timeout_input(const lv_lst_test_case_t *tc);
+void run_all_tests_process_levl_sounding_timeout(void);
