@@ -218,7 +218,7 @@ static void setup(const srv &s)
 	case 1: node->node_path[0] = 0; break;
 	case 2: memset(node->node_path, 'p', 63); break;
 	case 3: memset(node->node_path, 'p', 64); break;
-	case 4: memset(node->node_path, 'p', 64); memset(hipc_node_slab + 64, 0x41, sizeof(hal_ipc_node_t) - 64); break;
+	case 4: memset(node->node_path, 'p', 64); memset(hipc_node_slab + 64, 0x41, sizeof(hal_ipc_node_t) - 64); node->type = (hal_ipc_node_type_t)s.node_type; break;
 	default: strcpy(node->node_path, "/tmp/hipc_srv_node"); break;
 	}
 }
