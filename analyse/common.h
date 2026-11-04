@@ -3027,7 +3027,9 @@ void construct_set_bus_csi_sta_maclist_input(const set_bus_csi_sta_maclist_test_
 int  test_set_bus_csi_sta_maclist(const set_bus_csi_sta_maclist_test_case_t *tc);
 void run_all_tests_set_bus_csi_sta_maclist(void);
 
-typedef struct webconfig_subdoc_decoded_data { void *csi_data_queue; } webconfig_subdoc_decoded_data_t;
+typedef struct { unsigned char clientMac[6]; int max_num_csi_clients; int levl_sounding_duration; int levl_publish_interval; } levl_config_t;   // include/wifi_base.h
+typedef struct webconfig_subdoc_decoded_data { void *csi_data_queue; levl_config_t levl; } webconfig_subdoc_decoded_data_t;
+typedef struct { int type; struct { webconfig_subdoc_decoded_data_t decoded; } u; } webconfig_subdoc_data_t;   // subset of include/wifi_webconfig.h
 // --- webconfig_hal_csi_data_apply harness (OneWifi source/apps/csi/wifi_csi_analytics.c) ---
 #define WHC_MAC_SZ 18
 #define WHC_PAD    64
@@ -5553,3 +5555,15 @@ typedef struct lv_lds_test_case lv_lds_test_case_t;
 extern lv_lds_test_case_t levl_disassoc_device_event_suite[];
 void construct_levl_disassoc_device_event_input(const lv_lds_test_case_t *tc);
 void run_all_tests_levl_disassoc_device_event(void);
+
+/* --- levl_event_webconfig_set_data harness --- */
+#define LSE_PAD 64
+extern char lse_apps_buf[];
+extern char lse_doc_buf[];
+extern int  lse_ap_ret, lse_sched_calls, lse_sched_ap, lse_sched_dur, lse_sched_int;
+extern unsigned char lse_sched_mac[6];
+struct lv_lse_test_case { const char *test_name; int type_levl; int max_clients; int dur; int interval; int mac_set; int ap_ret; int init_dur; int init_int; int want_max; int want_dur; int want_int; int want_sched; };
+typedef struct lv_lse_test_case lv_lse_test_case_t;
+extern lv_lse_test_case_t levl_event_webconfig_set_data_suite[];
+void construct_levl_event_webconfig_set_data_input(const lv_lse_test_case_t *tc);
+void run_all_tests_levl_event_webconfig_set_data(void);
