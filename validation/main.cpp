@@ -29,7 +29,10 @@ int main() {
 //	run_all_tests_hal_ipc_server_get_radio_channel_stats_callback();
 
 	// get_processor_desc (rdk-wifi-hal hal_ipc/server/hal_ipc.c)
-	run_all_tests_get_processor_desc();
+//	run_all_tests_get_processor_desc();
+
+	// rdk_hal_ipc_exec (rdk-wifi-hal hal_ipc/server/hal_ipc.c)
+	run_all_tests_rdk_hal_ipc_exec();
 
 	return 0;
 }

@@ -5794,7 +5794,8 @@ typedef enum {
     hal_ipc_desc_type_max
 } hal_ipc_desc_type_t;
 #define HAL_IPC_DESCRIPTOR_NAME_LEN 128
-#define GPD_UNION_PAD 4096              /* scaffold: stands in for the in/out unions + scratch_buf */
+#define GPD_IN_PAD  4096                /* scaffold: stands in for the "in" union  */
+#define GPD_OUT_PAD 4096                /* scaffold: stands in for the "out" union */
 #pragma pack(1)
 typedef struct hal_ipc_processor_desc {
     hal_ipc_desc_type_t type;
@@ -5802,7 +5803,10 @@ typedef struct hal_ipc_processor_desc {
     void               *ipc_processor[5];
     unsigned int        len;
     int                 ret;
-    unsigned char       union_pad[GPD_UNION_PAD];
+    unsigned char       in_pad[GPD_IN_PAD];
+    unsigned char       out_pad[GPD_OUT_PAD];
+    unsigned char      *scratch_buf;
+    unsigned int        scratch_buf_size;
 } hal_ipc_processor_desc_t;
 #pragma pack()
 extern hal_ipc_processor_desc_t processor_desc[];
@@ -5814,3 +5818,49 @@ typedef struct gpd_test_case gpd_test_case_t;
 extern gpd_test_case_t get_processor_desc_suite[];
 void construct_get_processor_desc_input(const gpd_test_case_t *tc);
 void run_all_tests_get_processor_desc(void);
+
+/* --- rdk_hal_ipc_exec harness (rdk-wifi-hal hal_ipc/server/hal_ipc.c) --- */
+#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+/* enum + node struct copied VERBATIM from hal_ipc.h:53-60 / 519-525 */
+typedef enum {
+    hal_ipc_node_type_notification_server,
+    hal_ipc_node_type_notification_client,
+    hal_ipc_node_type_sync_call_server,
+    hal_ipc_node_type_sync_call_sm_client,
+    hal_ipc_node_type_sync_call_bm_client,
+    hal_ipc_node_type_max
+} hal_ipc_node_type_t;
+
+typedef struct {
+    char                node_path[64];
+    pthread_t           listener_tid;
+    int                 srv_sock;
+    struct sockaddr_un  srv_sockaddr;
+    hal_ipc_node_type_t type;
+} hal_ipc_node_t;
+
+#define HIPC_PAD     256                /* runner-owned slab padding, tail poisoned        */
+#define HIPC_SCR_SZ  30000              /* runner-owned scratch_buf slab                   */
+extern unsigned char hipc_node_slab[sizeof(hal_ipc_node_t) + HIPC_PAD];
+extern unsigned char hipc_desc_slab[sizeof(hal_ipc_processor_desc_t) + HIPC_PAD];
+extern unsigned char hipc_scr_slab[HIPC_SCR_SZ];
+extern size_t hipc_cur_scr_size;        /* scratch bytes valid in hipc_scr_slab for the current case */
+extern unsigned int hipc_max_ipc_buff;  /* scaffold for MAX_IPC_BUFF (hal_ipc.h:37 = 10240) */
+extern char hipc_exec_why[];            /* reason string for the last FAIL */
+/* stubs standing in for the socket syscalls / free (redirected by macros in the handler file) */
+int     hipc_stub_socket(int domain, int type, int protocol);
+int     hipc_stub_bind(int fd, const struct sockaddr *addr, socklen_t len);
+int     hipc_stub_connect(int fd, const struct sockaddr *addr, socklen_t len);
+int     hipc_stub_setsockopt(int fd, int level, int optname, const void *optval, socklen_t optlen);
+ssize_t hipc_stub_send(int fd, const void *buf, size_t len, int flags);
+int     hipc_stub_close(int fd);
+int     hipc_stub_unlink(const char *path);
+void    hipc_stub_free(void *p);
+int rdk_hal_ipc_exec(hal_ipc_node_t *p_ipc_node, hal_ipc_processor_desc_t *desc);
+struct hipc_exec_test_case { const char *test_name; int node_type; int fail_at; int shape; unsigned int max_buf; int path_variant; int kind; int expected_result; };
+typedef struct hipc_exec_test_case hipc_exec_test_case_t;
+extern hipc_exec_test_case_t rdk_hal_ipc_exec_suite[];
+void construct_rdk_hal_ipc_exec_input(const hipc_exec_test_case_t *tc);
+void run_all_tests_rdk_hal_ipc_exec(void);
