@@ -5675,3 +5675,27 @@ typedef struct dpp_dummy_test_case dpp_dummy_test_case_t;
 extern dpp_dummy_test_case_t dpp_dummy_suite[];
 void construct_dpp_dummy_input(const dpp_dummy_test_case_t *tc);
 void run_all_tests_dpp_dummy(void);
+
+/* --- hal_ipc_server_set_ap_assoc_dev_diag_res3_callback harness (rdk-wifi-hal hal_ipc/server/hal_ipc.c) --- */
+#define HIPC_LOG_SZ   256              /* runner-owned log sink slot            */
+#define HIPC_LOG_USE  128              /* size handed to vsnprintf; tail poisoned */
+extern char hipc_log_buf[];
+typedef enum {
+    WIFI_HAL_LOG_LVL_DEBUG,
+    WIFI_HAL_LOG_LVL_INFO,
+    WIFI_HAL_LOG_LVL_ERROR,
+    WIFI_HAL_LOG_LVL_MAX
+} wifi_hal_log_level_t;
+void wifi_hal_print(wifi_hal_log_level_t level, const char *format, ...) __attribute__((format(printf, 2, 3)));
+extern int  hipc_log_calls, hipc_log_level;
+typedef wifi_associated_dev3_t hipc_dev3_t;   /* real type from common.h */
+typedef int (*hipc_cb_t)(int ap_index, hipc_dev3_t *assoc_dev_array, unsigned int *output_array_size);
+extern hipc_cb_t hal_ipc_server_callback_get_ap_assoc_dev_diag_res3;
+extern void     *hal_ipc_server_callback_get_neighbor_ap2;
+extern void     *hal_ipc_server_callback_get_radio_channel_stats;
+void hal_ipc_server_set_ap_assoc_dev_diag_res3_callback(hipc_cb_t cb);
+struct hipc_sadr3_test_case { const char *test_name; int (*scenario)(void); int expected_result; };
+typedef struct hipc_sadr3_test_case hipc_sadr3_test_case_t;
+extern hipc_sadr3_test_case_t hal_ipc_server_set_ap_assoc_dev_diag_res3_callback_suite[];
+void construct_hal_ipc_server_set_ap_assoc_dev_diag_res3_callback_input(const hipc_sadr3_test_case_t *tc);
+void run_all_tests_hal_ipc_server_set_ap_assoc_dev_diag_res3_callback(void);
