@@ -35,7 +35,10 @@ int main() {
 //	run_all_tests_rdk_hal_ipc_exec();
 
 	// rdk_hal_server_func (rdk-wifi-hal hal_ipc/server/hal_ipc.c)
-	run_all_tests_rdk_hal_server_func();
+//	run_all_tests_rdk_hal_server_func();
+
+	// rdk_create_hal_ipc_node (rdk-wifi-hal hal_ipc/server/hal_ipc.c)
+	run_all_tests_rdk_create_hal_ipc_node();
 
 	return 0;
 }

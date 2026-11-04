@@ -5901,3 +5901,15 @@ typedef struct hsrv_test_case hsrv_test_case_t;
 extern hsrv_test_case_t rdk_hal_server_func_suite[];
 void construct_rdk_hal_server_func_input(const hsrv_test_case_t *tc);
 void run_all_tests_rdk_hal_server_func(void);
+/* --- rdk_create_hal_ipc_node harness (rdk-wifi-hal hal_ipc/server/hal_ipc.c) --- */
+extern unsigned char hcre_gnode_slab[sizeof(hal_ipc_node_t) * hal_ipc_node_type_max + HIPC_PAD];   /* stands in for g_ipc_node[]; tail poisoned */
+int   hcre_stub_pthread_create(pthread_t *t, const pthread_attr_t *attr, void *(*fn)(void *), void *arg);
+void *hcre_server_func_addr(void);
+struct hcre_test_case { const char *test_name; int (*scenario)(void); int expected_result; };
+typedef struct hcre_test_case hcre_test_case_t;
+extern hcre_test_case_t rdk_create_hal_ipc_node_suite[];
+extern void (*hcre_poison_fn)(int on);
+void construct_rdk_create_hal_ipc_node_input(const hcre_test_case_t *tc);
+int  rdk_create_hal_ipc_node_run_current(void);
+void run_all_tests_rdk_create_hal_ipc_node(void);
+hal_ipc_node_t *rdk_create_hal_ipc_node(hal_ipc_node_type_t type);
