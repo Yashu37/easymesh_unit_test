@@ -5535,3 +5535,21 @@ typedef struct lv_lpc_test_case lv_lpc_test_case_t;
 extern lv_lpc_test_case_t process_levl_csi_suite[];
 void construct_process_levl_csi_input(const lv_lpc_test_case_t *tc);
 void run_all_tests_process_levl_csi(void);
+
+/* --- levl_disassoc_device_event harness --- */
+#define LDS_PAD 64
+extern char lds_ctrl_buf[];
+extern char lds_app_buf[];
+extern char lds_csi_buf[];
+extern char lds_data_buf[];
+extern int  lds_null_app;
+extern int  lds_pub_calls, lds_pub_status, lds_stop_calls, lds_stop_ap, lds_cancel_calls, lds_cancel_id, lds_freearg_calls;
+extern unsigned char lds_pub_mac[6], lds_stop_mac[6];
+void lds_set_slots(const unsigned char *mac, int curr, int sched_id, int pend);
+int  lds_curr_present(void);
+int  lds_pend_present(void);
+struct lv_lds_test_case { const char *test_name; int null_data; int null_app; int null_csi; int null_curr_map; int null_pend_map; int curr; int sched_id; int pend; int num_sounding; int want_stop; int want_pub; int want_cancel; int want_freearg; int want_nsnd; int want_cur_left; int want_pend_left; };
+typedef struct lv_lds_test_case lv_lds_test_case_t;
+extern lv_lds_test_case_t levl_disassoc_device_event_suite[];
+void construct_levl_disassoc_device_event_input(const lv_lds_test_case_t *tc);
+void run_all_tests_levl_disassoc_device_event(void);
