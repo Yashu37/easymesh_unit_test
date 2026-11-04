@@ -16,7 +16,7 @@
 #include <pthread.h>
 
 /* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_GSG_FIX  0
+#define RDK_GSG_FIX  1
 
 #define MAX_STEERING_GROUP_NUM  8
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
