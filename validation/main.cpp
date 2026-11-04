@@ -3,7 +3,8 @@
 #include <string.h>
 #include "common.h"
 extern "C" void run_all_tests_ipc_server_output(void);
-extern "C" void run_all_tests_ipc_client_notification_input(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_ipc_client_notification_input(void);
+extern "C" void run_all_tests_wifi_hal_setRadioStatsEnable(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -55,7 +56,10 @@ int main() {
 //	run_all_tests_ipc_server_output();
 
 	// ipc_client_notification_input (rdk-wifi-hal hal_ipc/server/hal_ipc_processors.c)
-	run_all_tests_ipc_client_notification_input();
+//	run_all_tests_ipc_client_notification_input();
+
+	// wifi_hal_setRadioStatsEnable (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
+	run_all_tests_wifi_hal_setRadioStatsEnable();
 
 	return 0;
 }
