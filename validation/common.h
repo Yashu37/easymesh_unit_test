@@ -5742,3 +5742,75 @@ typedef struct hipc_grcs_test_case hipc_grcs_test_case_t;
 extern hipc_grcs_test_case_t hal_ipc_server_get_radio_channel_stats_callback_suite[];
 void construct_hal_ipc_server_get_radio_channel_stats_callback_input(const hipc_grcs_test_case_t *tc);
 void run_all_tests_hal_ipc_server_get_radio_channel_stats_callback(void);
+
+/* --- get_processor_desc harness (rdk-wifi-hal hal_ipc/server/hal_ipc.c) --- */
+#define GPD_NAME_SZ  64                 /* runner-owned name copy slot            */
+#define GPD_NAME_USE 48                 /* bytes the runner copies; tail poisoned */
+extern char gpd_name_buf[];
+/* enum copied VERBATIM from hal_ipc.h */
+typedef enum {
+    hal_ipc_desc_type_set_radio_stats_enable,               // INT wifi_setRadioStatsEnable(INT radioIndex, BOOL enabled);
+    hal_ipc_desc_type_get_ssid_num_of_entries,              // INT wifi_getSSIDNumberOfEntries(ULONG *numEntries);
+    hal_ipc_desc_type_get_ap_assoc_dev_stats,               // INT wifi_getApAssociatedDeviceStats(INT apIndex, mac_address_t *clientMacAddress, wifi_associated_dev_stats_t *associated_dev_stats, ULLONG *handle);
+    hal_ipc_desc_type_get_radio_chan_stats,                 // INT wifi_getRadioChannelStats(INT radioIndex, wifi_channelStats_t *input_output_channelStats_array, INT array_size);
+    hal_ipc_desc_type_start_neighbor_scan,                  // INT wifi_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_mode, INT dwell_time, UINT chan_num, UINT *chan_list);
+    hal_ipc_desc_type_get_neighbor_wifi_status,             // INT wifi_getNeighboringWiFiStatus(INT radioIndex, wifi_neighbor_ap2_t **neighbor_ap_array, UINT *output_array_size);
+    hal_ipc_desc_type_get_ssid_traffic_stats2,              // INT wifi_getSSIDTrafficStats2(INT ssidIndex, wifi_ssidTrafficStats2_t *output_struct);
+    hal_ipc_desc_type_get_ap_assoc_dev_rx_stats_result,     // INT wifi_getApAssociatedDeviceRxStatsResult(INT radioIndex, mac_address_t *clientMacAddress, wifi_associated_dev_rate_info_rx_stats_t **stats_array, UINT *output_array_size, ULLONG *handle);
+    hal_ipc_desc_type_get_ssid_enable,                      // INT wifi_getSSIDEnable(INT ssidIndex, BOOL *output_bool);
+    hal_ipc_desc_type_get_ssid_radio_index,                 // INT wifi_getSSIDRadioIndex(INT ssidIndex, INT *radioIndex);
+    hal_ipc_desc_type_get_ssid_name_status,                 // INT wifi_getSSIDNameStatus(INT apIndex, CHAR *output_string);
+    hal_ipc_desc_type_get_ap_name,                          // INT wifi_getApName(INT apIndex, CHAR *output_string);
+    hal_ipc_desc_type_get_neighbor_report_activation,       // INT wifi_getNeighborReportActivation(UINT apIndex, BOOL *activate);
+    hal_ipc_desc_type_get_bss_transition_activation,        // INT wifi_getBSSTransitionActivation(UINT apIndex, BOOL *activate);
+    hal_ipc_desc_type_get_ap_assoc_dev_diag_result3,        // INT wifi_getApAssociatedDeviceDiagnosticResult3(INT apIndex, wifi_associated_dev3_t **associated_dev_array, UINT *output_array_size);
+    hal_ipc_desc_type_get_ap_assoc_client_diag_result,      // INT wifi_getApAssociatedClientDiagnosticResult(INT apIndex, char *mac_addr, wifi_associated_dev3_t *dev_conn);
+    hal_ipc_desc_type_get_radio_operating_freq_band,        // INT wifi_getRadioOperatingFrequencyBand(INT radioIndex, CHAR *output_string);
+    hal_ipc_desc_type_get_radio_num_of_entries,             // INT wifi_getRadioNumberOfEntries(ULONG *output);
+    hal_ipc_desc_type_get_ap_assoc_dev_tx_stats_result,     // INT wifi_getApAssociatedDeviceTxStatsResult(INT radioIndex, mac_address_t *clientMacAddress, wifi_associated_dev_rate_info_tx_stats_t **stats_array, UINT *output_array_size, ULLONG *handle);
+    hal_ipc_desc_type_steering_set_group,                   // INT wifi_steering_setGroup(UINT steeringgroupIndex, wifi_steering_apConfig_t *cfg_2, wifi_steering_apConfig_t *cfg_5);
+    hal_ipc_desc_type_steering_client_set,                  // INT wifi_steering_clientSet(UINT steeringgroupIndex, INT apIndex, mac_address_t client_mac, wifi_steering_clientConfig_t *config);
+    hal_ipc_desc_type_steering_client_remove,               // INT wifi_steering_clientRemove(UINT steeringgroupIndex, INT apIndex, mac_address_t client_mac);
+    hal_ipc_desc_type_steering_client_disconnect,           // INT wifi_steering_clientDisconnect(UINT steeringgroupIndex, INT apIndex, mac_address_t client_mac, wifi_disconnectType_t type, UINT reason);
+    hal_ipc_desc_type_set_btm_request,                      // INT wifi_setBTMRequest(UINT apIndex, CHAR *peerMac, wifi_BTMRequest_t *request);
+    hal_ipc_desc_type_get_ssid_name,                        // INT wifi_getSSIDName(INT apIndex, CHAR *output_string);
+    hal_ipc_desc_type_set_rm_beacon_request,                // INT wifi_setRMBeaconRequest(UINT apIndex, CHAR *peer, wifi_BeaconRequest_t *in_request, UCHAR *out_DialogToken);
+    hal_ipc_desc_type_get_association_req_ies,              // INT wifi_getAssociationReqIEs(UINT apIndex, const mac_address_t *clientMacAddress, CHAR *req_ies, UINT req_ies_size, UINT *req_ies_len);
+    hal_ipc_desc_type_set_neighbor_reports,                 // INT wifi_setNeighborReports(UINT apIndex, UINT numNeighborReports, wifi_NeighborReport_t *neighborReports);
+    hal_ipc_desc_type_set_neighbor_report_activation,       // INT wifi_setNeighborReportActivation(UINT apIndex, BOOL activate);
+    hal_ipc_desc_type_get_radio_if_name,                    // INT wifi_getRadioIfName(INT radioIndex, CHAR *output_string);
+    hal_ipc_desc_type_get_ap_num_assoc_devs,                // INT wifi_getApNumDevicesAssociated(INT apIndex, ULONG *output_ulong);
+
+    hal_ipc_desc_type_steering_unregister,                  // INT wifi_steering_eventUnregister(void);
+    hal_ipc_desc_type_steering_register,                    // INT wifi_steering_eventRegister(wifi_steering_eventCB_t event_cb);
+    hal_ipc_desc_type_steering_event,                       // notify about steering event
+    hal_ipc_desc_type_mgmt_frame_callback_register,         // INT wifi_mgmt_frame_callbacks_register(wifi_receivedMgmtFrame_callback mgmtRxCallback);
+    hal_ipc_desc_type_mgmt_frame_event,                     // notify about mgmt frame event
+    hal_ipc_rm_beacon_request_register,                     // INT wifi_RMBeaconRequestCallbackRegister(unsigned int apIndex, wifi_RMBeaconReport_callback cb_fn)
+    hal_ipc_rm_beacon_report_event,                         // notify about RM beacon report event
+    hal_ipc_btm_query_request_register,                     // INT wifi_BTMQueryRequest_callback_register(unsigned int apIndex, wifi_BTMQueryRequest_callback btmQueryCallback, wifi_BTMResponse_callback btmResponseCallback)
+    hal_ipc_btm_query_request_event,                        // notify about BTM query request event
+    hal_ipc_btm_response_event,                             // notify about BTM response event
+    hal_ipc_desc_type_max
+} hal_ipc_desc_type_t;
+#define HAL_IPC_DESCRIPTOR_NAME_LEN 128
+#define GPD_UNION_PAD 4096              /* scaffold: stands in for the in/out unions + scratch_buf */
+#pragma pack(1)
+typedef struct hal_ipc_processor_desc {
+    hal_ipc_desc_type_t type;
+    char                name[HAL_IPC_DESCRIPTOR_NAME_LEN];
+    void               *ipc_processor[5];
+    unsigned int        len;
+    int                 ret;
+    unsigned char       union_pad[GPD_UNION_PAD];
+} hal_ipc_processor_desc_t;
+#pragma pack()
+extern hal_ipc_processor_desc_t processor_desc[];
+hal_ipc_processor_desc_t *get_processor_desc(hal_ipc_desc_type_t type);
+extern const char *gpd_expected_names[];
+enum { GPD_PTR_EQ, GPD_NAME, GPD_TYPEFIELD, GPD_IN_RANGE, GPD_STRIDE, GPD_PTR_ARITH, GPD_SAFE_RANGE, GPD_DEREF_NO_CRASH };
+struct gpd_test_case { const char *test_name; int type_value; int kind; int expected_result; };
+typedef struct gpd_test_case gpd_test_case_t;
+extern gpd_test_case_t get_processor_desc_suite[];
+void construct_get_processor_desc_input(const gpd_test_case_t *tc);
+void run_all_tests_get_processor_desc(void);
