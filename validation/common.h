@@ -5913,3 +5913,27 @@ void construct_rdk_create_hal_ipc_node_input(const hcre_test_case_t *tc);
 int  rdk_create_hal_ipc_node_run_current(void);
 void run_all_tests_rdk_create_hal_ipc_node(void);
 hal_ipc_node_t *rdk_create_hal_ipc_node(hal_ipc_node_type_t type);
+/* --- cleanup_client_data harness (rdk-wifi-hal hal_ipc/server/hal_ipc_processors.c) --- */
+extern unsigned char hcc_slot_slab[sizeof(unsigned char *) + HIPC_PAD];   /* holds the unsigned char * the function gets the address of; tail poisoned */
+extern int   hcc_free_calls;
+extern void *hcc_free_last;
+void  hcc_stub_free(void *p);
+void  cleanup_client_data_entry(unsigned char **client_scratch_buf, int client_data_len);
+struct hcc_test_case { const char *test_name; int (*scenario)(void); int expected_result; };
+typedef struct hcc_test_case hcc_test_case_t;
+extern hcc_test_case_t cleanup_client_data_suite[];
+extern void (*hcc_poison_fn)(int on);
+void construct_cleanup_client_data_input(const hcc_test_case_t *tc);
+int  cleanup_client_data_run_current(void);
+void run_all_tests_cleanup_client_data(void);
+/* --- cleanup_desc_scratch_buf harness (rdk-wifi-hal hal_ipc/server/hal_ipc_processors.c) --- */
+#define HCD_BUF_NULL    0
+#define HCD_BUF_HEAP    1
+#define HCD_BUF_GARBAGE 2
+#define HCD_BUF_SLAB    3
+struct hcd_test_case { const char *test_name; int buf_kind; unsigned size; int desc_offset; int null_desc; int calls; int expected_result; };
+typedef struct hcd_test_case hcd_test_case_t;
+extern hcd_test_case_t cleanup_desc_scratch_buf_suite[];
+extern unsigned char hcd_desc_slab[sizeof(hal_ipc_processor_desc_t) + 16 + HIPC_PAD];   /* desc lives at hcd_desc_slab + desc_offset; tail poisoned by the runner */
+void cleanup_desc_scratch_buf_entry(hal_ipc_processor_desc_t *desc);
+void run_all_tests_cleanup_desc_scratch_buf(void);
