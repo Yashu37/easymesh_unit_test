@@ -382,5 +382,6 @@ int main() {
 //	run_all_tests_process_levl_csi();
 //	run_all_tests_levl_disassoc_device_event();
 //	run_all_tests_levl_event_webconfig_set_data();
+//	run_all_tests_process_csi_stop_levl_locked();
 	return 0;
 }

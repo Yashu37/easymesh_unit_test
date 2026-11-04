@@ -5567,3 +5567,25 @@ typedef struct lv_lse_test_case lv_lse_test_case_t;
 extern lv_lse_test_case_t levl_event_webconfig_set_data_suite[];
 void construct_levl_event_webconfig_set_data_input(const lv_lse_test_case_t *tc);
 void run_all_tests_levl_event_webconfig_set_data(void);
+
+/* --- process_csi_stop_levl_locked harness --- */
+#define LCS_PAD 64
+extern char lcs_ctrl_buf[];
+extern char lcs_app_buf[];
+extern char lcs_csi_buf[];
+extern int  lcs_null_ctrl;
+extern int  lcs_pub_calls, lcs_pub_status, lcs_stop_calls, lcs_cancel_calls, lcs_cancel_id, lcs_freearg_calls;
+extern levl_sched_data_t *lcs_curr[4];
+extern int  lcs_n;
+extern char *lcs_pend_keys[4];
+extern levl_sched_data_t *lcs_pend_vals[4];
+extern int  lcs_pend_n;
+void lcs_set_entries(int n, int sched_id);
+int  lcs_curr_count(void);
+int  lcs_pend_count(void);
+int  lcs_pend_ok(void);
+struct lv_lcs_test_case { const char *test_name; int null_ctrl; int null_app; int null_map; int n; int sched_id; int want_ret; int want_stop; int want_pub; int want_cancel; int want_curr; int want_pend; };
+typedef struct lv_lcs_test_case lv_lcs_test_case_t;
+extern lv_lcs_test_case_t process_csi_stop_levl_locked_suite[];
+void construct_process_csi_stop_levl_locked_input(const lv_lcs_test_case_t *tc);
+void run_all_tests_process_csi_stop_levl_locked(void);
