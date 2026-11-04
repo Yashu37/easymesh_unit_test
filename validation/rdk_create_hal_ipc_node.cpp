@@ -21,7 +21,7 @@
 #include "common.h"
 
 /* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_CRE_FIX  0
+#define RDK_CRE_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    wifi_hal_print(WIFI_HAL_LOG_LVL_DEBUG, format, ##__VA_ARGS__)
 #define g_ipc_node     ((hal_ipc_node_t *)hcre_gnode_slab)
