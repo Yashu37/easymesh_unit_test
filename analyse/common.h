@@ -5622,3 +5622,21 @@ typedef struct lv_lgh_test_case lv_lgh_test_case_t;
 extern lv_lgh_test_case_t levl_get_handler_suite[];
 void construct_levl_get_handler_input(const lv_lgh_test_case_t *tc);
 void run_all_tests_levl_get_handler(void);
+
+/* --- levl_set_handler harness --- */
+#define LSH_PAD 64
+#define LSH_NAME_MAX 400
+#define LSH_STR_MAX 64
+#define LSH_PDATA_SZ 24           /* sizeof(raw_data_t) on LP64 */
+extern char lsh_pdata_buf[];      /* raw_data_t out/in param + LSH_PAD */
+extern char lsh_name_buf[];       /* event_name, exactly strlen+1, poisoned tail */
+extern size_t lsh_name_len;
+extern char lsh_str_buf[];        /* the string value, exactly strlen+1, poisoned tail */
+extern size_t lsh_str_len;
+extern int  lsh_malloc_fail, lsh_push_calls;
+extern levl_config_t lsh_pushed;
+struct lv_lsh_test_case { const char *test_name; const char *name; int data_type; const char *str; unsigned int u32; int malloc_fail; int want_ret; int want_push; int check_mac; int want_max; int want_dur; int want_int; };
+typedef struct lv_lsh_test_case lv_lsh_test_case_t;
+extern lv_lsh_test_case_t levl_set_handler_suite[];
+void construct_levl_set_handler_input(const lv_lsh_test_case_t *tc);
+void run_all_tests_levl_set_handler(void);
