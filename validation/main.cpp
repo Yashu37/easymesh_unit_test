@@ -13,7 +13,8 @@ extern "C" void run_all_tests_wifi_hal_getApAssociatedDeviceRxStatsResult(void);
 extern "C" void run_all_tests_wifi_hal_getSSIDEnable(void);
 extern "C" void run_all_tests_wifi_hal_getSSIDRadioIndex(void);
 extern "C" void run_all_tests_wifi_hal_getSSIDNameStatus(void);
-extern "C" void run_all_tests_wifi_hal_getApName(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_wifi_hal_getApName(void);
+extern "C" void run_all_tests_wifi_hal_getNeighborReportActivation(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -95,7 +96,10 @@ int main() {
 //	run_all_tests_wifi_hal_getSSIDNameStatus();
 
 	// wifi_hal_getApName (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
-	run_all_tests_wifi_hal_getApName();
+//	run_all_tests_wifi_hal_getApName();
+
+	// wifi_hal_getNeighborReportActivation (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
+	run_all_tests_wifi_hal_getNeighborReportActivation();
 
 	return 0;
 }
