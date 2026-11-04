@@ -9,11 +9,11 @@
  *   valid   : returned pointer == &table[t]; name matches the real table
  *             entry; desc->type == t; pointer lies inside the table;
  *             adjacent entries are exactly sizeof(desc) apart.
- *   invalid : returned pointer is the unchecked arithmetic result (documents
- *             actual behaviour); contract check "NULL or inside the table"
- *             (expected 1); and a dereference in a forked child, which must
- *             not crash (expected 1).  Every invalid case that fails here is
- *             the SAME root cause: no bounds check on `type`.
+ *   invalid : returns NULL; contract check "NULL or inside the table"; and a
+ *             dereference (when non-NULL), which must not crash (run in-process
+ *             and last, so without FIX 1 the run aborts with the ASan report).  Before FIX 1 every invalid case failed (no bounds check
+ *             on `type`, pointer outside processor_desc[], ASan
+ *             global-buffer-overflow on use); with FIX 1 all pass.
  * Expected result is the SAFE contract (1 = ok), so a FAIL is a finding.
  */
 #include <stdio.h>
@@ -277,44 +277,45 @@ gpd_test_case_t get_processor_desc_suite[] = {
 	{ "valid_t37_stride_to_next", 37, 4, 1 },
 	{ "valid_t38_stride_to_next", 38, 4, 1 },
 	{ "valid_t39_stride_to_next", 39, 4, 1 },
-	{ "invalid_neg1_ptr_is_unchecked_arithmetic", -1, 5, 1 },
+	{ "invalid_neg1_returns_null", -1, 5, 1 },
 	{ "invalid_neg1_returns_null_or_in_table", -1, 6, 1 },
-	{ "invalid_neg1_deref_does_not_crash", -1, 7, 1 },
-	{ "invalid_neg2_ptr_is_unchecked_arithmetic", -2, 5, 1 },
+	{ "invalid_neg2_returns_null", -2, 5, 1 },
 	{ "invalid_neg2_returns_null_or_in_table", -2, 6, 1 },
-	{ "invalid_neg2_deref_does_not_crash", -2, 7, 1 },
-	{ "invalid_neg41_ptr_is_unchecked_arithmetic", -41, 5, 1 },
+	{ "invalid_neg41_returns_null", -41, 5, 1 },
 	{ "invalid_neg41_returns_null_or_in_table", -41, 6, 1 },
-	{ "invalid_neg41_deref_does_not_crash", -41, 7, 1 },
-	{ "invalid_neg100_ptr_is_unchecked_arithmetic", -100, 5, 1 },
+	{ "invalid_neg100_returns_null", -100, 5, 1 },
 	{ "invalid_neg100_returns_null_or_in_table", -100, 6, 1 },
-	{ "invalid_neg100_deref_does_not_crash", -100, 7, 1 },
-	{ "invalid_neg2147483648_ptr_is_unchecked_arithmetic", -2147483648, 5, 1 },
+	{ "invalid_neg2147483648_returns_null", -2147483648, 5, 1 },
 	{ "invalid_neg2147483648_returns_null_or_in_table", -2147483648, 6, 1 },
-	{ "invalid_neg2147483648_deref_does_not_crash", -2147483648, 7, 1 },
-	{ "invalid_pos41_ptr_is_unchecked_arithmetic", 41, 5, 1 },
+	{ "invalid_pos41_returns_null", 41, 5, 1 },
 	{ "invalid_pos41_returns_null_or_in_table", 41, 6, 1 },
-	{ "invalid_pos41_deref_does_not_crash", 41, 7, 1 },
-	{ "invalid_pos42_ptr_is_unchecked_arithmetic", 42, 5, 1 },
+	{ "invalid_pos42_returns_null", 42, 5, 1 },
 	{ "invalid_pos42_returns_null_or_in_table", 42, 6, 1 },
-	{ "invalid_pos42_deref_does_not_crash", 42, 7, 1 },
-	{ "invalid_pos43_ptr_is_unchecked_arithmetic", 43, 5, 1 },
+	{ "invalid_pos43_returns_null", 43, 5, 1 },
 	{ "invalid_pos43_returns_null_or_in_table", 43, 6, 1 },
-	{ "invalid_pos43_deref_does_not_crash", 43, 7, 1 },
-	{ "invalid_pos64_ptr_is_unchecked_arithmetic", 64, 5, 1 },
+	{ "invalid_pos64_returns_null", 64, 5, 1 },
 	{ "invalid_pos64_returns_null_or_in_table", 64, 6, 1 },
-	{ "invalid_pos64_deref_does_not_crash", 64, 7, 1 },
-	{ "invalid_pos100_ptr_is_unchecked_arithmetic", 100, 5, 1 },
+	{ "invalid_pos100_returns_null", 100, 5, 1 },
 	{ "invalid_pos100_returns_null_or_in_table", 100, 6, 1 },
-	{ "invalid_pos100_deref_does_not_crash", 100, 7, 1 },
-	{ "invalid_pos1000_ptr_is_unchecked_arithmetic", 1000, 5, 1 },
+	{ "invalid_pos1000_returns_null", 1000, 5, 1 },
 	{ "invalid_pos1000_returns_null_or_in_table", 1000, 6, 1 },
-	{ "invalid_pos1000_deref_does_not_crash", 1000, 7, 1 },
-	{ "invalid_pos65536_ptr_is_unchecked_arithmetic", 65536, 5, 1 },
+	{ "invalid_pos65536_returns_null", 65536, 5, 1 },
 	{ "invalid_pos65536_returns_null_or_in_table", 65536, 6, 1 },
-	{ "invalid_pos65536_deref_does_not_crash", 65536, 7, 1 },
-	{ "invalid_pos2147483647_ptr_is_unchecked_arithmetic", 2147483647, 5, 1 },
+	{ "invalid_pos2147483647_returns_null", 2147483647, 5, 1 },
 	{ "invalid_pos2147483647_returns_null_or_in_table", 2147483647, 6, 1 },
+	/* crash cases last: without FIX 1 the first of these aborts under ASan */
+	{ "invalid_pos41_deref_does_not_crash", 41, 7, 1 },
+	{ "invalid_neg1_deref_does_not_crash", -1, 7, 1 },
+	{ "invalid_neg2_deref_does_not_crash", -2, 7, 1 },
+	{ "invalid_neg41_deref_does_not_crash", -41, 7, 1 },
+	{ "invalid_neg100_deref_does_not_crash", -100, 7, 1 },
+	{ "invalid_neg2147483648_deref_does_not_crash", -2147483648, 7, 1 },
+	{ "invalid_pos42_deref_does_not_crash", 42, 7, 1 },
+	{ "invalid_pos43_deref_does_not_crash", 43, 7, 1 },
+	{ "invalid_pos64_deref_does_not_crash", 64, 7, 1 },
+	{ "invalid_pos100_deref_does_not_crash", 100, 7, 1 },
+	{ "invalid_pos1000_deref_does_not_crash", 1000, 7, 1 },
+	{ "invalid_pos65536_deref_does_not_crash", 65536, 7, 1 },
 	{ "invalid_pos2147483647_deref_does_not_crash", 2147483647, 7, 1 },
 	{ NULL, 0, 0, 0 }
 };
@@ -335,20 +336,13 @@ static int in_table(const void *p)
 
 static int deref_in_child(hal_ipc_processor_desc_t *d)
 {
-	int st;
-	pid_t pid;
-
-	fflush(stdout);
-	pid = fork();
-	if (pid == 0) {
-		int dn = open("/dev/null", O_WRONLY);
-		dup2(dn, 2);                              /* silence the ASan report in the child */
-		volatile int sink = d->type;              /* what every real caller does: use desc->... */
+	/* What every real caller does: use desc->... (a correct caller checks NULL first).
+	 * Run in-process: without FIX 1 this is the ASan abort. */
+	if (d != NULL) {
+		volatile int sink = d->type;
 		(void)sink;
-		_exit(0);
 	}
-	waitpid(pid, &st, 0);
-	return WIFEXITED(st) && WEXITSTATUS(st) == 0; /* 1 = survived, 0 = crashed/aborted */
+	return 1;                                     /* reached = did not crash */
 }
 
 int get_processor_desc_run_current(void)
@@ -370,8 +364,8 @@ int get_processor_desc_run_current(void)
 		hal_ipc_processor_desc_t *n = get_processor_desc((hal_ipc_desc_type_t)(cur_tc->type_value + 1));
 		return (size_t)((char *)n - (char *)d) == sizeof(hal_ipc_processor_desc_t);
 	}
-	case GPD_PTR_ARITH:
-		return (intptr_t)d == (intptr_t)&processor_desc[0] + (intptr_t)cur_tc->type_value * (intptr_t)sizeof(hal_ipc_processor_desc_t);
+	case GPD_PTR_ARITH:                               /* invalid type -> NULL (was: unchecked arithmetic before FIX 1) */
+		return d == NULL;
 	case GPD_SAFE_RANGE:
 		return d == NULL || in_table(d);
 	case GPD_DEREF_NO_CRASH:
