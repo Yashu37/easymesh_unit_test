@@ -11,7 +11,8 @@ extern "C" void run_all_tests_wifi_hal_getRadioChannelStats(void);
 extern "C" void run_all_tests_wifi_hal_getSSIDTrafficStats2(void);
 extern "C" void run_all_tests_wifi_hal_getApAssociatedDeviceRxStatsResult(void);
 extern "C" void run_all_tests_wifi_hal_getSSIDEnable(void);
-extern "C" void run_all_tests_wifi_hal_getSSIDRadioIndex(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_wifi_hal_getSSIDRadioIndex(void);
+extern "C" void run_all_tests_wifi_hal_getSSIDNameStatus(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -87,7 +88,10 @@ int main() {
 //	run_all_tests_wifi_hal_getSSIDEnable();
 
 	// wifi_hal_getSSIDRadioIndex (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
-	run_all_tests_wifi_hal_getSSIDRadioIndex();
+//	run_all_tests_wifi_hal_getSSIDRadioIndex();
+
+	// wifi_hal_getSSIDNameStatus (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
+	run_all_tests_wifi_hal_getSSIDNameStatus();
 
 	return 0;
 }
