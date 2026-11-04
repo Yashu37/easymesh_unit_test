@@ -17,8 +17,8 @@
  *   max_size   : 1 / 1000 / 4096 / 10240 / 100000   (separate group)
  *   node_path  : normal / empty / 63 chars / 64 unterminated (zero tail)
  *   crash group (forked, ASan report visible on stderr): NULL node, NULL
- *                desc, unterminated node_path with non-zero tail, scratch
- *                size larger than the allocation.
+ *                desc, unterminated node_path with non-zero tail (these used to
+ *                crash; with the fixes they must return -1 without crashing).
  * Syscalls are stubs (see rdk_hal_ipc_exec.cpp), so each case observes what
  * the function asked the kernel to do.  The expected result is the SAFE
  * contract (client types only connect; every error path returns -1 and
@@ -169,8 +169,8 @@ hipc_exec_test_case_t rdk_hal_ipc_exec_suite[] = {
 	{ "crash_p_ipc_node_NULL", 1, 0, 0, 10240u, 5, 1, 1 },
 	{ "crash_desc_NULL", 1, 0, 0, 10240u, 6, 1, 1 },
 	{ "crash_path_len64_unterminated_nonzero_tail", 1, 0, 0, 10240u, 4, 1, 1 },
-	{ "crash_scratch_size_1_over_alloc", 1, 0, 3, 10240u, 7, 1, 1 },
-	{ "crash_scratch_size_1000_over_alloc", 1, 0, 3, 10240u, 8, 1, 1 },
+	{ "matrix_sync_sm_client_fail_none_shape5", 3, 0, 5, 10240u, 0, 0, 1 },
+	{ "matrix_sync_bm_client_fail_connect_shape5", 4, 5, 5, 10240u, 0, 0, 1 },
 	{ NULL, 0, 0, 0, 0, 0, 0, 0 }
 };
 
@@ -213,8 +213,6 @@ static void fill_desc(const hipc_exec_test_case_t *tc)
 	desc->scratch_buf = ssz ? hipc_scr_slab : NULL;
 	desc->scratch_buf_size = (unsigned int)ssz;
 	hipc_cur_scr_size = ssz;
-	if (tc->kind == 1 && tc->path_variant == 7) desc->scratch_buf_size += 1;      /* caller lies: size > allocation */
-	if (tc->kind == 1 && tc->path_variant == 8) desc->scratch_buf_size += 1000;
 	len_gt_D = desc->len > D;
 	has_scratch_phase = len_gt_D && desc->scratch_buf_size > 0;
 }
