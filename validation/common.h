@@ -5937,3 +5937,22 @@ extern hcd_test_case_t cleanup_desc_scratch_buf_suite[];
 extern unsigned char hcd_desc_slab[sizeof(hal_ipc_processor_desc_t) + 16 + HIPC_PAD];   /* desc lives at hcd_desc_slab + desc_offset; tail poisoned by the runner */
 void cleanup_desc_scratch_buf_entry(hal_ipc_processor_desc_t *desc);
 void run_all_tests_cleanup_desc_scratch_buf(void);
+/* --- sync_hostapd_freq_param harness (rdk-wifi-hal hal_ipc/server/hal_ipc_processors.c) --- */
+struct hshf_test_case {
+	const char *test_name;
+	unsigned ap_index;          /* argument */
+	int interface_present;      /* an interface with vap_index 3 exists */
+	unsigned vap_radio_index;   /* interface->vap_info.radio_index */
+	int radio_present;          /* a radio with rdk index 0 exists */
+	int hapd_iface;             /* interface->u.ap.hapd.iface non-NULL */
+	int country_code; unsigned op_class; unsigned channel;
+	int cur_freq;               /* iface->freq before the call */
+	int forked;                 /* NULL dereference expected: run in a child */
+	int exp_ret; int exp_freq;  /* return value and iface->freq after the call */
+	const char *exp_country;    /* country string handed to ieee80211_chan_to_freq (NULL = not checked) */
+	int expected_result;
+};
+typedef struct hshf_test_case hshf_test_case_t;
+extern hshf_test_case_t sync_hostapd_freq_param_suite[];
+int  sync_hostapd_freq_param_entry(unsigned int apIndex);
+void run_all_tests_sync_hostapd_freq_param(void);

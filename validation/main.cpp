@@ -44,7 +44,10 @@ int main() {
 //	run_all_tests_cleanup_client_data();
 
 	// cleanup_desc_scratch_buf (rdk-wifi-hal hal_ipc/server/hal_ipc_processors.c)
-	run_all_tests_cleanup_desc_scratch_buf();
+//	run_all_tests_cleanup_desc_scratch_buf();
+
+	// sync_hostapd_freq_param (rdk-wifi-hal hal_ipc/server/hal_ipc_processors.c)
+	run_all_tests_sync_hostapd_freq_param();
 
 	return 0;
 }
