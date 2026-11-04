@@ -1710,6 +1710,10 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				int  paused;
 				int  postpone_sched_handler_id;
 				pthread_mutex_t lock;
+				bool temperature_event_subscribed[3];   // [MAX_NUM_RADIOS] (literal: MAX_NUM_RADIOS is defined later in this header)
+				bool lock_initialized;
+				int  probe_collector_sched_handler_id;
+				struct { int (*csi_start_fn)(void *, unsigned int, unsigned char *, int); int (*csi_stop_fn)(void *, unsigned int, unsigned char *, int); } csi_fns;   // csi_base_app_t (used by levl_init)
 			} levl;
 		} u;
 	} data;
@@ -5640,3 +5644,21 @@ typedef struct lv_lsh_test_case lv_lsh_test_case_t;
 extern lv_lsh_test_case_t levl_set_handler_suite[];
 void construct_levl_set_handler_input(const lv_lsh_test_case_t *tc);
 void run_all_tests_levl_set_handler(void);
+
+/* --- levl_init harness --- */
+#define LLI_PAD 64
+extern char lli_app_buf[];
+extern char lli_csi_buf[];
+extern char lli_ctrl_buf[];
+extern int  lli_app_init_ret, lli_null_ctrl, lli_null_csi, lli_map_fail_at, lli_mkfifo_err, lli_bus_open_ret, lli_bus_reg_ret;
+extern int  lli_radios, lli_vaps;
+extern int  lli_app_init_calls, lli_map_calls, lli_sched_calls, lli_mkfifo_calls, lli_open_calls, lli_reg_calls, lli_mutex_init_calls;
+extern int  lli_reg_n, lli_reg_names_ok, lli_reg_rows0, lli_reg_rows10;
+extern char lli_reg_first[128], lli_reg_last[128];
+extern int  lli_sched_period;
+extern char lli_map_tokens[8];   /* distinct non-NULL tokens handed out by hash_map_create */
+struct lv_lli_test_case { const char *test_name; int app_init_ret; int null_ctrl; int null_csi; int map_fail_at; int mkfifo_err; int bus_open_ret; int bus_reg_ret; int radios; int vaps; int lock_inited; int want_ret; int want_reg; int want_inited; };
+typedef struct lv_lli_test_case lv_lli_test_case_t;
+extern lv_lli_test_case_t levl_init_suite[];
+void construct_levl_init_input(const lv_lli_test_case_t *tc);
+void run_all_tests_levl_init(void);

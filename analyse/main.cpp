@@ -386,5 +386,6 @@ int main() {
 //	run_all_tests_radio_temperature_response();
 //	run_all_tests_levl_get_handler();
 //	run_all_tests_levl_set_handler();
+//	run_all_tests_levl_init();
 	return 0;
 }
