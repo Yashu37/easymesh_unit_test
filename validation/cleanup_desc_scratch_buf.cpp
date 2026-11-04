@@ -16,7 +16,7 @@
 #include "common.h"
 
 /* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_CDS_FIX  0
+#define RDK_CDS_FIX  1
 
 /* --- copied from hal_ipc_processors.c:38 --- */
 static void cleanup_desc_scratch_buf(struct hal_ipc_processor_desc *desc)
