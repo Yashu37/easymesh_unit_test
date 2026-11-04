@@ -9,6 +9,8 @@
  * Scaffolding only: the interface holds the REAL wifi_vap_info_t (real packed union of bss_info / sta_info,
  * from wifi_hal.h); radios / g_wifi_hal / hash_map_* are minimal (hwr_gse.h) and walk a runner-owned array.
  * The function under test is renamed hwr_wifi_hal_getSSIDEnable (ipc_server_output already stubs the real name).
+
+ * (The copied lookup helper is declared static here only so the harnesses link together; its body is verbatim.)
  */
 #include "hwr_gse.h"
 
@@ -32,7 +34,7 @@ static hwr_gse_iface_t *hash_map_get_next(hwr_gse_map_t *map, hwr_gse_iface_t *c
 }
 
 /* --- copied from wifi_hal_nl80211_utils.c:2312 --- */
-wifi_interface_info_t *get_interface_by_vap_index(unsigned int vap_index)
+static wifi_interface_info_t *get_interface_by_vap_index(unsigned int vap_index)
 {
     wifi_radio_info_t *radio;
     wifi_interface_info_t *interface;

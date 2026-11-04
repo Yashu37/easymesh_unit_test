@@ -10,6 +10,8 @@
  * reads (hwr_ssid.h); hash_map_get_first / hash_map_get_next walk a small runner-owned array of interface
  * pointers.  The function under test is renamed hwr_wifi_hal_getSSIDNumberOfEntries because the
  * ipc_server_output harness already defines a stub named wifi_hal_getSSIDNumberOfEntries.
+
+ * (The copied lookup helper is declared static here only so the harnesses link together; its body is verbatim.)
  */
 #include "hwr_ssid.h"
 
@@ -32,7 +34,7 @@ static hwr_iface_t *hash_map_get_next(hwr_hash_map_t *map, hwr_iface_t *cur)
 }
 
 /* --- copied from wifi_hal_nl80211_utils.c:2271 --- */
-wifi_radio_info_t *get_radio_by_rdk_index(wifi_radio_index_t index)
+static wifi_radio_info_t *get_radio_by_rdk_index(wifi_radio_index_t index)
 {
     wifi_radio_info_t *radio;
     unsigned int i;
