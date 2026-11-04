@@ -5520,3 +5520,18 @@ typedef struct lv_lcp_test_case lv_lcp_test_case_t;
 extern lv_lcp_test_case_t levl_csi_publish_suite[];
 void construct_levl_csi_publish_input(const lv_lcp_test_case_t *tc);
 void run_all_tests_levl_csi_publish(void);
+
+/* --- process_levl_csi harness --- */
+#define LPC_PAD 64
+extern char lpc_app_buf[];
+extern char lpc_csi_buf[];
+extern int  lpc_pub_calls, lpc_drop_on_publish;
+extern long lpc_entry_secs_before;
+void lpc_set_slot(const unsigned char *mac, int interval, long last_pub_offset_secs);
+int  lpc_slot_updated(void);
+void lpc_free_slot(void);
+struct lv_lpc_test_case { const char *test_name; int map_null; int slot; int interval; long last_off; int drop; int want_ret; int want_pub; int want_updated; };
+typedef struct lv_lpc_test_case lv_lpc_test_case_t;
+extern lv_lpc_test_case_t process_levl_csi_suite[];
+void construct_process_levl_csi_input(const lv_lpc_test_case_t *tc);
+void run_all_tests_process_levl_csi(void);
