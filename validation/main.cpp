@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "common.h"
+extern "C" void run_all_tests_ipc_server_output(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -47,7 +48,10 @@ int main() {
 //	run_all_tests_cleanup_desc_scratch_buf();
 
 	// sync_hostapd_freq_param (rdk-wifi-hal hal_ipc/server/hal_ipc_processors.c)
-	run_all_tests_sync_hostapd_freq_param();
+//	run_all_tests_sync_hostapd_freq_param();
+
+	// ipc_server_output (rdk-wifi-hal hal_ipc/server/hal_ipc_processors.c)
+	run_all_tests_ipc_server_output();
 
 	return 0;
 }
