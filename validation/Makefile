@@ -1,0 +1,23 @@
+CXX = g++
+
+SRC = main.cpp dpp_dummy.cpp construct_dpp_dummy.cpp dpp_dummy_test.cpp
+OUT = main
+
+all: run
+
+CXXFLAGS = -g -O0 -Wall -fpermissive -fsanitize=address
+LDLIBS   = -ljansson -lpthread
+OBJ = $(SRC:.cpp=.o)
+
+# Incremental build: each .cpp -> .o (recompiled only when it or common.h changes)
+%.o: %.cpp common.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OUT): $(OBJ)
+	$(CXX) $(OBJ) -o $(OUT) -fsanitize=address $(LDLIBS)
+
+run: $(OUT)
+	./$(OUT)
+
+clean:
+	rm -f $(OUT) *.o a.out
