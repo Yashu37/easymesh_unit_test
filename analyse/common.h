@@ -1691,7 +1691,7 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 			struct {                      // data.u.csi (subset used by process_csi / csi_start_fn)
 				void *csi_sounding_mac_map;  // hash_map_t *
 				int   num_current_sounding;
-				struct { void (*csi_stop_fn)(wifi_app_t *, int, unsigned char *, int); } csi_fns;
+				struct { int (*csi_start_fn)(wifi_app_t *, int, unsigned char *, int); void (*csi_stop_fn)(wifi_app_t *, int, unsigned char *, int); } csi_fns;
 			} csi;
 			csi_analytics_info_t csi_analytics;   // data.u.csi_analytics (webconfig_hal_csi_data_apply)
 			struct { em_config_t em_config; } em_data;   // data.u.em_data (em_init policy config)
@@ -1704,6 +1704,9 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				void *curr_sounding_mac_map;  // hash_map_t *
 				void *pending_mac_map;        // hash_map_t *
 				struct wifi_app *csi_app;
+				bool csi_event_subscribed;
+				int  paused;
+				int  postpone_sched_handler_id;
 				pthread_mutex_t lock;
 			} levl;
 		} u;
@@ -5475,3 +5478,23 @@ typedef struct lv_lst_test_case lv_lst_test_case_t;
 extern lv_lst_test_case_t process_levl_sounding_timeout_suite[];
 void construct_process_levl_sounding_timeout_input(const lv_lst_test_case_t *tc);
 void run_all_tests_process_levl_sounding_timeout(void);
+
+/* --- schedule_mac_for_sounding_locked harness --- */
+#define LSM_PAD 64
+extern unsigned char lsm_mac_buf[];
+extern char lsm_ctrl_buf[];
+extern char lsm_app_buf[];
+extern char lsm_csi_buf[];
+extern char lsm_curr_token, lsm_pend_token;
+extern void *lsm_owned[8];
+extern int  lsm_n_owned;
+extern void *lsm_last_tdata_expect;
+extern char lsm_last_key[64];
+extern int  lsm_null_app, lsm_dup, lsm_curr_count, lsm_curr_put, lsm_pend_put, lsm_sched_calls, lsm_sched_ret;
+extern int  lsm_pub_calls, lsm_pub_status[4], lsm_start_calls, lsm_stop_calls, lsm_start_ret;
+void lsm_cleanup(void);
+struct lv_lsm_test_case { const char *test_name; int null_app; int subscribed; int null_csi; int null_map; int dup; int paused; int curr_count; int max_clients; int start_ret; int sched_ret; int want_ret; int want_curr_put; int want_pend_put; int want_start; int want_stop; int want_pub; int want_sched; };
+typedef struct lv_lsm_test_case lv_lsm_test_case_t;
+extern lv_lsm_test_case_t schedule_mac_for_sounding_locked_suite[];
+void construct_schedule_mac_for_sounding_locked_input(const lv_lsm_test_case_t *tc);
+void run_all_tests_schedule_mac_for_sounding_locked(void);

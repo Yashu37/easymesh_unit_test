@@ -377,5 +377,6 @@ int main() {
 //	run_all_tests_apps_assoc_req_frame_event();
 //	run_all_tests_apps_reassoc_req_frame_event();
 //	run_all_tests_process_levl_sounding_timeout();
+//	run_all_tests_schedule_mac_for_sounding_locked();
 	return 0;
 }
