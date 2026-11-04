@@ -24,7 +24,7 @@ typedef hipc_cb_t   app_get_ap_assoc_dev_diag_res3_t;
 /* --- copied verbatim from hal_ipc.c:755-757 --- */
 app_get_ap_assoc_dev_diag_res3_t hal_ipc_server_callback_get_ap_assoc_dev_diag_res3;
 /* hal_ipc_server_callback_get_neighbor_ap2 is defined in the set_neighbor_ap2 handler file */
-void *hal_ipc_server_callback_get_radio_channel_stats;   /* app_get_radio_channel_stats_t (opaque here) */
+/* hal_ipc_server_callback_get_radio_channel_stats is defined in the set_radio_channel_stats handler file */
 
 /* --- copied verbatim from hal_ipc.c:761 --- */
 void hal_ipc_server_set_ap_assoc_dev_diag_res3_callback(app_get_ap_assoc_dev_diag_res3_t callback_get_ap_assoc_dev_diag_res3)

@@ -102,12 +102,12 @@ hipc_snap2_test_case_t hal_ipc_server_set_neighbor_ap2_callback_suite[] = {
 	/* ---- the other two callback globals are untouched ---- */
 	{ "assoc_diag_global_unchanged",    [](void)->int { reset(); hal_ipc_server_callback_get_ap_assoc_dev_diag_res3 = (hipc_cb_t)(void *)assoc_like;
 		hal_ipc_server_set_neighbor_ap2_callback(cb_a); return hal_ipc_server_callback_get_ap_assoc_dev_diag_res3 == (hipc_cb_t)(void *)assoc_like; }, 1 },
-	{ "radio_stats_global_unchanged",   [](void)->int { reset(); hal_ipc_server_callback_get_radio_channel_stats = (void *)radio_like;
-		hal_ipc_server_set_neighbor_ap2_callback(cb_b); return hal_ipc_server_callback_get_radio_channel_stats == (void *)radio_like; }, 1 },
+	{ "radio_stats_global_unchanged",   [](void)->int { reset(); hal_ipc_server_callback_get_radio_channel_stats = (hipc_rs_cb_t)(void *)radio_like;
+		hal_ipc_server_set_neighbor_ap2_callback(cb_b); return hal_ipc_server_callback_get_radio_channel_stats == (hipc_rs_cb_t)(void *)radio_like; }, 1 },
 	{ "other_globals_unchanged_on_null",[](void)->int { reset(); hal_ipc_server_callback_get_ap_assoc_dev_diag_res3 = (hipc_cb_t)(void *)assoc_like;
-		hal_ipc_server_callback_get_radio_channel_stats = (void *)radio_like;
+		hal_ipc_server_callback_get_radio_channel_stats = (hipc_rs_cb_t)(void *)radio_like;
 		hal_ipc_server_set_neighbor_ap2_callback(NULL);
-		return hal_ipc_server_callback_get_ap_assoc_dev_diag_res3 == (hipc_cb_t)(void *)assoc_like && hal_ipc_server_callback_get_radio_channel_stats == (void *)radio_like; }, 1 },
+		return hal_ipc_server_callback_get_ap_assoc_dev_diag_res3 == (hipc_cb_t)(void *)assoc_like && hal_ipc_server_callback_get_radio_channel_stats == (hipc_rs_cb_t)(void *)radio_like; }, 1 },
 
 	/* ---- debug log line ---- */
 	{ "log_message_exact",              [](void)->int { reset(); hal_ipc_server_set_neighbor_ap2_callback(cb_a);

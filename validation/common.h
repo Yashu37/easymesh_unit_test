@@ -5693,7 +5693,9 @@ typedef int (*hipc_cb_t)(int ap_index, hipc_dev3_t *assoc_dev_array, unsigned in
 extern hipc_cb_t hal_ipc_server_callback_get_ap_assoc_dev_diag_res3;
 typedef int (*hipc_nb_cb_t)(int radio_index, wifi_neighbor_ap2_t *neighbor_results, unsigned int *output_array_size);
 extern hipc_nb_cb_t hal_ipc_server_callback_get_neighbor_ap2;   /* owned by the set_neighbor_ap2 handler */
-extern void     *hal_ipc_server_callback_get_radio_channel_stats;
+typedef struct hipc_chstats_opaque hipc_chstats_t;   /* wifi_channelStats_t is opaque to the setter */
+typedef int (*hipc_rs_cb_t)(int radio_index, hipc_chstats_t *channel_stats_array, int *array_size);
+extern hipc_rs_cb_t hal_ipc_server_callback_get_radio_channel_stats;   /* owned by the set_radio_channel_stats handler */
 void hal_ipc_server_set_ap_assoc_dev_diag_res3_callback(hipc_cb_t cb);
 struct hipc_sadr3_test_case { const char *test_name; int (*scenario)(void); int expected_result; };
 typedef struct hipc_sadr3_test_case hipc_sadr3_test_case_t;
@@ -5708,3 +5710,11 @@ typedef struct hipc_snap2_test_case hipc_snap2_test_case_t;
 extern hipc_snap2_test_case_t hal_ipc_server_set_neighbor_ap2_callback_suite[];
 void construct_hal_ipc_server_set_neighbor_ap2_callback_input(const hipc_snap2_test_case_t *tc);
 void run_all_tests_hal_ipc_server_set_neighbor_ap2_callback(void);
+
+/* --- hal_ipc_server_set_radio_channel_stats_callback harness (rdk-wifi-hal hal_ipc/server/hal_ipc.c) --- */
+void hal_ipc_server_set_radio_channel_stats_callback(hipc_rs_cb_t cb);
+struct hipc_srcs_test_case { const char *test_name; int (*scenario)(void); int expected_result; };
+typedef struct hipc_srcs_test_case hipc_srcs_test_case_t;
+extern hipc_srcs_test_case_t hal_ipc_server_set_radio_channel_stats_callback_suite[];
+void construct_hal_ipc_server_set_radio_channel_stats_callback_input(const hipc_srcs_test_case_t *tc);
+void run_all_tests_hal_ipc_server_set_radio_channel_stats_callback(void);

@@ -14,7 +14,10 @@ int main() {
 //	run_all_tests_hal_ipc_server_set_ap_assoc_dev_diag_res3_callback();
 
 	// hal_ipc_server_set_neighbor_ap2_callback (rdk-wifi-hal hal_ipc/server/hal_ipc.c)
-	run_all_tests_hal_ipc_server_set_neighbor_ap2_callback();
+//	run_all_tests_hal_ipc_server_set_neighbor_ap2_callback();
+
+	// hal_ipc_server_set_radio_channel_stats_callback (rdk-wifi-hal hal_ipc/server/hal_ipc.c)
+	run_all_tests_hal_ipc_server_set_radio_channel_stats_callback();
 
 	return 0;
 }
