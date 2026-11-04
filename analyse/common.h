@@ -1705,6 +1705,8 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				void *pending_mac_map;        // hash_map_t *
 				struct wifi_app *csi_app;
 				bool csi_event_subscribed;
+				bool csi_over_fifo;
+				int  csi_fd;
 				int  paused;
 				int  postpone_sched_handler_id;
 				pthread_mutex_t lock;
@@ -2947,7 +2949,10 @@ void run_all_tests_cac_mgmt_frame_hook(void);
 
 typedef struct { unsigned int ap_index; unsigned char mac_addr[6]; unsigned char link_addr[6]; bool is_mlo; int subscribed_apps; } csi_mac_data_t;  // superset for process_csi + csi_start/stop_fn
 typedef struct { unsigned char raw[256]; } wifi_csi_data_t;
-typedef struct { unsigned char sta_mac[6]; wifi_csi_data_t csi; } wifi_csi_dev_t;
+#ifndef CSI_HEADER_SIZE
+#define CSI_HEADER_SIZE (4 + sizeof(unsigned int) + sizeof(time_t) + (sizeof(unsigned int)) + (1 *((sizeof(unsigned char)*6) + sizeof(unsigned int))))
+#endif
+typedef struct { unsigned char sta_mac[6]; char header[CSI_HEADER_SIZE]; wifi_csi_data_t csi; } __attribute__((packed)) wifi_csi_dev_t;
 typedef struct { bool b_inst_client_enabled; unsigned long u_inst_client_reporting_period; unsigned long u_inst_client_def_reporting_period; unsigned long u_inst_client_def_override_ttl; char mac_address[13]; } instant_measurement_config_t;
 typedef struct { union { struct { instant_measurement_config_t harvester; } decoded; } u; } wha_subdoc_data_t;
 typedef struct { union { wifi_csi_dev_t *csi; wha_subdoc_data_t *webconfig_data; } u; } wifi_event_t;
@@ -5498,3 +5503,20 @@ typedef struct lv_lsm_test_case lv_lsm_test_case_t;
 extern lv_lsm_test_case_t schedule_mac_for_sounding_locked_suite[];
 void construct_schedule_mac_for_sounding_locked_input(const lv_lsm_test_case_t *tc);
 void run_all_tests_schedule_mac_for_sounding_locked(void);
+
+/* --- levl_csi_publish harness --- */
+#define LCP_PAD 64
+#define LCP_SINK_SZ (CSI_HEADER_SIZE + sizeof(wifi_csi_data_t) + 16)
+extern unsigned char lcp_mac_buf[];
+extern char lcp_csi_buf[];
+extern char lcp_ctrl_buf[];
+extern char lcp_app_buf[];
+extern unsigned char lcp_sink[];
+extern char lcp_pub_name[128];
+extern unsigned int lcp_pub_len, lcp_write_len;
+extern int  lcp_pub_calls, lcp_open_calls, lcp_write_calls, lcp_open_ret, lcp_null_app;
+struct lv_lcp_test_case { const char *test_name; int fifo; int fd; int open_ret; int null_app; int want_pub; int want_open; int want_write; int want_hdr; };
+typedef struct lv_lcp_test_case lv_lcp_test_case_t;
+extern lv_lcp_test_case_t levl_csi_publish_suite[];
+void construct_levl_csi_publish_input(const lv_lcp_test_case_t *tc);
+void run_all_tests_levl_csi_publish(void);
