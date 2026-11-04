@@ -1921,6 +1921,7 @@ typedef struct {
 	int                     CarrierSenseThreshold_Exceeded;
 	char                    ChannelsInUse[64];
 	char                    frequency_band[64];
+	unsigned int            radio_Temperature;                // (used by radio_temperature_response)
 } radio_data_t;
 typedef struct {
 	unsigned int    ap_index;
@@ -5589,3 +5590,19 @@ typedef struct lv_lcs_test_case lv_lcs_test_case_t;
 extern lv_lcs_test_case_t process_csi_stop_levl_locked_suite[];
 void construct_process_csi_stop_levl_locked_input(const lv_lcs_test_case_t *tc);
 void run_all_tests_process_csi_stop_levl_locked(void);
+
+/* --- radio_temperature_response harness --- */
+#define LRT_PAD 64
+extern char lrt_ctrl_buf[];
+extern char lrt_app_buf[];
+extern char lrt_resp_buf[];
+extern char lrt_stat_buf[];
+extern int  lrt_null_ctrl, lrt_null_app, lrt_publish_fail;
+extern int  lrt_pub_calls, lrt_pub_type;
+extern unsigned int lrt_pub_value;
+extern char lrt_pub_name[128];
+struct lv_lrt_test_case { const char *test_name; int null_ctrl; int null_app; unsigned int radio_index; int n; unsigned int temp; int pub_fail; int want_ret; int want_pub; const char *want_name; };
+typedef struct lv_lrt_test_case lv_lrt_test_case_t;
+extern lv_lrt_test_case_t radio_temperature_response_suite[];
+void construct_radio_temperature_response_input(const lv_lrt_test_case_t *tc);
+void run_all_tests_radio_temperature_response(void);
