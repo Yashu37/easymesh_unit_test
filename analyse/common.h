@@ -5606,3 +5606,19 @@ typedef struct lv_lrt_test_case lv_lrt_test_case_t;
 extern lv_lrt_test_case_t radio_temperature_response_suite[];
 void construct_radio_temperature_response_input(const lv_lrt_test_case_t *tc);
 void run_all_tests_radio_temperature_response(void);
+
+/* --- levl_get_handler harness --- */
+#define LGH_PAD 64
+#define LGH_NAME_MAX 400
+extern char lgh_ctrl_buf[];
+extern char lgh_app_buf[];
+extern char lgh_pdata_buf[];      /* raw_data_t + LGH_PAD (type is local to the handler: size in LGH_PDATA_SZ) */
+extern char lgh_name_buf[];       /* event_name copy, exactly strlen+1, poisoned tail */
+extern size_t lgh_name_len;       /* strlen+1 of the name in lgh_name_buf */
+extern int  lgh_null_ctrl, lgh_null_app, lgh_malloc_fail, lgh_null_name;
+#define LGH_PDATA_SZ 24           /* sizeof(raw_data_t): int + union(8) + size_t -> 24 on LP64 */
+struct lv_lgh_test_case { const char *test_name; int null_ctrl; int null_app; int null_name; int malloc_fail; const char *name; int max_clients; int duration; int want_ret; int want_type; unsigned int want_u32; const char *want_str; };
+typedef struct lv_lgh_test_case lv_lgh_test_case_t;
+extern lv_lgh_test_case_t levl_get_handler_suite[];
+void construct_levl_get_handler_input(const lv_lgh_test_case_t *tc);
+void run_all_tests_levl_get_handler(void);
