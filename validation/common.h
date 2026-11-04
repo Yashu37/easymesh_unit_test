@@ -5726,3 +5726,11 @@ typedef struct hipc_gadr3_test_case hipc_gadr3_test_case_t;
 extern hipc_gadr3_test_case_t hal_ipc_server_get_ap_assoc_dev_diag_res3_callback_suite[];
 void construct_hal_ipc_server_get_ap_assoc_dev_diag_res3_callback_input(const hipc_gadr3_test_case_t *tc);
 void run_all_tests_hal_ipc_server_get_ap_assoc_dev_diag_res3_callback(void);
+
+/* --- hal_ipc_server_get_neighbor_ap2_callback harness (rdk-wifi-hal hal_ipc/server/hal_ipc.c) --- */
+hipc_nb_cb_t hal_ipc_server_get_neighbor_ap2_callback(void);
+struct hipc_gnap2_test_case { const char *test_name; int (*scenario)(void); int expected_result; };
+typedef struct hipc_gnap2_test_case hipc_gnap2_test_case_t;
+extern hipc_gnap2_test_case_t hal_ipc_server_get_neighbor_ap2_callback_suite[];
+void construct_hal_ipc_server_get_neighbor_ap2_callback_input(const hipc_gnap2_test_case_t *tc);
+void run_all_tests_hal_ipc_server_get_neighbor_ap2_callback(void);
