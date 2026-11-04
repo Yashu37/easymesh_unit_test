@@ -23,7 +23,7 @@
 #include "common.h"
 
 /* 1 = with FIX 1..3, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_SHF_FIX  0
+#define RDK_SHF_FIX  1
 
 #define RETURN_OK   0
 #define RETURN_ERR  (-1)
