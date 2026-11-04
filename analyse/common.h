@@ -5443,3 +5443,15 @@ typedef struct lv_aar_test_case lv_aar_test_case_t;
 extern lv_aar_test_case_t apps_assoc_req_frame_event_suite[];
 void construct_apps_assoc_req_frame_event_input(const lv_aar_test_case_t *tc);
 void run_all_tests_apps_assoc_req_frame_event(void);
+
+/* --- apps_reassoc_req_frame_event harness --- */
+#define ARF_PAD 64
+extern char arf_app_buf[];
+extern char arf_msg_buf[];
+extern char arf_sent_ns[256];
+extern int  arf_send_calls;
+struct lv_arf_test_case { const char *test_name; int ap_index; const char *want_ns; };
+typedef struct lv_arf_test_case lv_arf_test_case_t;
+extern lv_arf_test_case_t apps_reassoc_req_frame_event_suite[];
+void construct_apps_reassoc_req_frame_event_input(const lv_arf_test_case_t *tc);
+void run_all_tests_apps_reassoc_req_frame_event(void);
