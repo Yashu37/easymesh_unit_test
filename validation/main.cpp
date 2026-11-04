@@ -18,7 +18,8 @@ extern "C" void run_all_tests_wifi_hal_getNeighborReportActivation(void);
 extern "C" void run_all_tests_wifi_hal_getBSSTransitionActivation(void);
 extern "C" void run_all_tests_wifi_hal_getApAssociatedClientDiagnosticResult(void);
 extern "C" void run_all_tests_wifi_hal_getRadioOperatingFrequencyBand(void);
-extern "C" void run_all_tests_wifi_hal_getRadioNumberOfEntries(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_wifi_hal_getRadioNumberOfEntries(void);
+extern "C" void run_all_tests_wifi_hal_getApAssociatedDeviceTxStatsResult(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -115,7 +116,10 @@ int main() {
 //	run_all_tests_wifi_hal_getRadioOperatingFrequencyBand();
 
 	// wifi_hal_getRadioNumberOfEntries (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
-	run_all_tests_wifi_hal_getRadioNumberOfEntries();
+//	run_all_tests_wifi_hal_getRadioNumberOfEntries();
+
+	// wifi_hal_getApAssociatedDeviceTxStatsResult (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
+	run_all_tests_wifi_hal_getApAssociatedDeviceTxStatsResult();
 
 	return 0;
 }
