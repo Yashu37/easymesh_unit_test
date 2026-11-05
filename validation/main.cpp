@@ -56,6 +56,7 @@ extern "C" void run_all_tests_platform_wps_event(void);
 extern "C" void run_all_tests_platform_get_country_code_default(void);
 extern "C" void run_all_tests_nvram_get_current_password(void);   /* declared here: that harness does not use common.h */
 extern "C" void run_all_tests_nvram_get_current_ssid(void);
+extern "C" void run_all_tests_platform_pre_create_vap(void);
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -263,7 +264,10 @@ int main() {
 //	run_all_tests_nvram_get_current_password();
 
 	// nvram_get_current_ssid (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_nvram_get_current_ssid();
+//	run_all_tests_nvram_get_current_ssid();
+
+	// platform_pre_create_vap (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_platform_pre_create_vap();
 
 	return 0;
 }
