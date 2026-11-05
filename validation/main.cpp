@@ -39,7 +39,8 @@ extern "C" void run_all_tests_hal_ipc_RMBeaconReportEvent(void);
 extern "C" void run_all_tests_hal_ipc_send_steering_event(void);
 extern "C" void run_all_tests_hal_ipc_init(void);
 extern "C" void run_all_tests_wifi_nvram_defaultRead(void);
-extern "C" void run_all_tests_json_parse_backhaul_keypassphrase(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_json_parse_backhaul_keypassphrase(void);
+extern "C" void run_all_tests_json_parse_backhaul_ssid(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -199,7 +200,10 @@ int main() {
 //	run_all_tests_wifi_nvram_defaultRead();
 
 	// json_parse_backhaul_keypassphrase (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_json_parse_backhaul_keypassphrase();
+//	run_all_tests_json_parse_backhaul_keypassphrase();
+
+	// json_parse_backhaul_ssid (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_json_parse_backhaul_ssid();
 
 	return 0;
 }
