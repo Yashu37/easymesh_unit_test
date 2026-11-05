@@ -42,7 +42,8 @@ extern "C" void run_all_tests_wifi_nvram_defaultRead(void);
 extern "C" void run_all_tests_json_parse_backhaul_keypassphrase(void);
 extern "C" void run_all_tests_json_parse_backhaul_ssid(void);
 extern "C" void run_all_tests_platform_pre_init(void);
-extern "C" void run_all_tests_platform_post_init(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_platform_post_init(void);
+extern "C" void run_all_tests_platform_set_radio(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -211,7 +212,10 @@ int main() {
 //	run_all_tests_platform_pre_init();
 
 	// platform_post_init (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_platform_post_init();
+//	run_all_tests_platform_post_init();
+
+	// platform_set_radio (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_platform_set_radio();
 
 	return 0;
 }
