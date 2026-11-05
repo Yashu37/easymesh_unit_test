@@ -37,7 +37,8 @@ extern "C" void run_all_tests_hal_ipc_BTMQueryRequestEvent(void);
 extern "C" void run_all_tests_hal_ipc_BTMResponseEvent(void);
 extern "C" void run_all_tests_hal_ipc_RMBeaconReportEvent(void);
 extern "C" void run_all_tests_hal_ipc_send_steering_event(void);
-extern "C" void run_all_tests_hal_ipc_init(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_hal_ipc_init(void);
+extern "C" void run_all_tests_wifi_nvram_defaultRead(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -191,7 +192,10 @@ int main() {
 //	run_all_tests_hal_ipc_send_steering_event();
 
 	// hal_ipc_init (rdk-wifi-hal hal_ipc/server/server_hal_ipc.c)
-	run_all_tests_hal_ipc_init();
+//	run_all_tests_hal_ipc_init();
+
+	// wifi_nvram_defaultRead (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_wifi_nvram_defaultRead();
 
 	return 0;
 }
