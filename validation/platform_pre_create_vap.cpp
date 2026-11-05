@@ -16,7 +16,7 @@
 #include <string.h>
 
 /* 1 = with the fixes, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_PPV_FIX  0
+#define RDK_PPV_FIX  1
 
 #define BPI_LEN_32 32        /* platform.c */
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
