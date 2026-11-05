@@ -45,7 +45,8 @@ extern "C" void run_all_tests_platform_pre_init(void);
 extern "C" void run_all_tests_platform_post_init(void);
 extern "C" void run_all_tests_platform_set_radio(void);
 extern "C" void run_all_tests_platform_set_radio_pre_init(void);
-extern "C" void run_all_tests_platform_create_vap(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_platform_create_vap(void);
+extern "C" void run_all_tests_nvram_get_radio_enable_status(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -223,7 +224,10 @@ int main() {
 //	run_all_tests_platform_set_radio_pre_init();
 
 	// platform_create_vap (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_platform_create_vap();
+//	run_all_tests_platform_create_vap();
+
+	// nvram_get_radio_enable_status (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_nvram_get_radio_enable_status();
 
 	return 0;
 }
