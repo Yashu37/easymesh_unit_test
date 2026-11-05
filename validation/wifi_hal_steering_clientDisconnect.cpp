@@ -17,7 +17,7 @@
 #include <pthread.h>
 
 /* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_GSD_FIX  0
+#define RDK_GSD_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_info_print(format, ...)   hwr_print(0, format, ##__VA_ARGS__)
