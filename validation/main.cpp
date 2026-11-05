@@ -25,7 +25,8 @@ extern "C" void run_all_tests_wifi_hal_steering_setGroup(void);
 extern "C" void run_all_tests_wifi_hal_steering_clientSet(void);
 extern "C" void run_all_tests_wifi_hal_steering_clientRemove(void);
 extern "C" void run_all_tests_wifi_hal_steering_clientDisconnect(void);
-extern "C" void run_all_tests_wifi_hal_getSSIDName(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_wifi_hal_getSSIDName(void);
+extern "C" void run_all_tests_wifi_hal_getAssociationReqIEs(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -143,7 +144,10 @@ int main() {
 //	run_all_tests_wifi_hal_steering_clientDisconnect();
 
 	// wifi_hal_getSSIDName (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
-	run_all_tests_wifi_hal_getSSIDName();
+//	run_all_tests_wifi_hal_getSSIDName();
+
+	// wifi_hal_getAssociationReqIEs (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
+	run_all_tests_wifi_hal_getAssociationReqIEs();
 
 	return 0;
 }
