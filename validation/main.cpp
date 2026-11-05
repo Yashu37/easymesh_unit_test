@@ -22,7 +22,8 @@ extern "C" void run_all_tests_wifi_hal_getRadioNumberOfEntries(void);
 extern "C" void run_all_tests_wifi_hal_getApAssociatedDeviceTxStatsResult(void);
 extern "C" void run_all_tests_wifi_hal_getMultiPskClientKey(void);
 extern "C" void run_all_tests_wifi_hal_steering_setGroup(void);
-extern "C" void run_all_tests_wifi_hal_steering_clientSet(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_wifi_hal_steering_clientSet(void);
+extern "C" void run_all_tests_wifi_hal_steering_clientRemove(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -131,7 +132,10 @@ int main() {
 //	run_all_tests_wifi_hal_steering_setGroup();
 
 	// wifi_hal_steering_clientSet (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
-	run_all_tests_wifi_hal_steering_clientSet();
+//	run_all_tests_wifi_hal_steering_clientSet();
+
+	// wifi_hal_steering_clientRemove (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
+	run_all_tests_wifi_hal_steering_clientRemove();
 
 	return 0;
 }
