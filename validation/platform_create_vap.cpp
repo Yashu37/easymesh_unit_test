@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 /* 1 = with FIX 1..3, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_PCV_FIX  0
+#define RDK_PCV_FIX  1
 
 #define HOSTAPD_VERSION 211
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
