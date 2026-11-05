@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 /* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_NSM_FIX  0
+#define RDK_NSM_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define nvram_get_current_security_mode      hwr_nvram_get_current_security_mode
