@@ -50,7 +50,8 @@ extern "C" void run_all_tests_nvram_get_radio_enable_status(void);
 extern "C" void run_all_tests_nvram_get_vap_enable_status(void);
 extern "C" void run_all_tests_nvram_get_current_security_mode(void);
 extern "C" void run_all_tests_platform_get_keypassphrase_default(void);
-extern "C" void run_all_tests_platform_get_ssid_default(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_platform_get_ssid_default(void);
+extern "C" void run_all_tests_platform_get_wps_pin_default(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -243,7 +244,10 @@ int main() {
 //	run_all_tests_platform_get_keypassphrase_default();
 
 	// platform_get_ssid_default (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_platform_get_ssid_default();
+//	run_all_tests_platform_get_ssid_default();
+
+	// platform_get_wps_pin_default (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_platform_get_wps_pin_default();
 
 	return 0;
 }
