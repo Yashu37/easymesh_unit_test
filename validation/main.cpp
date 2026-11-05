@@ -30,7 +30,8 @@ extern "C" void run_all_tests_wifi_hal_getAssociationReqIEs(void);
 extern "C" void run_all_tests_wifi_hal_getRadioCountryCode(void);
 extern "C" void run_all_tests_wifi_hal_getRadioOperatingChannelBandwidth(void);
 extern "C" void run_all_tests_wifi_hal_getRadioTransmitPower(void);
-extern "C" void run_all_tests_wifi_hal_setNeighborReportActivation(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_wifi_hal_setNeighborReportActivation(void);
+extern "C" void run_all_tests_wifi_hal_getRadioIfName(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -163,7 +164,10 @@ int main() {
 //	run_all_tests_wifi_hal_getRadioTransmitPower();
 
 	// wifi_hal_setNeighborReportActivation (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
-	run_all_tests_wifi_hal_setNeighborReportActivation();
+//	run_all_tests_wifi_hal_setNeighborReportActivation();
+
+	// wifi_hal_getRadioIfName (rdk-wifi-hal hal_ipc/server/hal_ipc_wifi_wrappers.c)
+	run_all_tests_wifi_hal_getRadioIfName();
 
 	return 0;
 }
