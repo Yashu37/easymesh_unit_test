@@ -18,7 +18,7 @@
 #include <cjson/cJSON.h>
 
 /* 1 = with FIX 1..4, 0 = original unfixed functions (set to 0 to reproduce the findings) */
-#define RDK_JBK_FIX  0
+#define RDK_JBK_FIX  1
 
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
 #define EM_CFG_FILE "/nvram/EasymeshCfg.json"
