@@ -33,7 +33,8 @@ extern "C" void run_all_tests_wifi_hal_getRadioTransmitPower(void);
 extern "C" void run_all_tests_wifi_hal_setNeighborReportActivation(void);
 extern "C" void run_all_tests_wifi_hal_getRadioIfName(void);
 extern "C" void run_all_tests_wifi_hal_getApNumDevicesAssociated(void);
-extern "C" void run_all_tests_hal_ipc_BTMQueryRequestEvent(void);   /* declared here: that harness does not use common.h */
+extern "C" void run_all_tests_hal_ipc_BTMQueryRequestEvent(void);
+extern "C" void run_all_tests_hal_ipc_BTMResponseEvent(void);   /* declared here: that harness does not use common.h */
 
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
@@ -175,7 +176,10 @@ int main() {
 //	run_all_tests_wifi_hal_getApNumDevicesAssociated();
 
 	// hal_ipc_BTMQueryRequestEvent (rdk-wifi-hal hal_ipc/server/server_hal_ipc.c)
-	run_all_tests_hal_ipc_BTMQueryRequestEvent();
+//	run_all_tests_hal_ipc_BTMQueryRequestEvent();
+
+	// hal_ipc_BTMResponseEvent (rdk-wifi-hal hal_ipc/server/server_hal_ipc.c)
+	run_all_tests_hal_ipc_BTMResponseEvent();
 
 	return 0;
 }
