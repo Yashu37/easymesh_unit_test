@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 /* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_HIN_FIX  0
+#define RDK_HIN_FIX  1
 
 #define HAL_IPC
 #define MAX_AP_INDEX 15
