@@ -12,7 +12,7 @@
 #include <string.h>
 
 /* 1 = with the fix, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_NCS_FIX  0
+#define RDK_NCS_FIX  1
 
 #define BPI_LEN_16 16        /* platform.c:41 */
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
