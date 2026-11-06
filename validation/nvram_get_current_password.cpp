@@ -1,18 +1,16 @@
 /*
  * HANDLER: nvram_get_current_password
  *
- * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:276 (~/Desktop/G/rdk-wifi-hal).  With RDK_NCP_FIX 0 it is the
- * VERBATIM original (reproduces the findings); with RDK_NCP_FIX 1 it carries the fix described in its comment.
- * Collaborator (construct file): wifi_nvram_defaultRead is a stub with a controllable result per call; its copy line is the original
- * strncpy(out, position, strlen(position)+1), -1 leaves out untouched.  The prints are the real macros over the log sink.  Renamed
- * hwr_nvram_get_current_password (other platforms define the same name).
+ * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:276 (~/Desktop/G/rdk-wifi-hal).  This file holds ONLY
+ * THE FIXED code (the fix described in its comment). Collaborator (construct file): wifi_nvram_defaultRead is a stub
+ * with a controllable result per call; its copy line is the original strncpy(out, position, strlen(position)+1), -1
+ * leaves out untouched.  The prints are the real macros over the log sink.  Renamed hwr_nvram_get_current_password
+ * (other platforms define the same name).
  */
 #include "hwr_ncp.h"
 #include <stdio.h>
 #include <string.h>
 
-/* 1 = with the fix, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_NCP_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -21,7 +19,6 @@
 
 /* --- platform.c:276 --- */
 extern "C" {
-#if RDK_NCP_FIX
 int nvram_get_current_password(char *l_password, int vap_index)
 {
     /* FIX: (1) the result of wifi_nvram_defaultRead() was ignored and 0 always returned: a missing key / empty value looked like
@@ -44,13 +41,4 @@ int nvram_get_current_password(char *l_password, int vap_index)
     memcpy(l_password, tmp, strlen(tmp) + 1);
     return 0;
 }
-#else
-int nvram_get_current_password(char *l_password, int vap_index)
-{
-    wifi_hal_dbg_print("%s:%d \n",__func__,__LINE__);
-    /*password is not sensitive,won't grant access to real devices*/ 
-    wifi_nvram_defaultRead("bpi_wifi_password",l_password);
-    return 0;
-}
-#endif
 }

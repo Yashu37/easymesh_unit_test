@@ -1,10 +1,9 @@
 /*
  * HANDLER: wifi_hal_getApNumDevicesAssociated
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:628-648
- * (~/Desktop/G/rdk-wifi-hal), with get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c:2312-2333)
- * copied verbatim next to it.  With RDK_GND_FIX 0 it is the VERBATIM original (reproduces the findings); with
- * RDK_GND_FIX 1 it carries FIX 1..2 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:628-648 (~/Desktop/G/rdk-wifi-hal), with
+ * get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c:2312-2333) copied verbatim next to it.  This file holds ONLY
+ * THE FIXED code: it carries FIX 1..2 below.
  *
  * Scaffolding only: the interface holds the REAL wifi_vap_info_t and the same u.ap / u.sta union as
  * wifi_hal_priv.h (u.ap.hapd first, num_sta inside it); g_wifi_hal holds num_radios, radio_info and the real
@@ -17,8 +16,6 @@
 #include <string.h>
 #include <pthread.h>
 
-/* 1 = with FIX 1..2, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_GND_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -68,13 +65,11 @@ INT wifi_hal_getApNumDevicesAssociated(INT apIndex, ULONG *output_ulong)
 
     wifi_hal_dbg_print("%s:%d: Enter.\n", __func__, __LINE__);
 
-#if RDK_GND_FIX
     /* FIX 1: output_ulong is written (under hapd_lock) without a NULL check. */
     if (output_ulong == NULL) {
         wifi_hal_error_print("%s:%d: NULL output pointer for vap index %d\n", __func__, __LINE__, apIndex);
         return -1;
     }
-#endif
     interface = get_interface_by_vap_index(apIndex);
     if (!interface)
     {
@@ -82,14 +77,12 @@ INT wifi_hal_getApNumDevicesAssociated(INT apIndex, ULONG *output_ulong)
         return -1;
     }
 
-#if RDK_GND_FIX
     /* FIX 2: interface->u.ap is the AP member of a union that holds the STA state of a STA VAP, which has no
      * hostapd instance: num_sta was read from unrelated bytes and returned as a station count. */
     if (interface->vap_info.vap_mode != wifi_vap_mode_ap) {
         wifi_hal_error_print("%s:%d: vap index %d is not an AP vap\n", __func__, __LINE__, apIndex);
         return -1;
     }
-#endif
     pthread_mutex_lock(&g_wifi_hal.hapd_lock);
     *output_ulong = interface->u.ap.hapd.num_sta;
     pthread_mutex_unlock(&g_wifi_hal.hapd_lock);

@@ -66,15 +66,10 @@ hal_ipc_processor_desc_t processor_desc[hal_ipc_desc_type_max] = {
 /* --- from hal_ipc.c:820, with FIX 1 (bounds check on type) --- */
 hal_ipc_processor_desc_t *get_processor_desc(hal_ipc_desc_type_t type)
 {
-#if 1
     /* FIX 1: reject a type outside [0, hal_ipc_desc_type_max) instead of
      * returning a pointer outside processor_desc[]. */
     if ((int)type < 0 || type >= hal_ipc_desc_type_max) {
         return NULL;
     }
     return &processor_desc[type];
-#else
-    /* original, unfixed (set the #if above to 0 to reproduce the crash) */
-    return &processor_desc[type];
-#endif
 }

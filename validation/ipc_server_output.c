@@ -1,10 +1,9 @@
 /*
  * HANDLER: ipc_server_output
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_processors.c:75-1146
- * (~/Desktop/G/rdk-wifi-hal), together with the two static helpers it calls
- * (cleanup_client_data / cleanup_desc_scratch_buf, lines 27-42).  With RDK_ISO_FIX 0 it is the
- * VERBATIM original (reproduces the findings); with RDK_ISO_FIX 1 it carries FIX 1..6 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_processors.c:75-1146 (~/Desktop/G/rdk-wifi-hal), together
+ * with the two static helpers it calls (cleanup_client_data / cleanup_desc_scratch_buf, lines 27-42).  This file holds
+ * ONLY THE FIXED code: it carries FIX 1..6 below.
  *
  * Scaffolding only:
  *  - hso_hal_ipc.h: REAL wifi_hal.h + the REAL hal_ipc.h descriptor definitions (verbatim).
@@ -17,8 +16,6 @@
  */
 #include "hso_hal_ipc.h"
 
-/* 1 = with FIX 1..6, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_ISO_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hso_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_info_print(format, ...)   hso_print(1, format, ##__VA_ARGS__)
@@ -152,14 +149,12 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
             if (array_size > HAL_IPC_RADIO_CHANNELS_MAX) {
                 array_size = HAL_IPC_RADIO_CHANNELS_MAX;
             }
-#if RDK_ISO_FIX
             /* FIX 1: array_size comes from the client; 0 / negative made malloc(0) / malloc(huge) and the
              * [0] access in the debug print below read outside the allocation. */
             if (array_size <= 0) {
                 wifi_hal_error_print("%s:%d FAIL %s invalid array_size %d\n", __func__, __LINE__, desc->name, array_size);
                 goto error_happened;
             }
-#endif
 
             input_output_channelStats_array = (wifi_channelStats_t *) malloc(array_size * sizeof(wifi_channelStats_t));
 
@@ -244,7 +239,6 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
             scan_mode = desc->in.start_neighbor_scan.scan_mode;
             dwell_time = desc->in.start_neighbor_scan.dwell_time;
             chan_num = desc->in.start_neighbor_scan.chan_num;
-#if RDK_ISO_FIX
             /* FIX 2: wifi_hal_startNeighborScan() reads chan_num entries of chan_list, but only one
              * (uninitialised) unsigned int was allocated and chan_num is client-controlled; allocate and
              * zero chan_num (capped) entries and check the allocation. */
@@ -256,9 +250,6 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
                 wifi_hal_error_print("%s:%d FAIL %s allocate memory for chan_list\n", __func__, __LINE__, desc->name);
                 goto error_happened;
             }
-#else
-            chan_list = (unsigned int*) malloc(sizeof(unsigned int));
-#endif
 
             if (dwell_time == 0) {
                     dwell_time = 5;
@@ -598,7 +589,6 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
             }
 
             desc->ret = callback_fn_diag(index, associated_dev_array, &output_array_size);
-#if RDK_ISO_FIX
             /* FIX 3a: a failing callback with a zero count was reported as success (return 0, desc->ret != 0). */
             if (desc->ret) {
                 wifi_hal_error_print("%s:%d FAIL call to %s returned %d code\n", __func__, __LINE__, desc->name, desc->ret);
@@ -611,7 +601,6 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
             if (output_array_size > HAL_IPC_MAX_STA_SUPPORT_NUM) {
                 output_array_size = HAL_IPC_MAX_STA_SUPPORT_NUM;
             }
-#endif
 
             if (!output_array_size) {
                 wifi_hal_dbg_print("%s:%d %s returned empty array.\n", __func__, __LINE__, desc->name);
@@ -783,7 +772,6 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
             cleanup_client_data(&client_scratch_buf, client_data_len);
 
             desc->scratch_buf = malloc(output_array_size*sizeof(wifi_associated_dev_rate_info_tx_stats_t));
-#if RDK_ISO_FIX
             /* FIX 4: the allocation was not checked (the rx case checks it). */
             if (!desc->scratch_buf) {
                 wifi_hal_error_print("%s:%d FAIL %s allocate memory for %d wifi_associated_dev_rate_info_tx_stats_t structs\n", __func__, __LINE__, desc->name, output_array_size);
@@ -791,7 +779,6 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
                 free(assoc_dev_tx_stats_array);
                 goto error_happened;
             }
-#endif
             memset(desc->scratch_buf, 0, output_array_size*sizeof(wifi_associated_dev_rate_info_tx_stats_t));
 
             desc->out.get_ap_assoc_dev_tx_stats_result.output_array_size = output_array_size;
@@ -1037,14 +1024,10 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
             desc->ret = wifi_hal_getAssociationReqIEs(  desc->in.get_association_req_ies.ap_index,
                                                         &desc->in.get_association_req_ies.client_mac_addr,
                                                         req_ies_out,
-#if RDK_ISO_FIX
                                                         /* FIX 5: req_ies_size is client-controlled but req_ies_out is only
                                                          * HAL_IPC_ASSOC_REQ_IES_BUF_SIZE bytes: wifi_hal_getAssociationReqIEs() trusts it as capacity. */
                                                         (desc->in.get_association_req_ies.req_ies_size > HAL_IPC_ASSOC_REQ_IES_BUF_SIZE) ?
                                                             HAL_IPC_ASSOC_REQ_IES_BUF_SIZE : desc->in.get_association_req_ies.req_ies_size,
-#else
-                                                        desc->in.get_association_req_ies.req_ies_size,
-#endif
                                                         &req_ies_size_out);
 
             if (desc->ret) {
@@ -1080,7 +1063,6 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
                 goto error_happened;
             }
 
-#if RDK_ISO_FIX
             /* FIX 6: scratch_buf_size and num_neighbor_reports are client-controlled; reports holds
              * HAL_IPC_MAX_NEIGHBOR_AP_COUNT entries, so the memcpy below overflowed it and
              * wifi_hal_setNeighborReports() read num_neighbor_reports entries past it. */
@@ -1091,7 +1073,6 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
                 free(reports);
                 goto error_happened;
             }
-#endif
             if (!memcpy((unsigned char*) reports, (unsigned char*) desc->scratch_buf, desc->scratch_buf_size)) {
                 wifi_hal_error_print("%s:%d FAIL memcpy %s of %d wifi_NeighborReport_t structs\n", __func__, __LINE__, desc->name, desc->in.set_neighbor_reports.num_neighbor_reports);
                 free(reports);

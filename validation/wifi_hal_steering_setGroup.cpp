@@ -1,9 +1,8 @@
 /*
  * HANDLER: wifi_hal_steering_setGroup
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:308-343
- * (~/Desktop/G/rdk-wifi-hal).  With RDK_GSG_FIX 0 it is the VERBATIM original (reproduces the finding); with
- * RDK_GSG_FIX 1 it carries FIX 1 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:308-343 (~/Desktop/G/rdk-wifi-hal).  This
+ * file holds ONLY THE FIXED code: it carries FIX 1 below.
  *
  * Scaffolding only: g_wifi_hal holds just bm_steer_groups[MAX_STEERING_GROUP_NUM (8)] and steering_data_lock
  * (layouts as in wifi_hal_priv.h, with the REAL wifi_steering_apConfig_t and MAX_NUM_RADIOS); real pthread
@@ -15,8 +14,6 @@
 #include <string.h>
 #include <pthread.h>
 
-/* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_GSG_FIX  1
 
 #define MAX_STEERING_GROUP_NUM  8
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -55,7 +52,6 @@ INT wifi_hal_steering_setGroup( UINT steeringgroupIndex,
     memcpy(&p_steer_group->bm_group_info[1].config, cfg_5, sizeof(wifi_steering_apConfig_t));
 
     /* Macfilter deny mode set */
-#if RDK_GSG_FIX
     /* FIX 1: the results were ignored, so the group stayed enabled and RETURN_OK was reported although the
      * deny-mode MAC filter could not be set on one of its APs (unknown VAP, STA VAP, filter mode configured by
      * the user, nl80211 failure): steering to that AP would then not block anything.  Disable the group and
@@ -66,10 +62,6 @@ INT wifi_hal_steering_setGroup( UINT steeringgroupIndex,
         pthread_mutex_unlock(&g_wifi_hal.steering_data_lock);
         return RETURN_ERR;
     }
-#else
-    steering_set_acl_mode(cfg_2->apIndex, wifi_mac_filter_mode_black_list);
-    steering_set_acl_mode(cfg_5->apIndex, wifi_mac_filter_mode_black_list);
-#endif
     wifi_hal_info_print("Wi-Fi steering ApGroup %d CFG: apidx=%d, %d, %d, %d, %d\n",
                             steeringgroupIndex, cfg_2->apIndex,
                             cfg_2->utilCheckIntervalSec, cfg_2->utilAvgCount,

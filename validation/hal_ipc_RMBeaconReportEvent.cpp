@@ -9,8 +9,8 @@
  *    reduced switch (braces added around the case body).
  *  - rdk_hal_ipc_exec (hal_ipc.c:826-940), verbatim apart from the EXEC_ERR_CLEANUP(desc) lines.  This event carries a
  *    scratch buffer, so it is hit by the early-failure leak of tracker #78 (found with hal_ipc_BTMQueryRequestEvent,
- *    root cause in rdk_hal_ipc_exec): RDK_RMB_FIX 1 keeps that fix applied so this harness does not count the same
- *    finding twice; set it to 0 to see the leak again through this function.  socket / bind / connect / setsockopt /
+ *    root cause in rdk_hal_ipc_exec): that fix is applied here so this harness does not count the same
+ *    finding twice.  socket / bind / connect / setsockopt /
  *    send / close / unlink are redirected to stubs (construct file) so every failure point can be driven and the
  *    bytes handed to send() are captured; malloc / free are counting stubs.
  *  - get_processor_desc / rdk_create_hal_ipc_node: stubs (construct file) returning a runner-owned descriptor whose
@@ -23,8 +23,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-/* 1 = rdk_hal_ipc_exec carries the fix of tracker #78, 0 = verbatim original (leaks the scratch buffer on early failures) */
-#define RDK_RMB_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_info_print(format, ...)   hwr_print(1, format, ##__VA_ARGS__)
@@ -42,16 +40,12 @@
 #define close       hwr_rmb_close
 #define unlink      hwr_rmb_unlink
 
-#if RDK_RMB_FIX
 /* FIX (tracker #78, same root cause as in hal_ipc_RMBeaconReportEvent): rdk_hal_ipc_exec frees desc->scratch_buf only after the descriptor was sent (and when the scratch send
  * fails).  Every earlier failure (socket / bind / setsockopt / connect / descriptor send, e.g. whenever the
  * notification server is not running) returned -1 with the scratch buffer that ipc_client_notification_input
  * malloc'd still allocated, and the caller (hal_ipc_RMBeaconReportEvent) never frees it: one wifi_BTMQuery_t +
  * wifi_BTMRequest_t leaked per event. */
 #define EXEC_ERR_CLEANUP(d) do { if ((d)->len > sizeof(hal_ipc_processor_desc_t) && (d)->scratch_buf) { free((d)->scratch_buf); (d)->scratch_buf = NULL; } } while (0)
-#else
-#define EXEC_ERR_CLEANUP(d)
-#endif
 
 
 //--------------------------------------------------------------------------------------------------

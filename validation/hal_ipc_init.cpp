@@ -1,8 +1,8 @@
 /*
  * HANDLER: hal_ipc_init
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/server_hal_ipc.c:150-183 (~/Desktop/G/rdk-wifi-hal).  With RDK_HIN_FIX 0
- * it is the VERBATIM original (reproduces the finding); with RDK_HIN_FIX 1 it carries FIX 1 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/server_hal_ipc.c:150-183 (~/Desktop/G/rdk-wifi-hal).  This file
+ * holds ONLY THE FIXED code: it carries FIX 1 below.
  *
  * The function registers the HAL IPC notification callbacks and creates the notification client and the sync-call
  * server nodes.  The registration functions it calls are copied VERBATIM from src/wifi_hal.c (wifi_hal_steering_event
@@ -18,8 +18,6 @@
 #include "hwr_hin.h"
 #include <stdio.h>
 
-/* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_HIN_FIX  1
 
 #define HAL_IPC
 #define MAX_AP_INDEX 15
@@ -107,13 +105,10 @@ extern "C" {
 int hal_ipc_init(void)
 {
     hal_ipc_node_t *node;
-#if RDK_HIN_FIX
     int reg_failed = 0;
-#endif
 
     // Register HAL IPC function as steering event callback
     // in rdk-wifi-hal callbacks struct g_wifi_hal.device_callbacks
-#if RDK_HIN_FIX
     /* FIX 1: the results of the three registrations were ignored, so hal_ipc_init() returned 0 (and went on to create the
      * notification / sync-call nodes) although a callback could not be registered - e.g. wifi_hal_RMBeaconRequestCallback
      * Register() returns RETURN_ERR for an AP index that already has a beacon callback (another registrant, or a second
@@ -123,43 +118,28 @@ int hal_ipc_init(void)
         wifi_hal_error_print("%s:%d: Failed to register steering event callback\n", __func__, __LINE__);
         reg_failed = 1;
     }
-#else
-    wifi_hal_steering_eventRegister(hal_ipc_send_steering_event);
-#endif
 
     // Register HAL IPC function as RM Beacon Report event callback
     // in rdk-wifi-hal callbacks struct g_wifi_hal.device_callbacks
     for (int ap_index = 0; ap_index < MAX_AP_INDEX; ap_index++) {
-#if RDK_HIN_FIX
         if (wifi_hal_RMBeaconRequestCallbackRegister(ap_index, hal_ipc_RMBeaconReportEvent) != RETURN_OK) {
             wifi_hal_error_print("%s:%d: Failed to register RM beacon report callback for ap %d\n", __func__, __LINE__, ap_index);
             reg_failed = 1;
         }
-#else
-        wifi_hal_RMBeaconRequestCallbackRegister(ap_index, hal_ipc_RMBeaconReportEvent);
-#endif
     }
 
     // Register HAL IPC function as BTM Query/Request event callback
     // in rdk-wifi-hal callbacks struct g_wifi_hal.device_callbacks
     for (int ap_index = 0; ap_index < MAX_AP_INDEX; ap_index++) {
-#if RDK_HIN_FIX
         if (wifi_hal_BTMQueryRequest_callback_register(ap_index, hal_ipc_BTMQueryRequestEvent, hal_ipc_BTMResponseEvent) != RETURN_OK) {
             wifi_hal_error_print("%s:%d: Failed to register BTM callbacks for ap %d\n", __func__, __LINE__, ap_index);
             reg_failed = 1;
         }
-#else
-        wifi_hal_BTMQueryRequest_callback_register( ap_index, 
-                                                    hal_ipc_BTMQueryRequestEvent,
-                                                    hal_ipc_BTMResponseEvent);
-#endif
     }
 
-#if RDK_HIN_FIX
     if (reg_failed) {
         return -1;
     }
-#endif
     if ((node = rdk_create_hal_ipc_node(hal_ipc_node_type_notification_client)) == NULL) {
         wifi_hal_error_print("%s:%d: Failed to create notification client node\n", __func__, __LINE__);
         return -1;

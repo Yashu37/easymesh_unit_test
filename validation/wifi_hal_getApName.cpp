@@ -1,12 +1,11 @@
 /*
  * HANDLER: wifi_hal_getApName
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:169-186
- * (~/Desktop/G/rdk-wifi-hal), together with the three helpers it depends on, copied from
- * src/wifi_hal_nl80211_utils.c (the non-FEATURE_SINGLE_PHY build): get_total_num_of_vaps (:4926),
- * get_interface_name_from_vap_index (:2235) and get_radio_by_rdk_index (:2271); they are declared static
- * here only so the harnesses link together.  With RDK_GAN_FIX 0 everything is the VERBATIM original (reproduces
- * the findings); with RDK_GAN_FIX 1 the two helpers carry FIX 1 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:169-186 (~/Desktop/G/rdk-wifi-hal), together
+ * with the three helpers it depends on, copied from src/wifi_hal_nl80211_utils.c (the non-FEATURE_SINGLE_PHY build):
+ * get_total_num_of_vaps (:4926), get_interface_name_from_vap_index (:2235) and get_radio_by_rdk_index (:2271); they are
+ * declared static here only so the harnesses link together.  This file holds ONLY THE FIXED code: it carries FIX 1
+ * below.
  *
  * Scaffolding only: g_wifi_hal / radio hold just num_radios, radio_info[], rdk_radio_index and
  * capab.maxNumberVAPs; interface_index_map is a runner-owned array of the REAL wifi_interface_name_idex_map_t
@@ -16,8 +15,6 @@
 #include "hwr_gan.h"
 #include <string.h>
 
-/* 1 = with FIX 1 in the helpers, 0 = original unfixed code (set to 0 to reproduce the findings) */
-#define RDK_GAN_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -56,14 +53,10 @@ static int get_total_num_of_vaps(void)
 
     for (l_index = 0; l_index < g_wifi_hal.num_radios; l_index++) {
 #ifndef FEATURE_SINGLE_PHY
-#if RDK_GAN_FIX
         /* FIX 1: the radio_info[] position is the loop index, not an rdk radio index.  Looking it up by rdk
          * index returned NULL for radios whose rdk index differs from their position and radio->capab was then
          * dereferenced (the FEATURE_SINGLE_PHY branch below already indexes the array directly). */
         radio = &g_wifi_hal.radio_info[l_index];
-#else
-        radio = get_radio_by_rdk_index(l_index);
-#endif
 #else //FEATURE_SINGLE_PHY
         radio = &g_wifi_hal.radio_info[l_index];
 #endif //FEATURE_SINGLE_PHY
@@ -84,14 +77,10 @@ static int get_interface_name_from_vap_index(unsigned int vap_index, char *inter
 
     for (l_index = 0; l_index < g_wifi_hal.num_radios; l_index++) {
 #ifndef FEATURE_SINGLE_PHY
-#if RDK_GAN_FIX
         /* FIX 1: the radio_info[] position is the loop index, not an rdk radio index.  Looking it up by rdk
          * index returned NULL for radios whose rdk index differs from their position and radio->capab was then
          * dereferenced (the FEATURE_SINGLE_PHY branch below already indexes the array directly). */
         radio = &g_wifi_hal.radio_info[l_index];
-#else
-        radio = get_radio_by_rdk_index(l_index);
-#endif
 #else //FEATURE_SINGLE_PHY
         radio = &g_wifi_hal.radio_info[l_index];
 #endif //FEATURE_SINGLE_PHY

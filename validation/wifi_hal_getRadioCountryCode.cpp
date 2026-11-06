@@ -1,13 +1,11 @@
 /*
  * HANDLER: wifi_hal_getRadioCountryCode
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:495-511
- * (~/Desktop/G/rdk-wifi-hal), with the helpers copied verbatim next to it from src/wifi_hal_nl80211_utils.c
- * (declared static here only so the harnesses link together): get_radio_by_rdk_index (2271-2283),
- * get_coutry_str_from_code (3136-3154) and the country table wifi_country_map (1011-1260, 247 entries).
- * With RDK_GCT_FIX 0 everything is the VERBATIM original (reproduces the findings); with RDK_GCT_FIX 1 the
- * function carries FIX 1 and the table FIX 2 and 3 below (the table is the source of the wrong strings, so the
- * fix is applied to the harness copy of the table; the findings name the helper's file/line).
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:495-511 (~/Desktop/G/rdk-wifi-hal), with the
+ * helpers copied verbatim next to it from src/wifi_hal_nl80211_utils.c (declared static here only so the harnesses link
+ * together): get_radio_by_rdk_index (2271-2283), get_coutry_str_from_code (3136-3154) and the country table
+ * wifi_country_map (1011-1260, 247 entries). This file holds ONLY THE FIXED code: the function carries FIX 1 and the table FIX 2 and 3 below (the table is the source of
+ * the wrong strings, so the fix is applied to the harness copy of the table; the findings name the helper's file/line).
  *
  * Scaffolding only: g_wifi_hal / the radio hold just num_radios, radio_info[], rdk_radio_index and the REAL
  * wifi_radio_operationParam_t (wifi_hal.h); struct wifiCountryEnumStrMap is the one of wifi_hal_priv.h:319.  The
@@ -18,8 +16,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-/* 1 = with FIX 1..3, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_GCT_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -150,11 +146,7 @@ static struct wifiCountryEnumStrMap wifi_country_map[] =
     {wifi_countrycode_JM,"JM"}, /**< JAMAICA */
     {wifi_countrycode_JP,"JP"}, /**< JAPAN */
     {wifi_countrycode_JE,"JE"}, /**< JERSEY */
-#if RDK_GCT_FIX
     {wifi_countrycode_JO,"JO"}, /**< JORDAN (FIX 2: was the lower case "jo") */
-#else
-    {wifi_countrycode_JO,"jo"}, /**< JORDAN */
-#endif
     {wifi_countrycode_KE,"KE"}, /**< KENYA */
     {wifi_countrycode_KG,"KG"}, /**< KYRGYZSTAN */
     {wifi_countrycode_KH,"KH"}, /**< CAMBODIA */
@@ -289,7 +281,6 @@ static struct wifiCountryEnumStrMap wifi_country_map[] =
     {wifi_countrycode_ZA,"ZA"}, /**< SOUTH AFRICA */
     {wifi_countrycode_ZM,"ZM"}, /**< ZAMBIA */
     {wifi_countrycode_ZW,"ZW"} /**< ZIMBABWE */
-#if RDK_GCT_FIX
     , /* the last original entry has no trailing comma */
     /* FIX 3: valid country codes of wifi_countrycode_type_t that were missing from the table (they were reported as the default "US") */
     {wifi_countrycode_AX,"AX"}, /**< ALAND ISLANDS */
@@ -299,7 +290,6 @@ static struct wifiCountryEnumStrMap wifi_country_map[] =
     {wifi_countrycode_SX,"SX"}, /**< SINT MAARTEN */
     {wifi_countrycode_BQ,"BQ"}, /**< BONAIRE, SINT EUSTATIUS AND SABA */
     {wifi_countrycode_00,"00"}, /**< WORLD REGULATORY DOMAIN */
-#endif
 };
 
 /* --- copied from wifi_hal_nl80211_utils.c:3136 --- */
@@ -346,12 +336,10 @@ INT wifi_hal_getRadioCountryCode(   INT radioIndex,
     wifi_radio_info_t *radio;
 
     wifi_hal_dbg_print("%s:%d: Enter.\n", __func__, __LINE__);
-#if RDK_GCT_FIX
     /* FIX 1: output_string is written unchecked (strcpy() in get_coutry_str_from_code). */
     if (output_string == NULL) {
         return -1;
     }
-#endif
     radio = get_radio_by_rdk_index(radioIndex);
 
     if(!radio){

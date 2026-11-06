@@ -1,18 +1,16 @@
 /*
  * HANDLER: platform_get_wps_pin_default
  *
- * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:256 (~/Desktop/G/rdk-wifi-hal).  With RDK_PWP_FIX 0 it is the
- * VERBATIM original (reproduces the findings); with RDK_PWP_FIX 1 it carries the fix described in its comment.
- * Collaborator (construct file): wifi_nvram_defaultRead is a stub with a controllable result; its copy line is the original
- * strncpy(out, position, strlen(position)+1), and -1 leaves out untouched (the function is separately harnessed).  The prints are the real
- * macros over the log sink.  Renamed hwr_platform_get_wps_pin_default (other platforms define the same name).
+ * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:256 (~/Desktop/G/rdk-wifi-hal).  This file holds ONLY
+ * THE FIXED code (the fix described in its comment). Collaborator (construct file): wifi_nvram_defaultRead is a stub
+ * with a controllable result; its copy line is the original strncpy(out, position, strlen(position)+1), and -1 leaves
+ * out untouched (the function is separately harnessed).  The prints are the real macros over the log sink.  Renamed
+ * hwr_platform_get_wps_pin_default (other platforms define the same name).
  */
 #include "hwr_pwp.h"
 #include <stdio.h>
 #include <string.h>
 
-/* 1 = with the fix, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_PWP_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -21,7 +19,6 @@
 
 /* --- platform.c:256 --- */
 extern "C" {
-#if RDK_PWP_FIX
 int platform_get_wps_pin_default(char *pin)
 {
     /* FIX: (1) pin == NULL was passed to wifi_nvram_defaultRead and written.
@@ -45,12 +42,4 @@ int platform_get_wps_pin_default(char *pin)
     memcpy(pin, tmp, strlen(tmp) + 1);
     return 0;
 }
-#else
-int platform_get_wps_pin_default(char *pin)
-{
-    wifi_hal_dbg_print("%s:%d \n",__func__,__LINE__);  
-    wifi_nvram_defaultRead("wps_pin",pin);
-    return 0;
-}
-#endif
 }

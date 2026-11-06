@@ -1,9 +1,8 @@
 /*
  * HANDLER: rdk_create_hal_ipc_node
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc.c:1190-1222
- * (~/Desktop/G/rdk-wifi-hal).  With RDK_CRE_FIX 0 it is the VERBATIM original
- * (reproduces the finding); with RDK_CRE_FIX 1 it carries FIX 1 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc.c:1190-1222 (~/Desktop/G/rdk-wifi-hal).  This file holds
+ * ONLY THE FIXED code: it carries FIX 1 below.
  *
  * Scaffolding only:
  *  - g_ipc_node[hal_ipc_node_type_max] is a runner-owned slab (hcre_gnode_slab,
@@ -20,8 +19,6 @@
 #include <pthread.h>
 #include "common.h"
 
-/* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_CRE_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    wifi_hal_print(WIFI_HAL_LOG_LVL_DEBUG, format, ##__VA_ARGS__)
 #define g_ipc_node     ((hal_ipc_node_t *)hcre_gnode_slab)
@@ -35,14 +32,12 @@ hal_ipc_node_t *rdk_create_hal_ipc_node(hal_ipc_node_type_t type)
 {
     hal_ipc_node_t *node;
 
-#if RDK_CRE_FIX
     /* FIX 1: type indexes g_ipc_node[] and is written through (node->type = type) BEFORE it is
      * validated; any value outside [0, hal_ipc_node_type_max) reads/writes outside the array. */
     if ((int)type < 0 || type >= hal_ipc_node_type_max) {
         wifi_hal_dbg_print("%s:%d: Invalid node type %d.\n", __func__, __LINE__, (int)type);
         return NULL;
     }
-#endif
 
     // always return the node based on enumeration of node type which is also the index of the array
     node = &g_ipc_node[type];

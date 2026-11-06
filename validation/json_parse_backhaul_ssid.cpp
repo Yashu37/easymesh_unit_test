@@ -5,9 +5,10 @@
  * wrapper around json_parse_string(), so the REAL chain is copied VERBATIM and linked with the real libcjson:
  *   json_parse_string  src/wifi_hal_rdk_util.c:528
  *   json_open_file     src/wifi_hal_rdk_util.c:488
- * With RDK_JBS_FIX 0 all three are the verbatim originals (reproduces the findings); with RDK_JBS_FIX 1 they carry FIX 1..4 (1,2,4 are the shared json_open_file / json_parse_string fixes of #83-#85, 3 is the wrapper's).
- * The only redirection is the file path: fopen("/nvram/EasymeshCfg.json") (EM_CFG_FILE) opens the runner's temporary file.
- * The prints are the real macros over the log sink.  The static function is reached through hwr_jbs_call() (same TU).
+ * This file holds ONLY THE FIXED code: it carries FIX 1..4 (1,2,4 are the shared json_open_file / json_parse_string
+ * fixes of #83-#85, 3 is the wrapper's). The only redirection is the file path: fopen("/nvram/EasymeshCfg.json")
+ * (EM_CFG_FILE) opens the runner's temporary file. The prints are the real macros over the log sink.  The static
+ * function is reached through hwr_jbs_call() (same TU).
  */
 #include "hwr_jbs.h"
 #include <stdio.h>
@@ -17,8 +18,6 @@
 #include <limits.h>
 #include <cjson/cJSON.h>
 
-/* 1 = with FIX 1..4 (1,2,4 are the shared json_open_file / json_parse_string fixes of #83-#85, 3 is the wrapper's), 0 = original unfixed functions (set to 0 to reproduce the findings) */
-#define RDK_JBS_FIX  1
 
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
 #define EM_CFG_FILE "/nvram/EasymeshCfg.json"
@@ -29,7 +28,6 @@
 #define json_parse_string hwr_jbs_json_parse_string
 
 /* --- src/wifi_hal_rdk_util.c:488 --- */
-#if RDK_JBS_FIX
 cJSON *json_open_file(const char *file_name)
 {
     FILE *fp;
@@ -73,50 +71,8 @@ cJSON *json_open_file(const char *file_name)
     fclose(fp);
     return json;
 }
-#else
-cJSON *json_open_file(const char *file_name)
-{
-    FILE *fp;
-    cJSON *json = NULL;
-    size_t len;
-    char *buff;
-
-    fp = fopen(file_name, "r");
-    if (fp == NULL) {
-        wifi_hal_error_print("%s:%d: Failed (err=%d, msg=%s) to open file:%s\n", __func__, __LINE__,
-            errno, strerror(errno), file_name);
-        return json;
-    }
-    fseek(fp, 0, SEEK_END);
-    len = ftell(fp);
-    if (len == UINT_MAX) {
-        fclose(fp);
-        return json;
-    }
-    fseek(fp, 0, SEEK_SET);
-
-    buff = malloc(len);
-    if (buff == NULL) {
-        wifi_hal_error_print("%s:%d: Failed to allocate %zu bytes for json file\n", __func__,
-            __LINE__, len);
-        fclose(fp);
-        return NULL;
-    }
-    len = fread(buff, 1, len, fp);
-    json = cJSON_ParseWithLength(buff, len);
-    if (json == NULL) {
-        const char *const error_ptr = cJSON_GetErrorPtr();
-        wifi_hal_error_print("%s:%d: Error json file parse: %s\n", __func__, __LINE__,
-            (error_ptr ? error_ptr : "UNKNOWN"));
-    }
-    free(buff);
-    fclose(fp);
-    return json;
-}
-#endif
 
 /* --- src/wifi_hal_rdk_util.c:528 --- */
-#if RDK_JBS_FIX
 int json_parse_string(const char* file_name, const char *item_name, char *val, size_t len)
 {
     cJSON *item;
@@ -155,35 +111,8 @@ int json_parse_string(const char* file_name, const char *item_name, char *val, s
     cJSON_Delete(json);
     return 0;
 }
-#else
-int json_parse_string(const char* file_name, const char *item_name, char *val, size_t len)
-{
-    cJSON *item;
-    cJSON *json;
-
-    json = json_open_file(file_name);
-    if (json == NULL) {
-        return -1;
-    }
-
-    item = cJSON_GetObjectItem(json, item_name);
-    if (!cJSON_IsString(item)) {
-        wifi_hal_error_print("%s:%d: (%s) does "
-                             "not exist or is not a string\n",
-            __func__, __LINE__, item_name);
-        cJSON_Delete(json);
-        return -1;
-    }
-    strncpy(val, cJSON_GetStringValue(item), len);
-    val[len-1] = '\0';
-
-    cJSON_Delete(json);
-    return 0;
-}
-#endif
 
 /* --- platform/banana-pi/platform.c:98 --- */
-#if RDK_JBS_FIX
 static int json_parse_backhaul_ssid(char *backhaul_ssid)
 {
     /* FIX 3 (same as json_parse_backhaul_keypassphrase #86): an empty "Backhaul_SSID": "" was returned as success, so
@@ -200,12 +129,6 @@ static int json_parse_backhaul_ssid(char *backhaul_ssid)
     memcpy(backhaul_ssid, tmp, strlen(tmp) + 1);
     return 0;
 }
-#else
-static int json_parse_backhaul_ssid(char *backhaul_ssid)
-{
-    return json_parse_string(EM_CFG_FILE, "Backhaul_SSID", backhaul_ssid, MAX_SSID_LEN);
-}
-#endif
 
 extern "C" int hwr_jbs_call(char *out)
 {

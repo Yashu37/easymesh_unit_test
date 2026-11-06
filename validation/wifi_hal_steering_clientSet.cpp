@@ -1,9 +1,8 @@
 /*
  * HANDLER: wifi_hal_steering_clientSet
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:346-384
- * (~/Desktop/G/rdk-wifi-hal).  With RDK_GCS_FIX 0 it is the VERBATIM original (reproduces the finding); with
- * RDK_GCS_FIX 1 it carries FIX 1 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:346-384 (~/Desktop/G/rdk-wifi-hal).  This
+ * file holds ONLY THE FIXED code: it carries FIX 1 below.
  *
  * Scaffolding only: g_wifi_hal holds just steering_data_lock (real pthread mutex); get_interface_by_vap_index,
  * steering_add_stalist and wifi_steering_del_mac_list are stubs in the construct file (renamed hwr_gcs_*,
@@ -15,8 +14,6 @@
 #include <string.h>
 #include <pthread.h>
 
-/* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_GCS_FIX  1
 
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
 #define wifi_hal_info_print(format, ...)   hwr_print(0, format, ##__VA_ARGS__)
@@ -47,7 +44,6 @@ INT wifi_hal_steering_clientSet(UINT steeringgroupIndex,
     char *key = NULL;
     bm_sta_list_t *bm_client_info = NULL;
 
-#if RDK_GCS_FIX
     /* FIX 1: client_mac and config were used without a check.  A NULL config reached the memcpy() below (and
      * was already dereferenced for the log), a NULL client_mac reached steering_add_stalist() / to_mac_str();
      * both crash, and a NULL config used to be noticed only after the station entry had been created.
@@ -56,7 +52,6 @@ INT wifi_hal_steering_clientSet(UINT steeringgroupIndex,
         wifi_hal_error_print("%s:%d: NULL %s for ap index %d\n", __func__, __LINE__, client_mac == NULL ? "client mac" : "config", apIndex);
         return RETURN_ERR;
     }
-#endif
     interface = get_interface_by_vap_index(apIndex);
     if (interface == NULL) {
         wifi_hal_error_print("%s:%d: WiFi interface not found:%d\n", __func__, __LINE__, apIndex);

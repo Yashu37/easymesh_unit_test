@@ -1,9 +1,8 @@
 /*
  * HANDLER: sync_hostapd_freq_param
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_processors.c:44-72
- * (~/Desktop/G/rdk-wifi-hal).  With RDK_SHF_FIX 0 it is the VERBATIM original
- * (reproduces the findings); with RDK_SHF_FIX 1 it carries FIX 1..3 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_processors.c:44-72 (~/Desktop/G/rdk-wifi-hal).  This file
+ * holds ONLY THE FIXED code: it carries FIX 1..3 below.
  *
  * Scaffolding only (the real types need the hostap / driver header tree):
  *  - minimal wifi_interface_info_t / wifi_radio_info_t with just the fields the
@@ -22,8 +21,6 @@
 #include <string.h>
 #include "common.h"
 
-/* 1 = with FIX 1..3, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_SHF_FIX  1
 
 #define RETURN_OK   0
 #define RETURN_ERR  (-1)
@@ -91,19 +88,16 @@ int sync_hostapd_freq_param(unsigned int apIndex)
     }
     vap = &interface->vap_info;
     radio = get_radio_by_rdk_index(vap->radio_index);
-#if RDK_SHF_FIX
     /* FIX 1: get_radio_by_rdk_index() returns NULL when no radio has that index. */
     if (radio == NULL) {
         wifi_hal_error_print("%s:%d: radio index:%u for ap index:%u not found\n", __func__, __LINE__, vap->radio_index, apIndex);
         return RETURN_ERR;
     }
-#endif
     radio_param = &radio->oper_param;
 
     get_coutry_str_from_code(radio_param->countryCode, country);
 
     freq = ieee80211_chan_to_freq(country, radio_param->operatingClass, radio_param->channel);
-#if RDK_SHF_FIX
     /* FIX 2: ieee80211_chan_to_freq() returns -1 for an unknown op class / channel; that must not be
      * written into the running hostapd interface. */
     if (freq <= 0) {
@@ -115,7 +109,6 @@ int sync_hostapd_freq_param(unsigned int apIndex)
         wifi_hal_error_print("%s:%d: ap index:%u hostapd interface not created\n", __func__, __LINE__, apIndex);
         return RETURN_ERR;
     }
-#endif
     if (interface->u.ap.hapd.iface->freq != freq) {
         wifi_hal_info_print("%s:%d: ap index:%u existing freq:%d curr freq:%d\n", __func__, __LINE__, apIndex, interface->u.ap.hapd.iface->freq, freq);
         interface->u.ap.hapd.iface->freq = freq;

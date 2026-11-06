@@ -1,9 +1,9 @@
 /*
  * HANDLER: wifi_nvram_defaultRead
  *
- * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:55-89 (~/Desktop/G/rdk-wifi-hal).  With
- * RDK_NVR_FIX 0 it is the VERBATIM original (reproduces the findings); with RDK_NVR_FIX 1 it carries FIX 1..3 below
- * (the fixed function takes the size of the output buffer as a third argument).
+ * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:55-89 (~/Desktop/G/rdk-wifi-hal).  This file holds
+ * ONLY THE FIXED code: it carries FIX 1..3 below (the fixed function takes the size of the output buffer as a third
+ * argument).
  *
  * The function reads "key=value" from /nvram/wifi_defaults.txt by running `grep '<key>=' /nvram/wifi_defaults.txt` through
  * _syscmd().  _syscmd (src/wifi_hal_hostapd.c:53) is copied VERBATIM, so the command really runs in a shell with a real
@@ -17,8 +17,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* 1 = with FIX 1..3 (3-argument function), 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_NVR_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wpa_printf(level, ...)             hwr_print(1, __VA_ARGS__)
@@ -69,7 +67,6 @@ int _syscmd(char *cmd, char *retBuf, int retBufSize)
 
 /* --- copied from platform.c:55 --- */
 extern "C" {
-#if RDK_NVR_FIX
 int wifi_nvram_defaultRead(char *in, char *out, size_t out_size)
 {
     /* FIX 1: the function built a shell command from the key (grep '%s=' ...) and used the first line that merely
@@ -135,52 +132,9 @@ int wifi_nvram_defaultRead(char *in, char *out, size_t out_size)
     fclose(fp);
     return ret;
 }
-#else
-int wifi_nvram_defaultRead(char *in,char *out)
-{
-    char buf[MAX_BUF_SIZE]={'\0'};
-    char cmd[MAX_CMD_SIZE]={'\0'};
-    char *position;
-
-    snprintf(cmd,MAX_CMD_SIZE,"grep '%s=' /nvram/wifi_defaults.txt",in);
-    if(_syscmd(cmd,buf,sizeof(buf)) == -1)
-    {
-        wifi_hal_dbg_print("\nError %d:%s:%s\n",__LINE__,__func__,__FILE__);
-        return -1;
-    }
-
-    if (buf[0] == NULL_CHAR)
-        return -1;
-    position = buf;
-    while(*position != NULL_CHAR)
-    {
-        if (*position == NEW_LINE)
-        {
-            *position = NULL_CHAR;
-            break;
-        }
-        position++;
-    }
-    position = strchr(buf, '=');
-    if (position == NULL)
-    {
-        wifi_hal_dbg_print("Line %d: invalid line '%s'",__LINE__, buf);
-        return -1;
-    }
-    *position = NULL_CHAR;
-    position++;
-    strncpy(out,position,strlen(position)+1);
-    return 0; 
-}
-#endif
 }
 
 extern "C" int hwr_nvr_call(char *in, char *out, size_t out_size)
 {
-#if RDK_NVR_FIX
     return wifi_nvram_defaultRead(in, out, out_size);
-#else
-    (void)out_size;
-    return wifi_nvram_defaultRead(in, out);
-#endif
 }

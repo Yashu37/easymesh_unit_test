@@ -1,10 +1,9 @@
 /*
  * HANDLER: wifi_hal_getBSSTransitionActivation
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:207-222
- * (~/Desktop/G/rdk-wifi-hal), with get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c:2312-2333)
- * copied verbatim next to it.  With RDK_GBT_FIX 0 it is the VERBATIM original (reproduces the findings);
- * with RDK_GBT_FIX 1 it carries FIX 1..2 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:207-222 (~/Desktop/G/rdk-wifi-hal), with
+ * get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c:2312-2333) copied verbatim next to it.  This file holds ONLY
+ * THE FIXED code: it carries FIX 1..2 below.
  *
  * Scaffolding only: the interface holds the REAL wifi_vap_info_t (real packed union of bss_info / sta_info,
  * from wifi_hal.h); radios / g_wifi_hal / hash_map_* are minimal (hwr_gbt.h) and walk a runner-owned array.
@@ -14,8 +13,6 @@
  */
 #include "hwr_gbt.h"
 
-/* 1 = with FIX 1..2, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_GBT_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -65,26 +62,22 @@ INT wifi_hal_getBSSTransitionActivation(UINT apIndex,
     wifi_interface_info_t *interface = NULL;
     wifi_hal_dbg_print("%s:%d: Enter.\n", __func__, __LINE__);
 
-#if RDK_GBT_FIX
     /* FIX 1: activate is written unchecked. */
     if (activate == NULL) {
         return RETURN_ERR;
     }
-#endif
     interface = get_interface_by_vap_index(apIndex);
     if(!interface) {
       wifi_hal_error_print("%s:%d:interface for ap index:%d not found\n", __func__, __LINE__, apIndex);
       return RETURN_ERR;
     }
 
-#if RDK_GBT_FIX
     /* FIX 2: vap_info.u is a union and bssTransitionActivated only exists in bss_info (AP VAPs).  For any
      * other VAP the same byte (offset 44) is part of sta_info, so the value returned (with a success code)
      * was unrelated garbage.  Reject non-AP VAPs. */
     if (interface->vap_info.vap_mode != wifi_vap_mode_ap) {
         return RETURN_ERR;
     }
-#endif
     *activate = interface->vap_info.u.bss_info.bssTransitionActivated;
 
     return 0;

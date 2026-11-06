@@ -1,9 +1,8 @@
 /*
  * HANDLER: rdk_hal_server_func
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc.c:943-1187
- * (~/Desktop/G/rdk-wifi-hal).  With RDK_SRV_FIX 0 it is the VERBATIM original
- * (reproduces the findings); with RDK_SRV_FIX 1 it carries FIX 1..5 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc.c:943-1187 (~/Desktop/G/rdk-wifi-hal).  This file holds ONLY
+ * THE FIXED code: it carries FIX 1..5 below.
  *
  * Scaffolding only:
  *  - hal_ipc_node_t / hal_ipc_node_type_t / hal_ipc_processor_t /
@@ -31,8 +30,6 @@
 #include <sys/un.h>
 #include "common.h"
 
-/* 1 = with FIX 1..5, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_SRV_FIX  1
 
 #define MAX_IPC_BUFF  hipc_max_ipc_buff
 #define wifi_hal_dbg_print(format, ...)    wifi_hal_print(WIFI_HAL_LOG_LVL_DEBUG, format, ##__VA_ARGS__)
@@ -65,15 +62,10 @@ static void *rdk_hal_server_func(void *arg)
 
     unsigned char *ptr;
 
-#if RDK_SRV_FIX
     /* FIX 1: (type != A || type != B) is always true, so "== false" never fired and every
      * node type was accepted.  Reject anything that is not a server type. */
     if ((p_ipc_node->type != hal_ipc_node_type_notification_server) &&
             (p_ipc_node->type != hal_ipc_node_type_sync_call_server)) {
-#else
-    if (((p_ipc_node->type != hal_ipc_node_type_notification_server) ||
-            (p_ipc_node->type != hal_ipc_node_type_sync_call_server)) == false) {
-#endif
         wifi_hal_error_print("%s:%d: Invalid node type: %d\n", __func__, __LINE__, p_ipc_node->type);
         return NULL;
     }
@@ -124,13 +116,9 @@ static void *rdk_hal_server_func(void *arg)
         desc.scratch_buf = NULL;
         desc.scratch_buf_size = 0;
         ptr = (unsigned char *) &desc;
-#if RDK_SRV_FIX
         /* FIX 4: always use the recv loop: a short recv() on the single-recv path left the
          * rest of the descriptor uninitialised stack garbage. */
         if (1) {
-#else
-        if (sizeof(hal_ipc_processor_desc_t) > max_size) {
-#endif
             while (target_bytes < sizeof(hal_ipc_processor_desc_t)) {
                 if (((nbytes = recv(cli_sock, ptr, (sizeof(hal_ipc_processor_desc_t) - target_bytes > max_size) ? max_size : (sizeof(hal_ipc_processor_desc_t) - target_bytes), 0)) == -1) || (nbytes == 0)) {
                     wifi_hal_error_print("%s:%d:receiving command response failed err: %d data len:%zu\n", __func__, __LINE__, errno, nbytes);
@@ -157,7 +145,6 @@ static void *rdk_hal_server_func(void *arg)
 
         // check if there is more data to be received
         if (desc.len > sizeof(hal_ipc_processor_desc_t)) {
-#if RDK_SRV_FIX
             /* FIX 5: desc.len / desc.scratch_buf_size come from the client; an inconsistent pair
              * must drop that client, not abort the whole server through assert(). */
             if (desc.scratch_buf_size != (desc.len - sizeof(hal_ipc_processor_desc_t))) {
@@ -165,9 +152,6 @@ static void *rdk_hal_server_func(void *arg)
                 close(cli_sock);
                 continue;
             }
-#else
-            assert(desc.scratch_buf_size == (desc.len - sizeof(hal_ipc_processor_desc_t)));
-#endif
             wifi_hal_dbg_print("%s:%d: Receiving scratch buf of size %d bytes ...\n", __func__, __LINE__, desc.scratch_buf_size);
 
             // allocate memory for client's data
@@ -183,12 +167,8 @@ static void *rdk_hal_server_func(void *arg)
             memset(desc.scratch_buf, 0, desc.scratch_buf_size);
             tmp = desc.scratch_buf;
 
-#if RDK_SRV_FIX
             /* FIX 4: always use the loop here too (short recv on the single-recv path). */
             if (1) {
-#else
-            if (desc.scratch_buf_size > max_size) {
-#endif
                 while (target_bytes < desc.scratch_buf_size) {
                     if (((nbytes = recv(cli_sock, (unsigned char *)tmp, (desc.scratch_buf_size - target_bytes) > max_size ? max_size : (desc.scratch_buf_size - target_bytes), 0)) == -1) || (nbytes == 0)) {
                         wifi_hal_error_print("%s:%d:receiving desc scratch buf in chunks failed err: %d data len:%zu\n", __func__, __LINE__, errno, nbytes);
@@ -197,11 +177,9 @@ static void *rdk_hal_server_func(void *arg)
                         break_cycle = 1;
                         break;
                     }
-#if RDK_SRV_FIX
                     /* FIX 2: advance the destination, otherwise every chunk overwrites the start
                      * of the scratch buffer and the rest of it stays zero. */
                     tmp += nbytes;
-#endif
                     target_bytes += nbytes;
                 }
                 if (break_cycle) {
@@ -224,7 +202,6 @@ static void *rdk_hal_server_func(void *arg)
 
         wifi_hal_dbg_print("%s:%d: Received command to execute: %s, bytes: %zu, expected: %d\n", __func__, __LINE__, desc.name, sizeof(hal_ipc_processor_desc_t) + nbytes, desc.len);
 
-#if RDK_SRV_FIX
         /* FIX 5: see above; also release the scratch buffer if one was allocated. */
         if ((sizeof(hal_ipc_processor_desc_t) + nbytes) != desc.len) {
             wifi_hal_error_print("%s:%d: desc.len %u does not match the received %zu bytes\n", __func__, __LINE__, desc.len, sizeof(hal_ipc_processor_desc_t) + nbytes);
@@ -232,19 +209,14 @@ static void *rdk_hal_server_func(void *arg)
             close(cli_sock);
             continue;
         }
-#else
-        assert((sizeof(hal_ipc_processor_desc_t) + nbytes) == desc.len);
-#endif
         ///**************************************************************************************///
         ///                 call the associated descriptor processor                             ///
         ///**************************************************************************************///
         if ((int)desc.type < 0 || desc.type >= hal_ipc_desc_type_max) {
             wifi_hal_error_print("%s:%d: invalid desc.type=%d\n", __func__, __LINE__, desc.type);
-#if RDK_SRV_FIX
             /* FIX 3: no processor will take ownership of the request scratch buffer, free it here. */
             free(desc.scratch_buf);
             desc.scratch_buf = NULL;
-#endif
             desc.ret = -1;
             desc.len = sizeof(hal_ipc_processor_desc_t);
             desc.scratch_buf_size = 0;
@@ -269,12 +241,8 @@ static void *rdk_hal_server_func(void *arg)
 
         // At first send the descriptor structure
         // Next send the descriptor scratch buffer (optional)
-#if RDK_SRV_FIX
         /* FIX 4: always use the send loop (short send() on the single-send path truncated the reply). */
         if (1) {
-#else
-        if (sizeof(hal_ipc_processor_desc_t) > max_size) {
-#endif
             nbytes = 0;
             target_bytes = 0;
             ptr = (unsigned char *) &desc;

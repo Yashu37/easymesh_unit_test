@@ -1,9 +1,8 @@
 /*
  * HANDLER: rdk_hal_ipc_exec
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc.c:826-940
- * (~/Desktop/G/rdk-wifi-hal).  With RDK_EXEC_FIX 0 it is the VERBATIM original
- * (reproduces the crashes); with RDK_EXEC_FIX 1 it carries FIX 1..4 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc.c:826-940 (~/Desktop/G/rdk-wifi-hal).  This file holds ONLY
+ * THE FIXED code: it carries FIX 1..4 below.
  *
  * Scaffolding only:
  *  - hal_ipc_node_t / hal_ipc_node_type_t are copied verbatim into common.h;
@@ -29,8 +28,6 @@
 #include <sys/un.h>
 #include "common.h"
 
-/* 1 = with FIX 1..4, 0 = original unfixed function (set to 0 to reproduce the crashes) */
-#define RDK_EXEC_FIX  1
 
 #define MAX_IPC_BUFF  hipc_max_ipc_buff
 #define wifi_hal_dbg_print(format, ...)    wifi_hal_print(WIFI_HAL_LOG_LVL_DEBUG, format, ##__VA_ARGS__)
@@ -55,13 +52,11 @@ int rdk_hal_ipc_exec(hal_ipc_node_t *p_ipc_node, hal_ipc_processor_desc_t *desc)
     struct sockaddr_un cli_sockaddr, srv_sockaddr;
     unsigned char *tmp;
 
-#if RDK_EXEC_FIX
     /* FIX 1: reject NULL p_ipc_node / desc instead of dereferencing them. */
     if (p_ipc_node == NULL || desc == NULL) {
         wifi_hal_error_print("%s:%d: NULL parameter\n", __func__, __LINE__);
         return -1;
     }
-#endif
 
     if ((cli_sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         wifi_hal_error_print("%s:%d:server socket create failed err: %d\n", __func__, __LINE__, errno);
@@ -69,7 +64,6 @@ int rdk_hal_ipc_exec(hal_ipc_node_t *p_ipc_node, hal_ipc_processor_desc_t *desc)
     }
 
     cli_sockaddr.sun_family = AF_UNIX;
-#if RDK_EXEC_FIX
     /* FIX 2: node_path is char[64]; copy at most that much and always NUL-terminate,
      * instead of an unbounded strcpy into the 108-byte sun_path. */
     strncpy(cli_sockaddr.sun_path, p_ipc_node->node_path, sizeof(p_ipc_node->node_path));
@@ -77,12 +71,6 @@ int rdk_hal_ipc_exec(hal_ipc_node_t *p_ipc_node, hal_ipc_processor_desc_t *desc)
     len = sizeof(cli_sockaddr);
 
     unlink(cli_sockaddr.sun_path);
-#else
-    strcpy(cli_sockaddr.sun_path, p_ipc_node->node_path);
-    len = sizeof(cli_sockaddr);
-
-    unlink(p_ipc_node->node_path);
-#endif
     if (bind(cli_sock, (struct sockaddr *)&cli_sockaddr, len) == -1) {
         wifi_hal_error_print("%s:%d:client socket bind failed err: %d\n", __func__, __LINE__, errno);
         close(cli_sock);
@@ -103,15 +91,10 @@ int rdk_hal_ipc_exec(hal_ipc_node_t *p_ipc_node, hal_ipc_processor_desc_t *desc)
 
         default:
             wifi_hal_error_print("%s:%d: Assert!!!.\n", __func__, __LINE__);
-#if RDK_EXEC_FIX
             /* FIX 3: assert(1) never fires, so an unsupported node type fell through to
              * connect() with an uninitialised srv_sockaddr.sun_path.  Fail instead. */
             close(cli_sock);
             return -1;
-#else
-            assert(1);
-            break;
-#endif
     }
 
     if ((setsockopt(cli_sock, SOL_SOCKET, SO_RCVBUF, &max_size ,sizeof(int))) < 0) {
@@ -139,13 +122,9 @@ int rdk_hal_ipc_exec(hal_ipc_node_t *p_ipc_node, hal_ipc_processor_desc_t *desc)
     ///     SEND DATA TO SERVER FOR PROCESSING                                 ///
     ///************************************************************************///
     tmp = (unsigned char *)desc;
-#if RDK_EXEC_FIX
     /* FIX 4: always use the send loop (not only when sizeof(desc) > max_size): a short
      * send() on the single-send path silently dropped the rest of the descriptor. */
     if (1) {
-#else
-    if (sizeof(hal_ipc_processor_desc_t) > max_size) {
-#endif
         nbytes = 0;
         target_bytes = 0;
 

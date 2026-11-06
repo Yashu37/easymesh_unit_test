@@ -4,8 +4,8 @@
  * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:605-625
  * (~/Desktop/G/rdk-wifi-hal), with the struct ovs_radioname_cloudradioname_map (593-597) and the table
  * cloud_radio_map (599-602) copied verbatim next to it (the table is declared static here only so the
- * harnesses link together).  With RDK_GRI_FIX 0 it is the VERBATIM original (reproduces the findings); with
- * RDK_GRI_FIX 1 it carries FIX 1 below.
+ * harnesses link together).  This file holds ONLY THE FIXED function (the bounds check on radioIndex described
+ * in the comment below); the original unfixed version is not in this file.
  *
  * Scaffolding only: g_wifi_hal holds just num_radios (the runner sets it per case); the prints are the real macros
  * over the log sink.  The function under test is renamed hwr_wifi_hal_getRadioIfName (ipc_server_output
@@ -13,9 +13,6 @@
  */
 #include "hwr_gri.h"
 #include <string.h>
-
-/* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_GRI_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -43,16 +40,12 @@ INT wifi_hal_getRadioIfName(INT radioIndex, CHAR *output_string)
 {
     wifi_hal_dbg_print("%s:%d: Enter.\n", __func__, __LINE__);
 
-#if RDK_GRI_FIX
     /* FIX 1: the index was compared with `>` against the number of radios only: an index equal to num_radios
      * passed, and cloud_radio_map has just two entries, so an index of 2 (radio 3 of 3, or index == num_radios)
      * read cloud_radio_map[2] out of bounds (log line and strcpy).  Require 0 <= index < num_radios and
      * index < the size of the table. */
     if (radioIndex < 0 || (unsigned int)radioIndex >= g_wifi_hal.num_radios ||
         (unsigned int)radioIndex >= ARRAY_SZ(cloud_radio_map)){
-#else
-    if (radioIndex > g_wifi_hal.num_radios){
-#endif
         wifi_hal_dbg_print("%s:%d: radio index %d out of range.\n", __func__, __LINE__, radioIndex);
         return -1;
     }

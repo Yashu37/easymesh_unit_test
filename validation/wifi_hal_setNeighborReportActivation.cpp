@@ -1,10 +1,9 @@
 /*
  * HANDLER: wifi_hal_setNeighborReportActivation
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:576-591
- * (~/Desktop/G/rdk-wifi-hal), with get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c:2312-2333)
- * copied verbatim next to it.  With RDK_SNR_FIX 0 it is the VERBATIM original (reproduces the findings);
- * with RDK_SNR_FIX 1 it carries FIX 1 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:576-591 (~/Desktop/G/rdk-wifi-hal), with
+ * get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c:2312-2333) copied verbatim next to it.  This file holds ONLY
+ * THE FIXED code: it carries FIX 1 below.
  *
  * Scaffolding only: the interface holds the REAL wifi_vap_info_t (real packed union of bss_info / sta_info,
  * from wifi_hal.h); radios / g_wifi_hal / hash_map_* are minimal (hwr_snr.h) and walk a runner-owned array.
@@ -13,8 +12,6 @@
  */
 #include "hwr_snr.h"
 
-/* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_SNR_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -70,7 +67,6 @@ INT wifi_hal_setNeighborReportActivation(UINT apIndex, BOOL activate)
       wifi_hal_error_print("%s:%d:interface for ap index:%d not found\n", __func__, __LINE__, apIndex);
       return RETURN_ERR;
     }
-#if RDK_SNR_FIX
     /* FIX 1: vap_info.u is a union and nbrReportActivated only exists in bss_info (AP VAPs).  For a STA VAP the
      * same byte (offset 45) is part of sta_info, so the write corrupted the STA configuration (and a monitor
      * VAP has neither member).  Reject non-AP VAPs. */
@@ -78,7 +74,6 @@ INT wifi_hal_setNeighborReportActivation(UINT apIndex, BOOL activate)
         wifi_hal_error_print("%s:%d: vap:%u is not an AP vap\n", __func__, __LINE__, apIndex);
         return RETURN_ERR;
     }
-#endif
     interface->vap_info.u.bss_info.nbrReportActivated = activate;
 
     return 0;

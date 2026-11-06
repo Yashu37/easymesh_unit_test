@@ -1,9 +1,8 @@
 /*
  * HANDLER: wifi_hal_steering_clientRemove
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:387-413
- * (~/Desktop/G/rdk-wifi-hal).  With RDK_GRM_FIX 0 it is the VERBATIM original (reproduces the finding); with
- * RDK_GRM_FIX 1 it carries FIX 1 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:387-413 (~/Desktop/G/rdk-wifi-hal).  This
+ * file holds ONLY THE FIXED code: it carries FIX 1 below.
  *
  * Scaffolding only: g_wifi_hal holds just steering_data_lock (real pthread mutex); get_interface_by_vap_index,
  * hash_map_get, wifi_steering_del_mac_list, steering_del_stalist (faithful model of src/wifi_hal_nl80211.c:1093:
@@ -16,8 +15,6 @@
 #include <string.h>
 #include <pthread.h>
 
-/* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the finding) */
-#define RDK_GRM_FIX  1
 
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
 #define wifi_hal_info_print(format, ...)   hwr_print(0, format, ##__VA_ARGS__)
@@ -50,14 +47,12 @@ INT wifi_hal_steering_clientRemove( UINT steeringgroupIndex,
     mac_addr_str_t sta_mac_str;
     char *key = NULL;
 
-#if RDK_GRM_FIX
     /* FIX 1: client_mac was used without a check: to_mac_str() reads it right after the AP lookup and
      * nl80211_kick_device() copies 6 bytes from it, so a NULL client_mac crashed. */
     if (client_mac == NULL) {
         wifi_hal_error_print("%s:%d: NULL client mac for ap index %d\n", __func__, __LINE__, apIndex);
         return RETURN_ERR;
     }
-#endif
     interface = get_interface_by_vap_index(apIndex);
     if(!interface) {
       wifi_hal_error_print("%s:%d:interface for ap index:%d not found\n", __func__, __LINE__, apIndex);

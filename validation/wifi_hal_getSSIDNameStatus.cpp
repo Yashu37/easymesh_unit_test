@@ -1,10 +1,9 @@
 /*
  * HANDLER: wifi_hal_getSSIDNameStatus
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:152-166
- * (~/Desktop/G/rdk-wifi-hal), with get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c) copied verbatim
- * next to it (declared static here only so the harnesses link together).  With RDK_GSN_FIX 0 it is the
- * VERBATIM original (reproduces the findings); with RDK_GSN_FIX 1 it carries FIX 1..3 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:152-166 (~/Desktop/G/rdk-wifi-hal), with
+ * get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c) copied verbatim next to it (declared static here only so the
+ * harnesses link together).  This file holds ONLY THE FIXED code: it carries FIX 1..3 below.
  *
  * Scaffolding only: the interface holds the REAL wifi_vap_info_t (wifi_hal.h); radios / g_wifi_hal /
  * hash_map_* are minimal (hwr_gsn.h) and walk a runner-owned array.  The function under test is renamed
@@ -13,8 +12,6 @@
 #include "hwr_gsn.h"
 #include <string.h>
 
-/* 1 = with FIX 1..3, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_GSN_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -64,18 +61,15 @@ INT wifi_hal_getSSIDNameStatus( INT apIndex,
     wifi_interface_info_t *interface = NULL;
     wifi_hal_dbg_print("%s:%d: Enter.\n", __func__, __LINE__);
 
-#if RDK_GSN_FIX
     /* FIX 1: output_string is written unchecked. */
     if (output_string == NULL) {
         return RETURN_ERR;
     }
-#endif
     interface = get_interface_by_vap_index(apIndex);
     if(!interface) {
       wifi_hal_error_print("%s:%d:interface for ap index:%d not found\n", __func__, __LINE__, apIndex);
       return RETURN_ERR;
     }
-#if RDK_GSN_FIX
     {
         /* FIX 2: strcpy() of a field that is not guaranteed to be NUL terminated (33 bytes for an AP, 32 for a
          * STA) ran past the end of the field and of the caller's buffer.  Copy at most the SSID bytes.
@@ -99,9 +93,6 @@ INT wifi_hal_getSSIDNameStatus( INT apIndex,
         memcpy(output_string, ssid, n);
         output_string[n] = '\0';
     }
-#else
-    strcpy(output_string, interface->vap_info.u.bss_info.ssid);
-#endif
 
     return 0;
 }

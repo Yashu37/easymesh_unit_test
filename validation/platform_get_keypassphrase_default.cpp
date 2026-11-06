@@ -1,20 +1,18 @@
 /*
  * HANDLER: platform_get_keypassphrase_default
  *
- * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:196 (~/Desktop/G/rdk-wifi-hal).  With RDK_PGK_FIX 0 it is the
- * VERBATIM original (reproduces the findings); with RDK_PGK_FIX 1 it carries the fix described in its comment.
- * Collaborators (construct file): is_wifi_hal_vap_mesh_sta, json_parse_backhaul_keypassphrase (its copy line is the one of
- * json_parse_string: strncpy(val, str, 129); val[128] = 0, i.e. 129 bytes are ALWAYS written) and wifi_nvram_defaultRead (its copy
- * line is the original strncpy(out, position, strlen(position)+1); -1 leaves out untouched) are stubs with controllable results,
- * each of them separately harnessed.  The defines are copied from platform.c; the prints are the real macros over the log sink.
- * Renamed hwr_platform_get_keypassphrase_default (other platforms define the same name).
+ * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:196 (~/Desktop/G/rdk-wifi-hal).  This file holds ONLY
+ * THE FIXED code (the fix described in its comment). Collaborators (construct file): is_wifi_hal_vap_mesh_sta,
+ * json_parse_backhaul_keypassphrase (its copy line is the one of json_parse_string: strncpy(val, str, 129); val[128] =
+ * 0, i.e. 129 bytes are ALWAYS written) and wifi_nvram_defaultRead (its copy line is the original strncpy(out, position,
+ * strlen(position)+1); -1 leaves out untouched) are stubs with controllable results, each of them separately harnessed.
+ * The defines are copied from platform.c; the prints are the real macros over the log sink. Renamed
+ * hwr_platform_get_keypassphrase_default (other platforms define the same name).
  */
 #include "hwr_pgk.h"
 #include <stdio.h>
 #include <string.h>
 
-/* 1 = with the fix, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_PGK_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -28,7 +26,6 @@
 
 /* --- platform.c:196 --- */
 extern "C" {
-#if RDK_PGK_FIX
 int platform_get_keypassphrase_default(char *password, int vap_index)
 {
     /* FIX: (1) password == NULL was written / measured (strlen) unchecked.
@@ -68,27 +65,4 @@ int platform_get_keypassphrase_default(char *password, int vap_index)
     strncpy(password, INVALID_KEY, strlen(INVALID_KEY) + 1);
     return 0;
 }
-#else
-int platform_get_keypassphrase_default(char *password, int vap_index)
-{
-    wifi_hal_dbg_print("%s:%d \n",__func__,__LINE__);  
-    /* if the vap_index is that of mesh STA then try to obtain the ssid from
-       /nvram/EasymeshCfg.json file */
-    if (is_wifi_hal_vap_mesh_sta(vap_index)) {
-        if (!json_parse_backhaul_keypassphrase(password)) {
-            wifi_hal_dbg_print("%s:%d, read password from jSON file\n", __func__, __LINE__);
-            return 0;
-        }
-    }
-    /*password is not sensitive,won't grant access to real devices*/ 
-    wifi_nvram_defaultRead("bpi_wifi_password",password);
-    if (strlen(password) == 0) {
-        wifi_hal_error_print("%s:%d nvram default password not found, "
-                             "enforced alternative default password\n",
-            __func__, __LINE__);
-        strncpy(password, INVALID_KEY, strlen(INVALID_KEY) + 1);
-    }
-    return 0;
-}
-#endif
 }

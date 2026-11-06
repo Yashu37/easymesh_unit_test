@@ -1,10 +1,9 @@
 /*
  * HANDLER: wifi_hal_getSSIDRadioIndex
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:135-149
- * (~/Desktop/G/rdk-wifi-hal), with get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c) copied verbatim
- * next to it.  With RDK_GSR_FIX 0 it is the VERBATIM original (reproduces the findings); with RDK_GSR_FIX 1
- * it carries FIX 1 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/hal_ipc_wifi_wrappers.c:135-149 (~/Desktop/G/rdk-wifi-hal), with
+ * get_interface_by_vap_index (src/wifi_hal_nl80211_utils.c) copied verbatim next to it.  This file holds ONLY THE FIXED
+ * code: it carries FIX 1 below.
  *
  * Scaffolding only: the interface holds the REAL wifi_vap_info_t (wifi_hal.h); radios / g_wifi_hal /
  * hash_map_* are minimal (hwr_gsr.h) and walk a runner-owned array.  The function under test is renamed
@@ -14,8 +13,6 @@
  */
 #include "hwr_gsr.h"
 
-/* 1 = with FIX 1, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_GSR_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -65,12 +62,10 @@ INT wifi_hal_getSSIDRadioIndex( INT ssidIndex,
     wifi_interface_info_t *interface = NULL;
     wifi_hal_dbg_print("%s:%d: Enter.\n", __func__, __LINE__);
 
-#if RDK_GSR_FIX
     /* FIX 1: radioIndex is written unchecked. */
     if (radioIndex == NULL) {
         return RETURN_ERR;
     }
-#endif
     interface = get_interface_by_vap_index(ssidIndex);
     if(!interface) {
       wifi_hal_error_print("%s:%d:interface for ap index:%d not found\n", __func__, __LINE__, ssidIndex);

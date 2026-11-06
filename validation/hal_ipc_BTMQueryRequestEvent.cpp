@@ -1,18 +1,17 @@
 /*
  * HANDLER: hal_ipc_BTMQueryRequestEvent
  *
- * Function copied from rdk-wifi-hal: hal_ipc/server/server_hal_ipc.c:28-57 (~/Desktop/G/rdk-wifi-hal) - the
- * BTM-query notification client the HAL registers with wifi_hal_BTMQueryRequest_callback_register().  It is
- * static in the original, so it is reached through the trampoline hwr_bqe_call() below.  With RDK_BQE_FIX 0 it
- * and its collaborators are the VERBATIM originals (reproduces the findings); with RDK_BQE_FIX 1 they carry
- * FIX 1..2 below.
+ * Function copied from rdk-wifi-hal: hal_ipc/server/server_hal_ipc.c:28-57 (~/Desktop/G/rdk-wifi-hal) - the BTM-query
+ * notification client the HAL registers with wifi_hal_BTMQueryRequest_callback_register().  It is static in the
+ * original, so it is reached through the trampoline hwr_bqe_call() below.  This file holds ONLY THE FIXED code: it
+ * carries FIX 1..2 below.
  *
  * The function itself only chains three collaborators, and all three are copied so the whole path is real:
  *  - ipc_client_notification_input, case hal_ipc_btm_query_request_event (hal_ipc_processors.c:1207-1247), in a
  *    reduced switch (the case body is verbatim; braces added around it, see FIX 1).  Its missing arg5 check is
  *    tracker #24 and is kept applied here so this harness isolates the chain.  FIX 1 lives here.
- *  - rdk_hal_ipc_exec (hal_ipc.c:826-940), verbatim apart from the EXEC_ERR_CLEANUP(desc) lines that are no-ops
- *    with RDK_BQE_FIX 0 (FIX 2 lives here).  socket / bind / connect / setsockopt / send / close / unlink are
+ *  - rdk_hal_ipc_exec (hal_ipc.c:826-940), verbatim apart from the EXEC_ERR_CLEANUP(desc) lines (FIX 2 lives
+ *    here).  socket / bind / connect / setsockopt / send / close / unlink are
  *    redirected to stubs (construct file) so every failure point can be driven and the bytes handed to send()
  *    are captured; malloc / free are counting stubs, so a leaked scratch buffer is deterministic.
  *  - get_processor_desc / rdk_create_hal_ipc_node: stubs (construct file) that return a runner-owned descriptor
@@ -25,8 +24,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-/* 1 = with FIX 1..2, 0 = original unfixed code (set to 0 to reproduce the findings) */
-#define RDK_BQE_FIX  1
 
 #define wifi_hal_dbg_print(format, ...)    hwr_print(0, format, ##__VA_ARGS__)
 #define wifi_hal_info_print(format, ...)   hwr_print(1, format, ##__VA_ARGS__)
@@ -44,16 +41,12 @@
 #define close       hwr_bqe_close
 #define unlink      hwr_bqe_unlink
 
-#if RDK_BQE_FIX
 /* FIX 2: rdk_hal_ipc_exec frees desc->scratch_buf only after the descriptor was sent (and when the scratch send
  * fails).  Every earlier failure (socket / bind / setsockopt / connect / descriptor send, e.g. whenever the
  * notification server is not running) returned -1 with the scratch buffer that ipc_client_notification_input
  * malloc'd still allocated, and the caller (hal_ipc_BTMQueryRequestEvent) never frees it: one wifi_BTMQuery_t +
  * wifi_BTMRequest_t leaked per event. */
 #define EXEC_ERR_CLEANUP(d) do { if ((d)->len > sizeof(hal_ipc_processor_desc_t) && (d)->scratch_buf) { free((d)->scratch_buf); (d)->scratch_buf = NULL; } } while (0)
-#else
-#define EXEC_ERR_CLEANUP(d)
-#endif
 
 //--------------------------------------------------------------------------------------------------
 /* --- copied from hal_ipc_processors.c (ipc_client_notification_input, one case) --- */
@@ -70,7 +63,6 @@ static int hwr_bqe_ni(struct hal_ipc_processor_desc *desc, void *arg1, void *arg
             }
             desc->in.btm_query_request_event_data.apIndex = *(unsigned int*) arg1;
             wifi_hal_info_print("%s:%d:: %s() ap_index:%d\n", __func__, __LINE__, desc->name, desc->in.btm_query_request_event_data.apIndex);
-#if RDK_BQE_FIX
             /* FIX 1: the caller (wifi_hal_wnm_rrm.c, non-PHASE2 build) passes peerMac as a "xx:xx:xx:xx:xx:xx" STRING
              * (wrapper parameter CHAR *peerMac), but sizeof(mac_address_t) = 6 raw bytes of that string were copied
              * as the MAC (the first six characters "aa:bb:", and an over-read for a string shorter than 6 bytes).
@@ -89,14 +81,6 @@ static int hwr_bqe_ni(struct hal_ipc_processor_desc *desc, void *arg1, void *arg
             }
             memcpy((unsigned char*) &desc->in.btm_query_request_event_data.peerMac, sta_mac, sizeof(mac_address_t));
             }
-#else
-            if (!memcpy((unsigned char*) &desc->in.btm_query_request_event_data.peerMac,
-                        (unsigned char*) arg2,
-                        sizeof(mac_address_t))) {
-                wifi_hal_dbg_print("%s:%d FAIL memcpy %s mac_address_t\n", __func__, __LINE__, desc->name);
-                return -1;
-            }
-#endif
             desc->in.btm_query_request_event_data.inMemSize = *(unsigned int*) arg4;
             
             desc->scratch_buf = (unsigned char*) malloc(sizeof(wifi_BTMQuery_t) + sizeof(wifi_BTMRequest_t));

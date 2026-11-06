@@ -1,19 +1,17 @@
 /*
  * HANDLER: platform_create_vap
  *
- * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:131 (~/Desktop/G/rdk-wifi-hal).  With RDK_PCV_FIX 0 it is the
- * VERBATIM original (reproduces the findings); with RDK_PCV_FIX 1 it carries FIX 1..3 below.
- * Collaborators: wifi_hal_is_mld_enabled is copied VERBATIM from src/wifi_hal_nl80211_utils.c:5872; for_each_mld_link is
- * hostapd's (hostapd.h:959, CONFIG_IEEE80211BE) over the verbatim dl_list macros; get_interface_by_vap_index,
- * ieee802_11_set_beacon and wifi_hal_get_interface_name are stubs (construct file) that look up the runner's interfaces, record the
- * link ids and fail on request.  HOSTAPD_VERSION is 211 (the function body is compiled out below that).  The prints are the
- * real macros over the log sink.  The function is renamed hwr_platform_create_vap (other platforms define the same name).
+ * Function copied from rdk-wifi-hal: platform/banana-pi/platform.c:131 (~/Desktop/G/rdk-wifi-hal).  This file holds ONLY
+ * THE FIXED code: it carries FIX 1..3 below. Collaborators: wifi_hal_is_mld_enabled is copied VERBATIM from
+ * src/wifi_hal_nl80211_utils.c:5872; for_each_mld_link is hostapd's (hostapd.h:959, CONFIG_IEEE80211BE) over the
+ * verbatim dl_list macros; get_interface_by_vap_index, ieee802_11_set_beacon and wifi_hal_get_interface_name are stubs
+ * (construct file) that look up the runner's interfaces, record the link ids and fail on request.  HOSTAPD_VERSION is
+ * 211 (the function body is compiled out below that).  The prints are the real macros over the log sink.  The function
+ * is renamed hwr_platform_create_vap (other platforms define the same name).
  */
 #include "hwr_pcv.h"
 #include <stdio.h>
 
-/* 1 = with FIX 1..3, 0 = original unfixed function (set to 0 to reproduce the findings) */
-#define RDK_PCV_FIX  1
 
 #define HOSTAPD_VERSION 211
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
@@ -46,7 +44,6 @@ bool wifi_hal_is_mld_enabled(wifi_interface_info_t *interface)
 
 /* --- platform.c:131 --- */
 extern "C" {
-#if RDK_PCV_FIX
 int platform_create_vap(wifi_radio_index_t index, wifi_vap_info_map_t *map)
 {
 #if (HOSTAPD_VERSION >= 211)
@@ -111,52 +108,4 @@ int platform_create_vap(wifi_radio_index_t index, wifi_vap_info_map_t *map)
 #endif
     return 0;
 }
-#else
-int platform_create_vap(wifi_radio_index_t index, wifi_vap_info_map_t *map)
-{
-#if (HOSTAPD_VERSION >= 211)
-    wifi_vap_info_t *vap;
-    wifi_interface_info_t *interface;
-    struct hostapd_data *hapd, *link_bss;
-
-    for (unsigned int i = 0; i < map->num_vaps; i++) {
-        vap = &map->vap_array[i];
-        if (vap->vap_mode != wifi_vap_mode_ap) {
-            continue;
-        }
-
-        interface = get_interface_by_vap_index(vap->vap_index);
-        if (interface == NULL) {
-            wifi_hal_error_print("%s:%d: failed to get interface for vap_index %d\n", __func__,
-                __LINE__, vap->vap_index);
-            continue;
-        }
-
-        if (!interface->vap_info.u.bss_info.enabled) {
-            continue;
-        }
-
-        if (interface->u.ap.conf.disable_11be) {
-            continue;
-        }
-
-        if (!wifi_hal_is_mld_enabled(interface)) {
-            continue;
-        }
-
-        /* beacon has to be set twice to make it broadcast */
-        hapd = &interface->u.ap.hapd;
-        for_each_mld_link(link_bss, hapd) {
-            if (ieee802_11_set_beacon(link_bss) != 0) {
-                wifi_hal_error_print("%s:%d: Failed to set beacon for interface: %s link id: %d\n",
-                    __func__, __LINE__, wifi_hal_get_interface_name(interface),
-                    link_bss->mld_link_id);
-                return -1;
-            }
-        }
-    }
-#endif
-    return 0;
-}
-#endif
 }
