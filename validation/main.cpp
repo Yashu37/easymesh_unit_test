@@ -94,6 +94,7 @@ extern "C" void run_all_tests_wifi_getRadioTransmitPower_bcm(void);
 extern "C" void run_all_tests_int_wifi_allow2G80211ax(void);
 extern "C" void run_all_tests_int_wifi_setQamPlus(void);
 extern "C" void run_all_tests_int_wifi_setApRetrylimit(void);
+extern "C" void run_all_tests_int_wifi_getApInterworkingElement(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -423,7 +424,10 @@ int main() {
 //	run_all_tests_int_wifi_setQamPlus();
 
 	// platform/intel: wifi_setApRetrylimit (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_setApRetrylimit();
+//	run_all_tests_int_wifi_setApRetrylimit();
+
+	// platform/intel: wifi_getApInterworkingElement (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_getApInterworkingElement();
 
 	return 0;
 }
