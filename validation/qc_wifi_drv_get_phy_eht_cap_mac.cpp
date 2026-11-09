@@ -2,7 +2,8 @@
  * HANDLER: wifi_drv_get_phy_eht_cap_mac (platform/qualcomm)
  *
  * Function copied VERBATIM from rdk-wifi-hal: platform/qualcomm/platform_ext.c:1124-1136 (platform_xer5.c:1405-1417 holds identical code) (~/Desktop/G/rdk-wifi-hal),
- * inside the file's #ifdef CONFIG_IEEE80211BE section (defined below).  This file holds the ORIGINAL code: no fix is applied.
+ * inside the file's #ifdef CONFIG_IEEE80211BE section (defined below).  This file holds the ORIGINAL code with fixes 1-2 applied
+ * (start fix n / end fix n markers; the unfixed copy is the reproducer): fix 1 NULL checks, fix 2 &eht_capab->mac_cap.
  *
  * The function was written for a struct where mac_cap is a byte array, but in hostap (both hostap-2.10 and the OneWifi libhostap) struct eht_capabilities has
  * "u16 mac_cap".  os_memcpy(eht_capab->mac_cap, ...) therefore passes the 16-bit VALUE of mac_cap as the destination ADDRESS (integer-to-pointer conversion,
@@ -24,6 +25,11 @@ typedef unsigned char u8;
 extern "C" {
 #ifdef CONFIG_IEEE80211BE
 void wifi_drv_get_phy_eht_cap_mac(struct eht_capabilities *eht_capab, struct nlattr **tb) {
+    /* start fix 1 */
+    if (eht_capab == NULL || tb == NULL) {
+        return;
+    }
+    /* end fix 1 */
     if (tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC]) {
         size_t len;
 
@@ -32,8 +38,10 @@ void wifi_drv_get_phy_eht_cap_mac(struct eht_capabilities *eht_capab, struct nla
         if (len > sizeof(eht_capab->mac_cap)) {
             len = sizeof(eht_capab->mac_cap);
         }
-        os_memcpy(eht_capab->mac_cap,
+        /* start fix 2 */
+        os_memcpy(&eht_capab->mac_cap,
                 nla_data(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC]), len);
+        /* end fix 2 */
     }
 }
 #endif /* CONFIG_IEEE80211BE */
