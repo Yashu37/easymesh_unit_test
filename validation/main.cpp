@@ -76,6 +76,7 @@ extern "C" void run_all_tests_wifi_getDownStreamGroupAddress(void);
 extern "C" void run_all_tests_wifi_getProxyArp(void);
 extern "C" void run_all_tests_wifi_getBssLoad(void);
 extern "C" void run_all_tests_wifi_setDownStreamGroupAddress(void);
+extern "C" void run_all_tests_wifi_setBssLoad(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -351,7 +352,10 @@ int main() {
 //	run_all_tests_wifi_getBssLoad();
 
 	// wifi_setDownStreamGroupAddress (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_wifi_setDownStreamGroupAddress();
+//	run_all_tests_wifi_setDownStreamGroupAddress();
+
+	// wifi_setBssLoad (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_wifi_setBssLoad();
 
 	return 0;
 }
