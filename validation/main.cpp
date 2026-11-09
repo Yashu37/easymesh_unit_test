@@ -90,6 +90,7 @@ extern "C" void run_all_tests_bcm_wifi_getApAssociatedDeviceDiagnosticResult3(vo
 extern "C" void run_all_tests_bcm_wifi_getRadioChannelStats(void);
 extern "C" void run_all_tests_bcm_wifi_getRadioTrafficStats2(void);
 extern "C" void run_all_tests_bcm_wifi_setApManagementFramePowerControl(void);
+extern "C" void run_all_tests_wifi_getRadioTransmitPower_bcm(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -407,7 +408,10 @@ int main() {
 //	run_all_tests_bcm_wifi_getRadioTrafficStats2();
 
 	// platform/broadcom: wifi_setApManagementFramePowerControl (rdk-wifi-hal platform/broadcom/platform.c)
-	run_all_tests_bcm_wifi_setApManagementFramePowerControl();
+//	run_all_tests_bcm_wifi_setApManagementFramePowerControl();
+
+	// platform/broadcom: wifi_getRadioTransmitPower (rdk-wifi-hal platform/broadcom/platform.c)
+	run_all_tests_wifi_getRadioTransmitPower_bcm();
 
 	return 0;
 }
