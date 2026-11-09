@@ -2,7 +2,7 @@
  * HANDLER: wifi_getRadioTrafficStats2 (platform/broadcom)
  *
  * Functions copied VERBATIM from rdk-wifi-hal (~/Desktop/G/rdk-wifi-hal): platform/broadcom/platform.c:4177-4372 - get_radio_diag_handler,
- * get_radio_diagnostics and wifi_getRadioTrafficStats2.  This file holds the ORIGINAL code: no fix is applied.  The netlink handler is the REAL one,
+ * get_radio_diagnostics and wifi_getRadioTrafficStats2.  This file holds the ORIGINAL code with fixes 1-2 applied (start fix n / end fix n markers; the unfixed copy is the reproducer).  The netlink handler is the REAL one,
  * running on real libnl messages.  Compiled as C.
  *
  * Scaffolding only (the Broadcom vendor header rdk_nl80211_hal.h is not in the source tree, so the RDK_VENDOR_* numbers below are the harness's own):
@@ -139,6 +139,13 @@ static int nl80211_send_and_recv(struct nl_msg *msg, int (*valid_handler)(struct
 }
 
 /* --- platform.c:4177-4372 --- */
+/* start fix 2 */
+typedef struct {
+    wifi_radioTrafficStats2_t *stats;
+    int received;
+} radio_diag_ctx_t;
+/* end fix 2 */
+
 static int get_radio_diag_handler(struct nl_msg *msg, void *arg)
 {
     int i;
@@ -173,7 +180,9 @@ static int get_radio_diag_handler(struct nl_msg *msg, void *arg)
         [RDK_VENDOR_ATTR_RADIO_INFO_MEDIAN_NOISE_FLOOR] = { .type = NLA_S32 },
         [RDK_VENDOR_ATTR_RADIO_INFO_STATS_START_TIME] = { .type = NLA_U64 },
     };
-    wifi_radioTrafficStats2_t *radioTrafficStats = arg;
+    /* start fix 2 */
+    wifi_radioTrafficStats2_t *radioTrafficStats = ((radio_diag_ctx_t *)arg)->stats;
+    /* end fix 2 */
 
     if (nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) <
         0) {
@@ -280,6 +289,9 @@ static int get_radio_diag_handler(struct nl_msg *msg, void *arg)
         radioTrafficStats->radio_MinimumNoiseFloorOnChannel,
         radioTrafficStats->radio_MedianNoiseFloorOnChannel,
         radioTrafficStats->radio_StatisticsStartTime);
+    /* start fix 2 */
+    ((radio_diag_ctx_t *)arg)->received = 1;
+    /* end fix 2 */
     return NL_SKIP;
 }
 
@@ -288,6 +300,9 @@ static int get_radio_diagnostics(wifi_interface_info_t *interface,
 {
     struct nl_msg *msg;
     int ret = RETURN_ERR;
+    /* start fix 2 */
+    radio_diag_ctx_t ctx = { .stats = radioTrafficStats, .received = 0 };
+    /* end fix 2 */
 
     wifi_hal_stats_dbg_print("%s:%d Entering\n", __func__, __LINE__);
     msg = nl80211_drv_vendor_cmd_msg(g_wifi_hal.nl80211_id, interface, 0, OUI_COMCAST,
@@ -296,11 +311,19 @@ static int get_radio_diagnostics(wifi_interface_info_t *interface,
         wifi_hal_stats_error_print("%s:%d Failed to create NL command\n", __func__, __LINE__);
         return RETURN_ERR;
     }
-    ret = nl80211_send_and_recv(msg, get_radio_diag_handler, radioTrafficStats, NULL, NULL);
+    /* start fix 2 */
+    ret = nl80211_send_and_recv(msg, get_radio_diag_handler, &ctx, NULL, NULL);
+    /* end fix 2 */
     if (ret) {
         wifi_hal_stats_error_print("%s:%d Failed to send NL message\n", __func__, __LINE__);
         return RETURN_ERR;
     }
+    /* start fix 2 */
+    if (!ctx.received) {
+        wifi_hal_stats_error_print("%s:%d No valid radio info in the reply\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* end fix 2 */
 
     return RETURN_OK;
 }
@@ -312,6 +335,13 @@ INT wifi_getRadioTrafficStats2(INT radioIndex, wifi_radioTrafficStats2_t *radioT
 
     wifi_hal_stats_dbg_print("%s:%d: Get radio traffic stats for index: %d\n", __func__, __LINE__,
         radioIndex);
+
+    /* start fix 1 */
+    if (radioTrafficStats == NULL) {
+        wifi_hal_stats_error_print("%s:%d: NULL radioTrafficStats\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* end fix 1 */
 
     radio = get_radio_by_rdk_index(radioIndex);
     if (radio == NULL) {
