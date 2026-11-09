@@ -15,7 +15,63 @@
  * ap_index 1000 = MAX_VAP, 1001 = MAX_VAP - 1.  Scan modes: 0 NONE 1 FULL 2 ONCHAN 3 OFFCHAN 4 SURVEY 5 SELECT_CHANNELS.  States: 0 NONE 1 ERROR 2 STARTED.
  * hapd channel table: 1=2412, 6=2437, 11=2462 (disabled), 36=5180, 52=5260 (disabled), 100=5500.  STA op class 81 = 2.4 GHz, 115 = 5 GHz.
  */
+#include <initializer_list>
 #include "hwr_wsn.h"
+
+/* ---- input constructor: builds the AP / STA / private interfaces, the radio, the hostapd channel table and the caller's channel list for one row ---- */
+unsigned int    list_slab[16];
+wsn_chan_t      chan_slab[8];
+wsn_hw_mode_t   mode_obj;
+wsn_hiface_t    hif_obj;
+wsn_interface_t ifA, ifP;
+wsn_radio_t     radio_obj;
+
+
+int resolve_index(int idx) { return idx == 1000 ? MAX_VAP : idx == 1001 ? MAX_VAP - 1 : idx; }
+
+wsn_interface_t *construct_wifi_startNeighborScan_input(const hwr_wsn_case_t *t, int idx)
+{
+	wsn_interface_t *si;
+	static const wsn_chan_t table[6] = { {1, 2412, 0}, {6, 2437, 0}, {11, 2462, WSN_CHAN_DISABLED}, {36, 5180, 0}, {52, 5260, WSN_CHAN_DISABLED}, {100, 5500, 0} };
+
+	memset(hwr_log_buf, 0, HWR_LOG_SZ);
+	memset(hwr_guard_slab, 0xA5, HWR_GUARD_SZ);
+	memset(&hwr_wsn_world, 0, sizeof(hwr_wsn_world));
+	memset(&ifA, 0, sizeof(ifA)); memset(&ifP, 0, sizeof(ifP)); memset(&radio_obj, 0, sizeof(radio_obj));
+	memset(list_slab, 0xA5, sizeof(list_slab));
+	memset(chan_slab, 0, sizeof(chan_slab)); memcpy(chan_slab, table, sizeof(table));
+	for (int i = 0; i < WSN_MAXL && (unsigned)i < t->chan_num; i++) list_slab[i] = t->list[i];
+
+	mode_obj.num_channels = 6; mode_obj.channels = chan_slab;
+	hif_obj.current_mode = (t->hapd_state == 2) ? &mode_obj : NULL;
+	for (wsn_interface_t *p : { &ifA, &ifP }) {
+		pthread_mutex_init(&p->scan_state_mutex, NULL);
+		pthread_mutex_init(&p->scan_info_mutex, NULL);
+		pthread_mutex_init(&p->scan_info_ap_mutex, NULL);
+		p->vap_info.radio_index = 0;
+		p->u.ap.hapd.iface = (t->hapd_state == 0) ? NULL : &hif_obj;
+	}
+	snprintf(ifA.name, sizeof(ifA.name), "wlan0.1"); snprintf(ifP.name, sizeof(ifP.name), "wlan0");
+	ifA.vap_info.vap_mode = (t->vap_mode == 0) ? wifi_vap_mode_ap : wifi_vap_mode_sta;
+	ifP.vap_info.vap_mode = wifi_vap_mode_ap;
+	snprintf(ifA.vap_info.u.sta_info.ssid, sizeof(ifA.vap_info.u.sta_info.ssid), "BackhaulNet");
+	snprintf(ifP.vap_info.u.sta_info.ssid, sizeof(ifP.vap_info.u.sta_info.ssid), "PrivateNet");
+	snprintf(radio_obj.name, sizeof(radio_obj.name), "wlan0");
+	radio_obj.oper_param.countryCode = t->country; radio_obj.oper_param.operatingClass = t->op_class; radio_obj.oper_param.channel = t->radio_channel;
+
+	si = (t->has_priv == 2) ? &ifP : &ifA;
+	si->scan_state = t->pre_state; si->scan_has_results = t->pre_results;
+	si->scan_filter.values = (unsigned int *)malloc(3 * sizeof(unsigned int));
+	si->scan_filter.values[0] = si->scan_filter.values[1] = si->scan_filter.values[2] = 7; si->scan_filter.num = 3;
+
+	hwr_wsn_world.ap_iface = t->has_ap_iface ? &ifA : NULL; hwr_wsn_world.ap_vap_index = (unsigned)idx;
+	hwr_wsn_world.radio = t->has_radio ? &radio_obj : NULL; hwr_wsn_world.radio_index = 0;
+	hwr_wsn_world.priv_iface = (t->has_priv == 0) ? NULL : (t->has_priv == 1 ? &ifA : &ifP);
+	hwr_wsn_world.nl_start_rc = t->nl_start_rc; hwr_wsn_world.nl_results_rc = t->nl_results_rc;
+	return si;
+}
+
+
 
 #define WAP    0,1,1,1,6,1,81,2,0,0,0,0     /* AP vap, private interface is the vap, radio channel 6, US, op class 81, hapd table */
 #define WSTA   1,1,1,2,6,1,81,2,0,0,0,0     /* STA vap, separate private AP interface */

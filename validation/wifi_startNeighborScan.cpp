@@ -5,8 +5,8 @@
  * (platform/banana-pi/platform.c:560), which only calls wifi_hal_startNeighborScan (src/wifi_hal.c:3147-3585, where all the
  * logic is), plus the helpers it uses with OPTION_GET_CHANNELS_FROM_HOSTAP == 1 and CONFIG_NEIGHBOR_AP_SCAN_ACTIVE == 0
  * exactly as in wifi_hal.c: set_freqs_filter / cleanup_freqs_filter (2636-2644), channel_is_valid_from_hapd and
- * get_valid_freqs_list_from_hapd (2748-2830), uint_array_set (wifi_hal_nl80211_utils.c:4798, verbatim).
- * This file holds the ORIGINAL (unfixed) code, so the harness reproduces the crashes.
+ * get_valid_freqs_list_from_hapd (2748-2830, FIX 2 inside), uint_array_set (wifi_hal_nl80211_utils.c:4798, verbatim).
+ * This file holds ONLY THE FIXED code: it carries FIX 1..5 below (each one is wrapped in start fix / end fix comments).
  *
  * Scaffolding only (the real types need the hostap / driver header tree, see hwr_wsn.h):
  *  - reduced wifi_interface_info_t / wifi_radio_info_t / hostapd structures with just the fields the function touches.
@@ -184,7 +184,13 @@ static int channel_is_valid_from_hapd(hostapd_data *hapd, unsigned channel)
 {
     int i;
     hostapd_iface *iface = hapd->iface;
-    
+    /* ---------- start fix 2: hapd->iface is NULL until hostapd has created the interface (sync_hostapd_freq_param checks
+     * it the same way); iface->current_mode was dereferenced on it. */
+    if (iface == NULL) {
+        wifi_hal_stats_error_print("%s:%d: [SCAN] hapd->iface is NULL\n", __func__, __LINE__);
+        return -1;
+    }
+    /* ---------- end fix 2 */
     hostapd_hw_modes *feature = iface->current_mode;
 
     if (feature == NULL) {
@@ -214,7 +220,12 @@ static int get_valid_freqs_list_from_hapd(hostapd_data *hapd, uint_array_t* freq
 {
     int i;
     hostapd_iface *iface = hapd->iface;
-    
+    /* ---------- start fix 2 (see channel_is_valid_from_hapd) */
+    if (iface == NULL) {
+        wifi_hal_stats_error_print("%s:%d: [SCAN] hapd->iface is NULL\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
     hostapd_hw_modes *feature = iface->current_mode;
     uint count = 0;
     uint *list;
@@ -295,6 +306,7 @@ static INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_
         return WIFI_HAL_ERROR;
     }
 
+    wifi_interface_info_t *vap_interface = interface;   /* fix 5: the addressed vap; `interface` is replaced by the radio's scan interface below */
     radioIndex = interface->vap_info.radio_index;
     radio = get_radio_by_rdk_index(radioIndex);
     if (radio == NULL) {
@@ -385,6 +397,14 @@ static INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_
         if (chan_num == 0 || chan_list == NULL) {
             chan_num = 1;
             current_channel = radio->oper_param.channel;
+            /* ---------- start fix 1: radio channel 0 (not configured yet) left current_channel == 0, so the loop
+             * below used chan_list[0] - NULL (SEGV) when no list was given, or an entry the caller did not pass. */
+            if (current_channel == 0) {
+                wifi_hal_stats_error_print("%s:%d: [SCAN] no channel list given and the radio has no current channel\n",
+                    __func__, __LINE__);
+                return WIFI_HAL_ERROR;
+            }
+            /* ---------- end fix 1 */
         }
 
         // - allocate space for freq list
@@ -442,23 +462,35 @@ static INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_
                     }
                 }
 
-                interface->scan_filter.values[i] = freq;
-                if (current_channel != 0) {
-                    wifi_hal_stats_dbg_print("%s:%d: [SCAN] chan:%u -> freq:%u (current channel)\n",
-                        __func__, __LINE__, current_channel, freq);
-                } else {
-                    wifi_hal_stats_dbg_print("%s:%d: [SCAN] chan:%u -> freq:%u\n", __func__,
-                        __LINE__, chan_list[i], freq);
-                }
             }
 
-            pthread_mutex_lock(&interface->scan_state_mutex);
-            interface->scan_state = WIFI_SCAN_STATE_STARTED;
-            pthread_mutex_unlock(&interface->scan_state_mutex);
+            /* ---------- start fix 4a: the frequency was stored only for a STA vap, so an AP vap scanned with an all-zero
+             * frequency filter. */
+            interface->scan_filter.values[i] = freq;
+            if (current_channel != 0) {
+                wifi_hal_stats_dbg_print("%s:%d: [SCAN] chan:%u -> freq:%u (current channel)\n",
+                    __func__, __LINE__, current_channel, freq);
+            } else {
+                wifi_hal_stats_dbg_print("%s:%d: [SCAN] chan:%u -> freq:%u\n", __func__,
+                    __LINE__, chan_list[i], freq);
+            }
+            /* ---------- end fix 4a */
         }
+
+        /* ---------- start fix 4b: scan_state was set to STARTED inside the loop, so an invalid later channel (or a failing
+         * nl80211_get_scan_results) returned with the state stuck at STARTED and every later scan was refused with
+         * WIFI_HAL_INTERNAL_ERROR ("already triggered"). */
+        pthread_mutex_lock(&interface->scan_state_mutex);
+        interface->scan_state = WIFI_SCAN_STATE_STARTED;
+        pthread_mutex_unlock(&interface->scan_state_mutex);
         // - scan_state is changed by nl80211_get_scan_results()
-        if (nl80211_get_scan_results(interface) != RETURN_OK)
+        if (nl80211_get_scan_results(interface) != RETURN_OK) {
+            pthread_mutex_lock(&interface->scan_state_mutex);
+            interface->scan_state = WIFI_SCAN_STATE_NONE;
+            pthread_mutex_unlock(&interface->scan_state_mutex);
             return WIFI_HAL_ERROR;
+        }
+        /* ---------- end fix 4b */
 
         return WIFI_HAL_SUCCESS;
     }
@@ -470,6 +502,14 @@ static INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_
         if (chan_num == 0 || chan_list == NULL) {
             chan_num = 1;
             current_channel = radio->oper_param.channel;
+            /* ---------- start fix 1: radio channel 0 (not configured yet) left current_channel == 0, so the loop
+             * below used chan_list[0] - NULL (SEGV) when no list was given, or an entry the caller did not pass. */
+            if (current_channel == 0) {
+                wifi_hal_stats_error_print("%s:%d: [SCAN] no channel list given and the radio has no current channel\n",
+                    __func__, __LINE__);
+                return WIFI_HAL_ERROR;
+            }
+            /* ---------- end fix 1 */
         }
 
         // - allocate space for freq list
@@ -516,6 +556,9 @@ static INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_
                         wifi_hal_stats_error_print(
                             "%s:%d: [SCAN] Couldn't get frequency for channel %u\n", __func__,
                             __LINE__, current_channel);
+                        /* ---------- start fix 3: freq was left uninitialised and stored in the scan filter. */
+                        return WIFI_HAL_ERROR;
+                        /* ---------- end fix 3 */
                     }
                 } else {
                     if (RETURN_OK != wifi_channel_to_freq(country, op_class, chan_list[i], &freq)) {
@@ -684,7 +727,10 @@ static INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_
 #endif
     } else {
         is_active_scan = true;
-        wifi_strcpy(ssid_list[0], sizeof(ssid_list[0]), interface->vap_info.u.sta_info.ssid);
+        /* ---------- start fix 5: `interface` is the radio's private / primary AP interface here, so its AP ssid was put into
+         * the directed probe request; a STA scan must carry the SSID of the STA vap that was addressed. */
+        wifi_strcpy(ssid_list[0], sizeof(ssid_list[0]), vap_interface->vap_info.u.sta_info.ssid);
+        /* ---------- end fix 5 */
         res = nl80211_start_scan(interface, 0, interface->scan_filter.num,
             interface->scan_filter.values, dwell_time, 1, ssid_list);
     }

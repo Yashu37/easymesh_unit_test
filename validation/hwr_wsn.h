@@ -72,5 +72,9 @@ typedef struct {
     int forked;
 } hwr_wsn_case_t;
 extern hwr_wsn_case_t wifi_startNeighborScan_suite[];
+extern unsigned int list_slab[16];
+extern wsn_chan_t chan_slab[8];
+int resolve_index(int idx);
+wsn_interface_t *construct_wifi_startNeighborScan_input(const hwr_wsn_case_t *t, int idx);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 #endif
