@@ -60,6 +60,7 @@ extern "C" void run_all_tests_platform_pre_create_vap(void);
 extern "C" void run_all_tests_platform_flags_init(void);
 extern "C" void run_all_tests_wifi_getNeighboringWiFiStatus(void);
 extern "C" void run_all_tests_wifi_setQamPlus(void);
+extern "C" void run_all_tests_wifi_setApRetrylimit(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
 int main() {
@@ -283,7 +284,10 @@ int main() {
 //	run_all_tests_wifi_getNeighboringWiFiStatus();
 
 	// wifi_setQamPlus (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_wifi_setQamPlus();
+//	run_all_tests_wifi_setQamPlus();
+
+	// wifi_setApRetrylimit (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_wifi_setApRetrylimit();
 
 	return 0;
 }
