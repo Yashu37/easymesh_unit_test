@@ -63,6 +63,7 @@ extern "C" void run_all_tests_wifi_setQamPlus(void);
 extern "C" void run_all_tests_wifi_setApRetrylimit(void);
 extern "C" void run_all_tests_wifi_sendActionFrameExt(void);
 extern "C" void run_all_tests_wifi_sendActionFrame(void);
+extern "C" void run_all_tests_wifi_getApManagementFramePowerControl(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
 int main() {
@@ -295,7 +296,10 @@ int main() {
 //	run_all_tests_wifi_sendActionFrameExt();
 
 	// wifi_sendActionFrame (rdk-wifi-hal platform/banana-pi/platform.c -> wifi_sendActionFrameExt)
-	run_all_tests_wifi_sendActionFrame();
+//	run_all_tests_wifi_sendActionFrame();
+
+	// wifi_getApManagementFramePowerControl (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_wifi_getApManagementFramePowerControl();
 
 	return 0;
 }
