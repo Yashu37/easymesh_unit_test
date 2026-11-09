@@ -108,6 +108,7 @@ extern "C" void run_all_tests_int_wifi_setP2PCrossConnect(void);
 extern "C" void run_all_tests_int_wifi_getDownStreamGroupAddress(void);
 extern "C" void run_all_tests_int_wifi_getProxyArp(void);
 extern "C" void run_all_tests_int_wifi_applyGASConfiguration(void);
+extern "C" void run_all_tests_int_wifi_pushApHotspotElement(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -479,7 +480,10 @@ int main() {
 //	run_all_tests_int_wifi_getProxyArp();
 
 	// platform/intel: wifi_applyGASConfiguration (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_applyGASConfiguration();
+//	run_all_tests_int_wifi_applyGASConfiguration();
+
+	// platform/intel: wifi_pushApHotspotElement (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_pushApHotspotElement();
 
 	return 0;
 }
