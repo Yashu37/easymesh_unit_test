@@ -114,6 +114,7 @@ extern "C" void run_all_tests_int_wifi_getApInterworkingServiceEnable(void);
 extern "C" void run_all_tests_int_wifi_sendActionFrameExt(void);
 extern "C" void run_all_tests_int_wifi_setDownStreamGroupAddress(void);
 extern "C" void run_all_tests_int_wifi_drv_get_phy_eht_cap_mac(void);
+extern "C" void run_all_tests_qc_wifi_setQamPlus(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -503,7 +504,10 @@ int main() {
 //	run_all_tests_int_wifi_setDownStreamGroupAddress();
 
 	// platform/intel: wifi_drv_get_phy_eht_cap_mac (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_drv_get_phy_eht_cap_mac();
+//	run_all_tests_int_wifi_drv_get_phy_eht_cap_mac();
+
+	// platform/qualcomm: wifi_setQamPlus (rdk-wifi-hal platform/qualcomm/platform_ext.c, platform_xer5.c)
+	run_all_tests_qc_wifi_setQamPlus();
 
 	return 0;
 }
