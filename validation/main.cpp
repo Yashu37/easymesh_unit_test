@@ -124,6 +124,7 @@ extern "C" void run_all_tests_rp_wifi_getRadioChannel(void);
 extern "C" void run_all_tests_rp_wifi_drv_get_phy_eht_cap_mac(void);
 extern "C" void run_all_tests_rp_wifi_steering_clientDisconnect(void);
 extern "C" void run_all_tests_rp_wifi_getApInterworkingServiceEnable(void);
+extern "C" void run_all_tests_em_wifi_rrm_send_beacon_req(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -543,7 +544,10 @@ int main() {
 //	run_all_tests_rp_wifi_steering_clientDisconnect();
 
 	// platform/raspberry-pi: wifi_getApInterworkingServiceEnable (rdk-wifi-hal platform/raspberry-pi/platform_pi.c)
-	run_all_tests_rp_wifi_getApInterworkingServiceEnable();
+//	run_all_tests_rp_wifi_getApInterworkingServiceEnable();
+
+	// platform/wifi-emulator: wifi_rrm_send_beacon_req (rdk-wifi-hal platform/wifi-emulator/platform_emulator.c)
+	run_all_tests_em_wifi_rrm_send_beacon_req();
 
 	return 0;
 }
