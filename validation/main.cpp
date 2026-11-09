@@ -110,6 +110,7 @@ extern "C" void run_all_tests_int_wifi_getProxyArp(void);
 extern "C" void run_all_tests_int_wifi_applyGASConfiguration(void);
 extern "C" void run_all_tests_int_wifi_pushApHotspotElement(void);
 extern "C" void run_all_tests_int_wifi_setBssLoad(void);
+extern "C" void run_all_tests_int_wifi_getApInterworkingServiceEnable(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -487,7 +488,10 @@ int main() {
 //	run_all_tests_int_wifi_pushApHotspotElement();
 
 	// platform/intel: wifi_setBssLoad (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_setBssLoad();
+//	run_all_tests_int_wifi_setBssLoad();
+
+	// platform/intel: wifi_getApInterworkingServiceEnable (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_getApInterworkingServiceEnable();
 
 	return 0;
 }
