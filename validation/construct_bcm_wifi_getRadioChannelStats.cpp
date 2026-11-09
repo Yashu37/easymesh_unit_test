@@ -71,9 +71,9 @@ bgk_case_t bcm_wifi_getRadioChannelStats_suite[] = {
 	{ "command_message_null",  0, 1, 1, 1, 3, 1, 1, 1, { { 2412, 1, 0 }, E0, E0, E0 }, 1, 0, 0, ERR, 1, 1, 0 },
 	{ "send_fails_after_handler", 0, 1, 1, 1, 3, 1, 1, 1, { { 2412, 1, 0 }, E0, E0, E0 }, 0, -1, 0, ERR, 0, 1, 0 },
 	{ "two_calls_same_result", 0, 1, 1, 1, 3, 1, 1, 2, { { 2412, 1, 0 }, { 2417, 2, 0 }, E0, E0 }, 0, 0, 0, OK, 0, 2, 0 },
-	/* ---- NULL array without a loop iteration: no dereference ---- */
+	/* ---- NULL array: size 0 is "nothing to fill" (OK), a non-zero size is invalid (ERR, even when the kernel returns no entries) ---- */
 	{ "array_null_size_0",     0, 1, 1, 0, 0, 1, 1, 1, { { 2412, 1, 0 }, E0, E0, E0 }, 0, 0, 0, OK, 1, 1, 0 },
-	{ "array_null_no_entries", 0, 1, 1, 0, 3, 1, 1, 0, { E0, E0, E0, E0 }, 0, 0, 0, OK, 1, 1, 0 },
+	{ "array_null_no_entries", 0, 1, 1, 0, 3, 1, 1, 0, { E0, E0, E0, E0 }, 0, 0, 0, ERR, 1, 1, 0 },
 	/* ---- invalid inputs that corrupt / crash the original (run last) ---- */
 	{ "invalid_negative_size_writes_arr0", 0, 1, 1, 1, -1, 99, 1, 1, { { 2412, 1, 0 }, E0, E0, E0 }, 0, 0, 0, OK, 1, 1, 1 },
 	{ "invalid_array_null_size_3",         0, 1, 1, 0, 3, 1, 1, 1, { { 2412, 1, 0 }, E0, E0, E0 }, 0, 0, 0, ERR, 1, 1, 1 },

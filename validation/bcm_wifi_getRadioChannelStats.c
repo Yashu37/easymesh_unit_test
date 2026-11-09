@@ -3,7 +3,7 @@
  *
  * Functions copied VERBATIM from rdk-wifi-hal (~/Desktop/G/rdk-wifi-hal): platform/broadcom/platform.c:4015-4175 - get_channel_stats_handler,
  * get_channel_stats and wifi_getRadioChannelStats - together with the REAL ieee80211_freq_to_chan / ieee80211_freq_to_channel_ext from hostap-2.10
- * (ieee802_11_common.c).  This file holds the ORIGINAL code: no fix is applied.  The netlink handler is the REAL one, running on real libnl messages.
+ * (ieee802_11_common.c).  This file holds the ORIGINAL code with fixes 1-2 applied (start fix n / end fix n markers; the unfixed copy is the reproducer).  The netlink handler is the REAL one, running on real libnl messages.
  * Compiled as C.
  *
  * Scaffolding only (the Broadcom vendor header rdk_nl80211_hal.h is not in the source tree, so the RDK_VENDOR_* numbers below are the harness's own):
@@ -428,6 +428,12 @@ static int get_channel_stats_handler(struct nl_msg *msg, void *arg)
     struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
     channel_stats_arr_t *stats = (channel_stats_arr_t *)arg;
 
+    /* start fix 2 */
+    if (stats->arr == NULL || stats->arr_size <= 0) {
+        return NL_SKIP;
+    }
+    /* end fix 2 */
+
     if (nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0),
         NULL) < 0) {
         wifi_hal_stats_error_print("%s:%d Failed to parse vendor data\n", __func__, __LINE__);
@@ -538,6 +544,14 @@ INT wifi_getRadioChannelStats(INT radioIndex, wifi_channelStats_t *input_output_
 
     wifi_hal_stats_dbg_print("%s:%d: Get radio stats for index: %d\n", __func__, __LINE__,
         radioIndex);
+
+    /* start fix 1 */
+    if (input_output_channelStats_array == NULL && array_size != 0) {
+        wifi_hal_stats_error_print("%s:%d: NULL channel stats array (size %d)\n", __func__, __LINE__,
+            array_size);
+        return RETURN_ERR;
+    }
+    /* end fix 1 */
 
     radio = get_radio_by_rdk_index(radioIndex);
     if (radio == NULL) {
