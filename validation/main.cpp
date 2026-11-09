@@ -81,6 +81,7 @@ extern "C" void run_all_tests_wifi_getApAssociatedClientDiagnosticResult(void);
 extern "C" void run_all_tests_wifi_setP2PCrossConnect(void);
 extern "C" void run_all_tests_wifi_setLayer2TrafficInspectionFiltering(void);
 extern "C" void run_all_tests_wifi_pushApHotspotElement(void);
+extern "C" void run_all_tests_wifi_applyGASConfiguration(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -371,7 +372,10 @@ int main() {
 //	run_all_tests_wifi_setLayer2TrafficInspectionFiltering();
 
 	// wifi_pushApHotspotElement (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_wifi_pushApHotspotElement();
+//	run_all_tests_wifi_pushApHotspotElement();
+
+	// wifi_applyGASConfiguration (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_wifi_applyGASConfiguration();
 
 	return 0;
 }
