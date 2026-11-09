@@ -68,6 +68,7 @@ extern "C" void run_all_tests_wifi_getRadioChannelStats(void);
 extern "C" void run_all_tests_wifi_getApEnable(void);
 extern "C" void run_all_tests_wifi_setApIsolationEnable(void);
 extern "C" void run_all_tests_wifi_freq_to_op_class(void);
+extern "C" void run_all_tests_wifi_setProxyArp(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -319,7 +320,10 @@ int main() {
 //	run_all_tests_wifi_setApIsolationEnable();
 
 	// wifi_freq_to_op_class (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_wifi_freq_to_op_class();
+//	run_all_tests_wifi_freq_to_op_class();
+
+	// wifi_setProxyArp (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_wifi_setProxyArp();
 
 	return 0;
 }
