@@ -127,6 +127,7 @@ extern "C" void run_all_tests_rp_wifi_getApInterworkingServiceEnable(void);
 extern "C" void run_all_tests_em_wifi_rrm_send_beacon_req(void);
 extern "C" void run_all_tests_em_wifi_wnm_send_bss_tm_req(void);
 extern "C" void run_all_tests_rp_wifi_nvram_defaultRead(void);
+extern "C" void run_all_tests_xl_wifi_setApRetrylimit(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -555,7 +556,10 @@ int main() {
 //	run_all_tests_em_wifi_wnm_send_bss_tm_req();
 
 	// platform/raspberry-pi + platform/wifi-emulator: wifi_nvram_defaultRead (identical code)
-	run_all_tests_rp_wifi_nvram_defaultRead();
+//	run_all_tests_rp_wifi_nvram_defaultRead();
+
+	// platform/xle: wifi_setApRetrylimit (rdk-wifi-hal platform/xle/platform_xle.c)
+	run_all_tests_xl_wifi_setApRetrylimit();
 
 	return 0;
 }
