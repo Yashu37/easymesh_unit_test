@@ -116,6 +116,7 @@ extern "C" void run_all_tests_int_wifi_setDownStreamGroupAddress(void);
 extern "C" void run_all_tests_int_wifi_drv_get_phy_eht_cap_mac(void);
 extern "C" void run_all_tests_qc_wifi_setQamPlus(void);
 extern "C" void run_all_tests_qc_wifi_setApRetrylimit(void);
+extern "C" void run_all_tests_qc_wifi_drv_get_phy_eht_cap_mac(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -511,7 +512,10 @@ int main() {
 //	run_all_tests_qc_wifi_setQamPlus();
 
 	// platform/qualcomm: wifi_setApRetrylimit (rdk-wifi-hal platform/qualcomm/platform_ext.c, platform_xer5.c)
-	run_all_tests_qc_wifi_setApRetrylimit();
+//	run_all_tests_qc_wifi_setApRetrylimit();
+
+	// platform/qualcomm: wifi_drv_get_phy_eht_cap_mac (rdk-wifi-hal platform/qualcomm/platform_ext.c, platform_xer5.c)
+	run_all_tests_qc_wifi_drv_get_phy_eht_cap_mac();
 
 	return 0;
 }
