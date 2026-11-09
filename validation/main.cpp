@@ -91,6 +91,7 @@ extern "C" void run_all_tests_bcm_wifi_getRadioChannelStats(void);
 extern "C" void run_all_tests_bcm_wifi_getRadioTrafficStats2(void);
 extern "C" void run_all_tests_bcm_wifi_setApManagementFramePowerControl(void);
 extern "C" void run_all_tests_wifi_getRadioTransmitPower_bcm(void);
+extern "C" void run_all_tests_int_wifi_allow2G80211ax(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -411,7 +412,10 @@ int main() {
 //	run_all_tests_bcm_wifi_setApManagementFramePowerControl();
 
 	// platform/broadcom: wifi_getRadioTransmitPower (rdk-wifi-hal platform/broadcom/platform.c)
-	run_all_tests_wifi_getRadioTransmitPower_bcm();
+//	run_all_tests_wifi_getRadioTransmitPower_bcm();
+
+	// platform/intel: wifi_allow2G80211ax (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_allow2G80211ax();
 
 	return 0;
 }
