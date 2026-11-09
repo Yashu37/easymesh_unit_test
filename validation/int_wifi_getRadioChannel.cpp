@@ -1,8 +1,8 @@
 /*
  * HANDLER: wifi_getRadioChannel (platform/intel)
  *
- * Function copied VERBATIM from rdk-wifi-hal: platform/intel/platform.c:1806-1823 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code: no fix is
- * applied.  It looks the radio up by RDK index and, when the radio is configured and enabled, stores its primary channel through output_ulong and returns
+ * Function copied VERBATIM from rdk-wifi-hal: platform/intel/platform.c:1806-1823 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fix 1 applied
+ * (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It looks the radio up by RDK index and, when the radio is configured and enabled, stores its primary channel through output_ulong and returns
  * RETURN_OK; an unknown radio or a radio that is not configured / not enabled gives RETURN_ERR without writing the output.  Renamed
  * hwr_int_wifi_getRadioChannel because other harnesses may use the real name.
  *
@@ -36,6 +36,11 @@ INT wifi_getRadioChannel(INT radioIndex,ULONG *output_ulong)
     }
 
     if (radio->configured && radio->oper_param.enable){
+        /* start fix 1 */
+        if (output_ulong == NULL) {
+            return RETURN_ERR;
+        }
+        /* end fix 1 */
         *output_ulong = radio->oper_param.channel;
         return RETURN_OK;
     } else {
