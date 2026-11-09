@@ -88,6 +88,7 @@ extern "C" void run_all_tests_wifi_drv_get_phy_eht_cap_mac(void);
 extern "C" void run_all_tests_wifi_getNeighboringWiFiStatus_bcm(void);
 extern "C" void run_all_tests_bcm_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_bcm_wifi_getRadioChannelStats(void);
+extern "C" void run_all_tests_bcm_wifi_getRadioTrafficStats2(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -399,7 +400,10 @@ int main() {
 //	run_all_tests_bcm_wifi_getApAssociatedDeviceDiagnosticResult3();
 
 	// platform/broadcom: wifi_getRadioChannelStats (rdk-wifi-hal platform/broadcom/platform.c)
-	run_all_tests_bcm_wifi_getRadioChannelStats();
+//	run_all_tests_bcm_wifi_getRadioChannelStats();
+
+	// platform/broadcom: wifi_getRadioTrafficStats2 (rdk-wifi-hal platform/broadcom/platform.c)
+	run_all_tests_bcm_wifi_getRadioTrafficStats2();
 
 	return 0;
 }
