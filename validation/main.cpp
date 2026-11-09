@@ -99,6 +99,7 @@ extern "C" void run_all_tests_int_wifi_pushApRoamingConsortiumElement(void);
 extern "C" void run_all_tests_int_wifi_setApManagementFramePowerControl(void);
 extern "C" void run_all_tests_int_wifi_setApMacAddressControlMode(void);
 extern "C" void run_all_tests_int_wifi_setRadioDfsAtBootUpEnable(void);
+extern "C" void run_all_tests_int_wifi_getRadioChannel(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -443,7 +444,10 @@ int main() {
 //	run_all_tests_int_wifi_setApMacAddressControlMode();
 
 	// platform/intel: wifi_setRadioDfsAtBootUpEnable (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_setRadioDfsAtBootUpEnable();
+//	run_all_tests_int_wifi_setRadioDfsAtBootUpEnable();
+
+	// platform/intel: wifi_getRadioChannel (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_getRadioChannel();
 
 	return 0;
 }
