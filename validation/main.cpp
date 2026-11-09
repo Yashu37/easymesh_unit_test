@@ -58,8 +58,8 @@ extern "C" void run_all_tests_nvram_get_current_password(void);   /* declared he
 extern "C" void run_all_tests_nvram_get_current_ssid(void);
 extern "C" void run_all_tests_platform_pre_create_vap(void);
 extern "C" void run_all_tests_platform_flags_init(void);
-extern "C" void run_all_tests_platform_get_aid(void);
 extern "C" void run_all_tests_wifi_getNeighboringWiFiStatus(void);
+extern "C" void run_all_tests_wifi_setQamPlus(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
 int main() {
@@ -279,11 +279,11 @@ int main() {
 	// wifi_startNeighborScan (rdk-wifi-hal platform/banana-pi/platform.c -> src/wifi_hal.c wifi_hal_startNeighborScan)
 //	run_all_tests_wifi_startNeighborScan();
 
-	// platform_get_aid (rdk-wifi-hal platform/banana-pi/platform.c)
-//	run_all_tests_platform_get_aid();
-
 	// wifi_getNeighboringWiFiStatus (rdk-wifi-hal platform/banana-pi/platform.c -> src/wifi_hal.c)
-	run_all_tests_wifi_getNeighboringWiFiStatus();
+//	run_all_tests_wifi_getNeighboringWiFiStatus();
+
+	// wifi_setQamPlus (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_wifi_setQamPlus();
 
 	return 0;
 }
