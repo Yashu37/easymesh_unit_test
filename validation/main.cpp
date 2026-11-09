@@ -83,6 +83,7 @@ extern "C" void run_all_tests_wifi_setLayer2TrafficInspectionFiltering(void);
 extern "C" void run_all_tests_wifi_pushApHotspotElement(void);
 extern "C" void run_all_tests_wifi_applyGASConfiguration(void);
 extern "C" void run_all_tests_wifi_steering_eventRegister(void);
+extern "C" void run_all_tests_wifi_setApManagementFramePowerControl(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -379,7 +380,10 @@ int main() {
 //	run_all_tests_wifi_applyGASConfiguration();
 
 	// wifi_steering_eventRegister (rdk-wifi-hal platform/banana-pi/platform.c)
-	run_all_tests_wifi_steering_eventRegister();
+//	run_all_tests_wifi_steering_eventRegister();
+
+	// wifi_setApManagementFramePowerControl (rdk-wifi-hal platform/banana-pi/platform.c)
+	run_all_tests_wifi_setApManagementFramePowerControl();
 
 	return 0;
 }
