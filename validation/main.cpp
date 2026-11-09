@@ -109,6 +109,7 @@ extern "C" void run_all_tests_int_wifi_getDownStreamGroupAddress(void);
 extern "C" void run_all_tests_int_wifi_getProxyArp(void);
 extern "C" void run_all_tests_int_wifi_applyGASConfiguration(void);
 extern "C" void run_all_tests_int_wifi_pushApHotspotElement(void);
+extern "C" void run_all_tests_int_wifi_setBssLoad(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -483,7 +484,10 @@ int main() {
 //	run_all_tests_int_wifi_applyGASConfiguration();
 
 	// platform/intel: wifi_pushApHotspotElement (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_pushApHotspotElement();
+//	run_all_tests_int_wifi_pushApHotspotElement();
+
+	// platform/intel: wifi_setBssLoad (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_setBssLoad();
 
 	return 0;
 }
