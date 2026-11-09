@@ -3,7 +3,7 @@
  *
  * Functions copied VERBATIM from rdk-wifi-hal (~/Desktop/G/rdk-wifi-hal): platform/banana-pi/platform.c:682-906 - get_sta_list_handler, get_sta_list,
  * set_wifi_standard_from_rate, get_sta_stats_handler, get_sta_stats and wifi_getApAssociatedDeviceDiagnosticResult3 - and the sta_list_t type
- * (platform.c, just above wifi_nvram_defaultRead).  This file holds the ORIGINAL code: no fix is applied.  The netlink handlers are the REAL ones,
+ * (platform.c, just above wifi_nvram_defaultRead).  This file holds the FIXED code: every change sits between "start fix n" / "end fix n" markers (the unfixed copy is the reproducer commit).  The netlink handlers are the REAL ones,
  * running on real libnl messages.  This file is compiled as C (the verbatim code uses out-of-order designated initializers, which C++ rejects).
  *
  * Scaffolding only (the real types need the hostap / driver header tree, see hwr_gad.h):
@@ -170,6 +170,9 @@ static int nl80211_send_and_recv(struct nl_msg *msg, int (*valid_handler)(struct
 typedef struct {
     mac_address_t *macs;
     unsigned int num;
+    /* start fix 3 */
+    int failed;
+    /* end fix 3 */
 } sta_list_t;
 
 /* --- platform.c:682-867 --- */
@@ -185,8 +188,20 @@ static int get_sta_list_handler(struct nl_msg *msg, void *arg)
         return NL_SKIP;
     }
 
-    if (tb[NL80211_ATTR_MAC]) {
-        sta_list->macs = realloc(sta_list->macs, (sta_list->num + 1) * sizeof(mac_address_t));
+    /* start fix 4 */
+    if (tb[NL80211_ATTR_MAC] && nla_len(tb[NL80211_ATTR_MAC]) >= (int)sizeof(mac_address_t)) {
+    /* end fix 4 */
+        /* start fix 3 */
+        mac_address_t *grown = realloc(sta_list->macs, (sta_list->num + 1) * sizeof(mac_address_t));
+        if (grown == NULL) {
+            free(sta_list->macs);
+            sta_list->macs = NULL;
+            sta_list->num = 0;
+            sta_list->failed = 1;
+            return NL_STOP;
+        }
+        sta_list->macs = grown;
+        /* end fix 3 */
         if (sta_list->macs) {
             memcpy(sta_list->macs[sta_list->num], nla_data(tb[NL80211_ATTR_MAC]), sizeof(mac_address_t));
             sta_list->num++;
@@ -212,6 +227,12 @@ static int get_sta_list(wifi_interface_info_t *interface, sta_list_t *sta_list)
         wifi_hal_stats_error_print("%s:%d Failed to execute NL command\n", __func__, __LINE__);
         return -1;
     }
+
+    /* start fix 3 */
+    if (sta_list->failed) {
+        return -1;
+    }
+    /* end fix 3 */
 
     return 0;
 }
@@ -272,7 +293,9 @@ static int get_sta_stats_handler(struct nl_msg *msg, void *arg)
         return NL_SKIP;
     }
 
-    if (tb[NL80211_ATTR_MAC]) {
+    /* start fix 4 */
+    if (tb[NL80211_ATTR_MAC] && nla_len(tb[NL80211_ATTR_MAC]) >= (int)sizeof(mac_address_t)) {
+    /* end fix 4 */
         memcpy(dev->cli_MACAddress, nla_data(tb[NL80211_ATTR_MAC]), sizeof(mac_address_t));
     }
 
@@ -369,6 +392,13 @@ INT wifi_getApAssociatedDeviceDiagnosticResult3(INT apIndex,
     sta_list_t sta_list = {};
     wifi_interface_info_t *interface;
 
+    /* start fix 1 */
+    if (associated_dev_array == NULL || output_array_size == NULL) {
+        wifi_hal_stats_error_print("%s:%d NULL output argument\n", __func__, __LINE__);
+        return -1;
+    }
+    /* end fix 1 */
+
     interface = get_interface_by_vap_index(apIndex);
     if (interface == NULL) {
         wifi_hal_stats_error_print("%s:%d Failed to get interface for index %d\n", __func__, __LINE__, apIndex);
@@ -384,6 +414,15 @@ INT wifi_getApAssociatedDeviceDiagnosticResult3(INT apIndex,
     *associated_dev_array = sta_list.num ?
         calloc(sta_list.num, sizeof(wifi_associated_dev3_t)) : NULL;
     *output_array_size = sta_list.num;
+
+    /* start fix 2 */
+    if (sta_list.num && *associated_dev_array == NULL) {
+        wifi_hal_stats_error_print("%s:%d Failed to allocate %u entries\n", __func__, __LINE__, sta_list.num);
+        *output_array_size = 0;
+        ret = -1;
+        goto exit;
+    }
+    /* end fix 2 */
 
     for (i = 0; i < sta_list.num; i++) {
         ret = get_sta_stats(interface, sta_list.macs[i], &(*associated_dev_array)[i]);

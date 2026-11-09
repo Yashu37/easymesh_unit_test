@@ -77,7 +77,7 @@ static int one_call(const gad_case_t *t, int *got)
 {
 	wifi_associated_dev3_t *arr = sentinel_arr;
 	UINT size = SENT_SIZE;
-	int expect_n = t->exp_size < 0 ? t->nsta - (t->quirk == 2 ? 1 : 0) : t->exp_size;
+	int expect_n = t->exp_size < 0 ? t->nsta - ((t->quirk == 1 || t->quirk == 2) ? 1 : 0) : t->exp_size;
 	int ok = 1;
 
 	int ret = test_wifi_getApAssociatedDeviceDiagnosticResult3(t, &arr, &size);
@@ -94,7 +94,7 @@ static int one_call(const gad_case_t *t, int *got)
 		else {
 			int e = 0;
 			for (int i = 0; i < t->nsta && ok; i++) {
-				if (t->quirk == 2 && i == 0) continue;
+				if ((t->quirk == 1 || t->quirk == 2) && i == 0) continue;
 				ok = check_entry(&arr[e++], i);
 			}
 		}

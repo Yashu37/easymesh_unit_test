@@ -76,7 +76,7 @@ gad_case_t wifi_getApAssociatedDeviceDiagnosticResult3_suite[] = {
 	{ "invalid_size_ptr_null_one_station",  0, 1, 2, 1, {0,0,0,0,0,0,0,0}, 0,0,0,-1,0,0,0, 1, ERR, 0, 1,0, 1 },
 	{ "invalid_both_ptrs_null",             0, 1, 3, 1, {0,0,0,0,0,0,0,0}, 0,0,0,-1,0,0,0, 1, ERR, 0, 1,0, 1 },
 	{ "invalid_calloc_fails_two_stations",  0, 1, 0, 2, {0,1,0,0,0,0,0,0}, 0,0,0,-1,1,0,0, 1, ERR, 0, 0,1, 1 },
-	{ "invalid_realloc_fails_second_mac",   0, 1, 0, 3, {0,1,2,0,0,0,0,0}, 0,0,0,-1,0,2,0, 1, ERR, 0, 0,1, 1 },
+	{ "invalid_realloc_fails_second_mac",   0, 1, 0, 3, {0,1,2,0,0,0,0,0}, 0,0,0,-1,0,2,0, 1, ERR, 0, 1,0, 1 },
 	{ "invalid_dump_mac_attr_2_bytes",      0, 1, 0, 3, {0,1,2,0,0,0,0,0}, 0,0,0,-1,0,0,1, 1, OK, -1, 0,0, 1 },
 	{ NULL }
 };
