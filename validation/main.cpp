@@ -102,6 +102,7 @@ extern "C" void run_all_tests_int_wifi_setRadioDfsAtBootUpEnable(void);
 extern "C" void run_all_tests_int_wifi_getRadioChannel(void);
 extern "C" void run_all_tests_int_wifi_setProxyArp(void);
 extern "C" void run_all_tests_int_wifi_setCountryIe(void);
+extern "C" void run_all_tests_int_wifi_getLayer2TrafficInspectionFiltering(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -455,7 +456,10 @@ int main() {
 //	run_all_tests_int_wifi_setProxyArp();
 
 	// platform/intel: wifi_setCountryIe (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_setCountryIe();
+//	run_all_tests_int_wifi_setCountryIe();
+
+	// platform/intel: wifi_getLayer2TrafficInspectionFiltering (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_getLayer2TrafficInspectionFiltering();
 
 	return 0;
 }
