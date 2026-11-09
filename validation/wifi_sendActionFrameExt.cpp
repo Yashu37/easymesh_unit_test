@@ -3,7 +3,7 @@
  *
  * Functions copied VERBATIM from rdk-wifi-hal (~/Desktop/G/rdk-wifi-hal): the banana-pi forwarder wifi_sendActionFrameExt
  * (platform/banana-pi/platform.c:660-664), which calls wifi_hal_send_mgmt_frame (src/wifi_hal.c:4775-4822, HOSTAPD_2_10 branch) where the logic is.
- * This file holds the ORIGINAL code: no fix is applied.
+ * This file holds ONLY THE FIXED code: it carries FIX 1 (marked start fix / end fix) in wifi_hal_send_mgmt_frame.
  *
  * Scaffolding only (the real types need the hostap / driver header tree, see hwr_sae.h):
  *  - reduced struct ieee80211_hdr / ieee80211_mgmt (the 24-byte header and the action category byte), IEEE80211_FC and the frame control constants.
@@ -71,7 +71,15 @@ int wifi_hal_send_mgmt_frame(int apIndex,mac_address_t sta, const unsigned char 
     int link_id = 0;
 #endif
     memset(bssid_buf, 0xff, sizeof(bssid_buf));
-    
+
+    /* ---------- start fix 1: frame == NULL with len > 0 and MacAddr == NULL were copied (SEGV), and len == 0 built a 24-byte buffer
+     * of which wifi_drv_send_mlme reads byte 24 (mgmt->u.action.category) - an action frame needs at least the category byte. */
+    if (sta == NULL || data == NULL || data_len == 0) {
+        wifi_hal_error_print("%s:%d: invalid parameters (sta:%p data:%p len:%zu)\n", __func__, __LINE__, (const void *)sta, (const void *)data, data_len);
+        return -1;
+    }
+    /* ---------- end fix 1 */
+
     buf = os_zalloc(24 + data_len);
     if (buf == NULL)
         return -1;
