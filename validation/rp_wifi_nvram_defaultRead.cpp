@@ -2,7 +2,8 @@
  * HANDLER: wifi_nvram_defaultRead (platform/raspberry-pi, identical code in platform/wifi-emulator/platform_emulator.c)
  *
  * Function copied VERBATIM from rdk-wifi-hal: platform/raspberry-pi/platform_pi.c:56-91 (~/Desktop/G/rdk-wifi-hal; wifi-emulator/platform_emulator.c:54-89 holds the
- * same text).  This file holds the ORIGINAL code: no fix is applied.  It builds the shell command "grep '<key>=' /nvram/wifi_defaults.txt" with sprintf into
+ * same text).  This file holds the ORIGINAL code with fix 1 applied
+ * (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer): sprintf replaced by snprintf(cmd, MAX_CMD_SIZE, ...).  It builds the shell command "grep '<key>=' /nvram/wifi_defaults.txt" with sprintf into
  * char cmd[MAX_CMD_SIZE = 1024], runs it through _syscmd and copies the value after the first '=' of the first output line into out.
  *
  * DIFFERENCE from banana-pi: the banana-pi version formats the command with snprintf(cmd, MAX_CMD_SIZE, ...); this version uses an UNBOUNDED sprintf, so a key
@@ -48,7 +49,9 @@ int wifi_nvram_defaultRead(char *in,char *out)
     char cmd[MAX_CMD_SIZE]={'\0'};
     char *position;
 
-    sprintf(cmd,"grep '%s=' /nvram/wifi_defaults.txt",in);
+    /* start fix 1 */
+    snprintf(cmd,MAX_CMD_SIZE,"grep '%s=' /nvram/wifi_defaults.txt",in);
+    /* end fix 1 */
     if(_syscmd(cmd,buf,sizeof(buf)) == -1)
     {
         wifi_hal_dbg_print("\nError %d:%s:%s\n",__LINE__,__func__,__FILE__);
