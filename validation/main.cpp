@@ -105,6 +105,7 @@ extern "C" void run_all_tests_int_wifi_setCountryIe(void);
 extern "C" void run_all_tests_int_wifi_getLayer2TrafficInspectionFiltering(void);
 extern "C" void run_all_tests_int_wifi_getCountryIe(void);
 extern "C" void run_all_tests_int_wifi_setP2PCrossConnect(void);
+extern "C" void run_all_tests_int_wifi_getDownStreamGroupAddress(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -467,7 +468,10 @@ int main() {
 //	run_all_tests_int_wifi_getCountryIe();
 
 	// platform/intel: wifi_setP2PCrossConnect (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_setP2PCrossConnect();
+//	run_all_tests_int_wifi_setP2PCrossConnect();
+
+	// platform/intel: wifi_getDownStreamGroupAddress (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_getDownStreamGroupAddress();
 
 	return 0;
 }
