@@ -11,7 +11,7 @@
 
 /* --- platform.c:937 --- */
 extern "C" {
-INT wifi_setCountryIe(INT apIndex, BOOL enable)
+INT wifi_setCountryIe(INT apIndex, BOOL enabled)
 {
     return 0;
 }

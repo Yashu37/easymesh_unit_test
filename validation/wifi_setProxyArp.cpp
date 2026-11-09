@@ -11,7 +11,7 @@
 
 /* --- platform.c:932 --- */
 extern "C" {
-INT wifi_setProxyArp(INT apIndex, BOOL enable)
+INT wifi_setProxyArp(INT apIndex, BOOL enabled)
 {
     return 0;
 }
