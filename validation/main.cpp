@@ -97,6 +97,7 @@ extern "C" void run_all_tests_int_wifi_setApRetrylimit(void);
 extern "C" void run_all_tests_int_wifi_getApInterworkingElement(void);
 extern "C" void run_all_tests_int_wifi_pushApRoamingConsortiumElement(void);
 extern "C" void run_all_tests_int_wifi_setApManagementFramePowerControl(void);
+extern "C" void run_all_tests_int_wifi_setApMacAddressControlMode(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -435,7 +436,10 @@ int main() {
 //	run_all_tests_int_wifi_pushApRoamingConsortiumElement();
 
 	// platform/intel: wifi_setApManagementFramePowerControl (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_setApManagementFramePowerControl();
+//	run_all_tests_int_wifi_setApManagementFramePowerControl();
+
+	// platform/intel: wifi_setApMacAddressControlMode (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_setApMacAddressControlMode();
 
 	return 0;
 }
