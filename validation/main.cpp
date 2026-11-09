@@ -117,6 +117,7 @@ extern "C" void run_all_tests_int_wifi_drv_get_phy_eht_cap_mac(void);
 extern "C" void run_all_tests_qc_wifi_setQamPlus(void);
 extern "C" void run_all_tests_qc_wifi_setApRetrylimit(void);
 extern "C" void run_all_tests_qc_wifi_drv_get_phy_eht_cap_mac(void);
+extern "C" void run_all_tests_rp_wifi_setApMacAddressControlMode(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -515,7 +516,10 @@ int main() {
 //	run_all_tests_qc_wifi_setApRetrylimit();
 
 	// platform/qualcomm: wifi_drv_get_phy_eht_cap_mac (rdk-wifi-hal platform/qualcomm/platform_ext.c, platform_xer5.c)
-	run_all_tests_qc_wifi_drv_get_phy_eht_cap_mac();
+//	run_all_tests_qc_wifi_drv_get_phy_eht_cap_mac();
+
+	// platform/raspberry-pi: wifi_setApMacAddressControlMode (rdk-wifi-hal platform/raspberry-pi/platform_pi.c)
+	run_all_tests_rp_wifi_setApMacAddressControlMode();
 
 	return 0;
 }
