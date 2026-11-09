@@ -8,6 +8,10 @@
  * Scaffolding only: wifi_drv_vendor_cmd (hostap driver call, not in this tree) is a recording stub (HOSTAPD_VERSION >= 210 form, 7 arguments) that copies
  * the payload and returns the runner's result; OUI_LTQ / the sub-command number are the harness's own values; the print macros map to the log sink
  * hwr_print (runner-poisoned slot).  Renamed hwr_int_wifi_setApRetrylimit because other harnesses use the real name.
+ *
+ * KNOWN, NOT COUNTED (user decision, Low severity, diagnostics only): the failure line is printed with strerror(res) although res is a negative errno from the
+ * nl80211 layer, so the log says "Unknown error -22" instead of "Invalid argument".  The return value and the vendor command are correct; the harness does not
+ * check the error text.
  */
 #include "hwr_irl.h"
 #include <string.h>

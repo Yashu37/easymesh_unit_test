@@ -7,8 +7,8 @@
  * pointer (0xdeadbeef); vendor result 0 / -1 / -2 / -5 / -12 / -22 / -95 (negative errno values, as the nl80211 layer returns them) / 1 / 5 / 22 / INT_MAX;
  * repeated calls; and a log slot that is empty / holds text / is almost full / is full.  Checks: the return value (the vendor result, RETURN_ERR for NULL),
  * the vendor command was sent exactly once per call with OUI_LTQ, the RETRY_LIMIT sub-command, the 8 payload bytes {4, 7}, length 8 and the same priv (never for NULL),
- * the guard slab is unchanged, and the log: the "couldn't find primary interface" line for NULL, the failure line with the result and the CORRECT error text
- * (strerror of the errno value, i.e. of -res for a negative result) when the vendor command failed, nothing otherwise.  Row layout: see hwr_irl_case_t.
+ * the guard slab is unchanged, and the log: the "couldn't find primary interface" line for NULL, the failure line with the result
+ * when the vendor command failed (its error text is not checked, see the handler header), nothing otherwise.  Row layout: see hwr_irl_case_t.
  */
 #include <limits.h>
 #include "hwr_irl.h"
