@@ -112,6 +112,7 @@ extern "C" void run_all_tests_int_wifi_pushApHotspotElement(void);
 extern "C" void run_all_tests_int_wifi_setBssLoad(void);
 extern "C" void run_all_tests_int_wifi_getApInterworkingServiceEnable(void);
 extern "C" void run_all_tests_int_wifi_sendActionFrameExt(void);
+extern "C" void run_all_tests_int_wifi_setDownStreamGroupAddress(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -495,7 +496,10 @@ int main() {
 //	run_all_tests_int_wifi_getApInterworkingServiceEnable();
 
 	// platform/intel: wifi_sendActionFrameExt (rdk-wifi-hal platform/intel/platform.c)
-	run_all_tests_int_wifi_sendActionFrameExt();
+//	run_all_tests_int_wifi_sendActionFrameExt();
+
+	// platform/intel: wifi_setDownStreamGroupAddress (rdk-wifi-hal platform/intel/platform.c)
+	run_all_tests_int_wifi_setDownStreamGroupAddress();
 
 	return 0;
 }
