@@ -3,7 +3,7 @@
  *
  * Functions copied VERBATIM from rdk-wifi-hal (~/Desktop/G/rdk-wifi-hal): platform/broadcom/platform.c:3502-4013 - the sta_list_t type, get_sta_list_handler,
  * get_sta_list, standard_to_str, bw_to_str, get_sta_stats_handler, get_sta_stats and wifi_getApAssociatedDeviceDiagnosticResult3.  This file holds the
- * ORIGINAL code: no fix is applied.  The netlink handlers are the REAL ones, running on real libnl messages.  Compiled as C (the verbatim code uses
+ * ORIGINAL code with fixes 1-4 applied (start fix n / end fix n markers; the unfixed copy is the reproducer).  The netlink handlers are the REAL ones, running on real libnl messages.  Compiled as C (the verbatim code uses
  * out-of-order designated initializers).
  *
  * Scaffolding only (the Broadcom vendor header rdk_nl80211_hal.h is not part of the source tree, so the RDK_VENDOR_* attribute numbers below are the
@@ -68,7 +68,7 @@ static bga_interface_t *get_interface_by_vap_index(unsigned int vap_index)
 static void *bga_calloc(size_t n, size_t s)
 {
     hwr_bga_world.calloc_calls++;
-    if (hwr_bga_world.fail_calloc) return NULL;
+    if (hwr_bga_world.fail_calloc && hwr_bga_world.calloc_calls >= 2) return NULL;   /* the 2nd calloc = the entry array (the 1st is the MAC list) */
     if (hwr_bga_world.calloc_limit && (unsigned long long)n * s > hwr_bga_world.calloc_limit) return NULL;
     void *p = calloc(n, s); if (p) hwr_bga_world.live++; return p;
 }
@@ -180,7 +180,7 @@ static void put_info(struct nl_msg *m, bga_world_t *w, int idx)
 
 static struct nl_msg *build_reply(bga_world_t *w, int is_list, int idx)
 {
-    struct nl_msg *m = nlmsg_alloc(), *ex;
+    struct nl_msg *m = nlmsg_alloc_size(65536), *ex;
     struct nlattr *v;
 
     genlmsg_put(m, 0, 0, 0, 0, 0, NL80211_CMD_VENDOR, 0);
@@ -483,8 +483,11 @@ static int get_sta_stats_handler(struct nl_msg *msg, void *arg)
         }
     }
 
+    /* start fix 3 */
     memcpy(stats->cli_MACAddress, nla_data(tb_vendor[RDK_VENDOR_ATTR_MAC]),
-        nla_len(tb_vendor[RDK_VENDOR_ATTR_MAC]));
+        nla_len(tb_vendor[RDK_VENDOR_ATTR_MAC]) < sizeof(stats->cli_MACAddress) ?
+        nla_len(tb_vendor[RDK_VENDOR_ATTR_MAC]) : sizeof(stats->cli_MACAddress));
+    /* end fix 3 */
 
     if (nla_parse_nested(tb_sta_info, RDK_VENDOR_ATTR_STA_INFO_MAX,
         tb_vendor[RDK_VENDOR_ATTR_STA_INFO], sta_info_policy)) {
@@ -643,8 +646,11 @@ static int get_sta_stats_handler(struct nl_msg *msg, void *arg)
     }
 
     if (tb_sta_info[RDK_VENDOR_ATTR_STA_INFO_MLD_MAC]) {
+        /* start fix 4 */
         memcpy(stats->cli_MLDAddr, nla_data(tb_sta_info[RDK_VENDOR_ATTR_STA_INFO_MLD_MAC]),
-               nla_len(tb_sta_info[RDK_VENDOR_ATTR_STA_INFO_MLD_MAC]));
+               nla_len(tb_sta_info[RDK_VENDOR_ATTR_STA_INFO_MLD_MAC]) < sizeof(stats->cli_MLDAddr) ?
+               nla_len(tb_sta_info[RDK_VENDOR_ATTR_STA_INFO_MLD_MAC]) : sizeof(stats->cli_MLDAddr));
+        /* end fix 4 */
     } else {
         memset(stats->cli_MLDAddr, 0, sizeof(stats->cli_MLDAddr));
     }
@@ -732,6 +738,13 @@ INT wifi_getApAssociatedDeviceDiagnosticResult3(INT apIndex,
     sta_list_t sta_list = {};
     wifi_interface_info_t *interface;
 
+    /* start fix 1 */
+    if (associated_dev_array == NULL || output_array_size == NULL) {
+        wifi_hal_stats_error_print("%s:%d NULL output argument\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* end fix 1 */
+
     interface = get_interface_by_vap_index(apIndex);
     if (interface == NULL) {
         wifi_hal_stats_error_print("%s:%d Failed to get interface for index %d\n", __func__, __LINE__,
@@ -747,6 +760,14 @@ INT wifi_getApAssociatedDeviceDiagnosticResult3(INT apIndex,
 
     *associated_dev_array = sta_list.num ?
         calloc(sta_list.num, sizeof(wifi_associated_dev3_t)) : NULL;
+    /* start fix 2 */
+    if (sta_list.num && *associated_dev_array == NULL) {
+        wifi_hal_stats_error_print("%s:%d calloc failed\n", __func__, __LINE__);
+        *output_array_size = 0;
+        ret = RETURN_ERR;
+        goto exit;
+    }
+    /* end fix 2 */
     *output_array_size = sta_list.num;
 
     for (i = 0; i < sta_list.num; i++) {
