@@ -79,7 +79,10 @@ INT wifi_hal_delHostapdDenyAclDevice(INT apIndex, CHAR *DeviceMacAddress)
     pthread_mutex_lock(&g_wifi_hal.hapd_lock);
     hapd = &interface->u.ap.hapd;
 
-    if (!hapd->conf) {
+    /* ---------- start fix 1: hapd->iface was not checked, but hostapd_set_acl() reads hapd->iface->drv_max_acl_mac_addrs
+     * (after the MAC was already removed from the deny list, with hapd_lock held). */
+    if (!hapd->conf || !hapd->iface) {
+    /* ---------- end fix 1 */
         pthread_mutex_unlock(&g_wifi_hal.hapd_lock);
         return RETURN_ERR;
     }
