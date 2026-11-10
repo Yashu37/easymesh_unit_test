@@ -2,7 +2,7 @@
  * HANDLER: wifi_hal_deauth (src/wifi_hal.c)
  *
  * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:705-718 (~/Desktop/G/rdk-wifi-hal), compiled with HOSTAPD_2_10 defined (the branch that does the work).  This file
- * holds the ORIGINAL code: no fix is applied.  It looks the interface up by vap_index, reads the hostapd own_addr from interface->u.ap.hapd under the hapd lock and calls
+ * holds the ORIGINAL code with fixes 1-2 applied (start fix n / end fix n markers; the unfixed copy is the reproducer).  It looks the interface up by vap_index, reads the hostapd own_addr from interface->u.ap.hapd under the hapd lock and calls
  * wifi_drv_sta_deauth(interface, own_addr, mac, status).  The lookup result is not checked (get_interface_by_vap_index returns NULL for an unknown vap_index) and the interface
  * is read through the AP member of its union whatever its mode (a STA VAP holds wpa_supplicant data there).  mac is only forwarded.
  *
@@ -38,6 +38,16 @@ void wifi_hal_deauth(int vap_index, int status, uint8_t *mac)
 {
     u8 own_addr[ETH_ALEN];
     wifi_interface_info_t *interface = get_interface_by_vap_index(vap_index);
+    /* start fix 1 */
+    if (interface == NULL) {
+        return;
+    }
+    /* end fix 1 */
+    /* start fix 2 */
+    if (interface->vap_info.vap_mode != wifi_vap_mode_ap) {
+        return;
+    }
+    /* end fix 2 */
     struct hostapd_data *hapd = &interface->u.ap.hapd;
 
     pthread_mutex_lock(&g_wifi_hal.hapd_lock);
