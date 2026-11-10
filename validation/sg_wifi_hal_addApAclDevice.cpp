@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_addApAclDevice (src/wifi_hal.c, WIFI_HAL_VERSION_3_PHASE2)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:2090-2150 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It looks the interface up by vap index, formats the MAC
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-3): src/wifi_hal.c:2090-2150 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fixes 1-3 applied (start fix n / end fix n markers, fix 3 is the inline comment; the unfixed copy is the reproducer).  It looks the interface up by vap index, formats the MAC
  * with to_mac_str() (no NULL check of DeviceMacAddress), requires an AP VAP, creates interface->acl_map when it is NULL, returns OK when the MAC is already in the map, otherwise mallocs an acl_map_t (result
  * not checked), copies the MAC into it, puts it into the map, calls nl80211_set_acl() and, when the VAP's MAC filter is enabled in black-list mode, nl80211_kick_device(); a failing kick is logged with
  * "%s" of DeviceMacAddress (a 6-byte mac_address_t, not a string).
@@ -84,6 +84,12 @@ INT wifi_hal_addApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
     }
     vap = &interface->vap_info;
 
+    /* ---------- start fix 1: DeviceMacAddress was dereferenced by to_mac_str() without a NULL check. */
+    if (DeviceMacAddress == NULL) {
+        wifi_hal_error_print("%s:%d: NULL MAC address for ap index %d\n", __func__, __LINE__, apIndex);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
     key = to_mac_str(DeviceMacAddress, sta_mac_str);
     
     wifi_hal_info_print("%s:%d: Interface: %s MAC: %s\n", __func__, __LINE__, interface->name, key);
@@ -110,6 +116,12 @@ INT wifi_hal_addApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
     }
 
     acl_map = (acl_map_t *)malloc(sizeof(acl_map_t));
+    /* ---------- start fix 2: the malloc result was used without a check. */
+    if (acl_map == NULL) {
+        wifi_hal_error_print("%s:%d: memory allocation failure for ap index %d\n", __func__, __LINE__, apIndex);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
 
     memcpy(acl_map->mac_addr_str, key, sizeof(mac_addr_str_t));
     memcpy(acl_map->mac_addr, DeviceMacAddress, sizeof(mac_address_t));
@@ -125,7 +137,7 @@ INT wifi_hal_addApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
         (vap->u.bss_info.mac_filter_mode == wifi_mac_filter_mode_black_list)) {
         if (nl80211_kick_device(interface, DeviceMacAddress) != 0) {
             wifi_hal_error_print("%s:%d: Unable to kick MAC %s on ap_index %d\n", __func__,
-                __LINE__, DeviceMacAddress, apIndex);
+                __LINE__, key /* fix 3: DeviceMacAddress is a 6-byte array, not a string; print the formatted key */, apIndex);
         }
     }
     return 0;
