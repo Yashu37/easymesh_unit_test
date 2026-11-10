@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_addHostapdDenyAclDevice (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:2026-2056 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It looks the interface up by vap index, requires an AP VAP and
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:2026-2056 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It looks the interface up by vap index, requires an AP VAP and
  * a non-NULL MAC string, takes g_wifi_hal.hapd_lock, requires hapd->conf, adds the MAC to hapd->conf->deny_mac (hostapd_ctrl_iface_acl_add_mac) and then calls hostapd_set_acl(hapd) and
  * hostapd_disassoc_deny_mac(hapd) (hapd->iface is not checked) before unlocking.
  *
@@ -86,7 +86,10 @@ INT wifi_hal_addHostapdDenyAclDevice(INT apIndex, CHAR *DeviceMacAddress)
     pthread_mutex_lock(&g_wifi_hal.hapd_lock);
     hapd = &interface->u.ap.hapd;
 
-    if (!hapd->conf) {
+    /* ---------- start fix 1: hapd->iface was not checked, but hostapd_set_acl() reads hapd->iface->drv_max_acl_mac_addrs
+     * (after the MAC was already added to the deny list, with hapd_lock held). */
+    if (!hapd->conf || !hapd->iface) {
+    /* ---------- end fix 1 */
         pthread_mutex_unlock(&g_wifi_hal.hapd_lock);
         return RETURN_ERR;
     }
