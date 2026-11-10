@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_getScanResults (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:1926-2018 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It validates the arguments, finds the radio and its STA
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:1926-2018 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It validates the arguments, finds the radio and its STA
  * interface, derives the country string and (channel given) the frequency, counts the scan entries of the STA interface (all of them when the frequency is 0, else those on that frequency), callocs that many
  * wifi_bss_info_t and copies the entries into it.  In the copy loop tmp_bss is advanced for EVERY scan entry but memcpy only runs for the matching ones, so with a frequency filter a match that is not
  * preceded only by matches lands at tmp_bss[index of the entry], not at tmp_bss[number of matches so far].
@@ -151,12 +151,17 @@ INT wifi_hal_getScanResults(wifi_radio_index_t index, wifi_channel_t *channel, w
     while (scan_info != NULL) {
         if (freq == 0) {
             memcpy(tmp_bss, scan_info, sizeof(wifi_bss_info_t));
+            tmp_bss++;
         } else {
             if (freq == scan_info->freq) {
                 memcpy(tmp_bss, scan_info, sizeof(wifi_bss_info_t));
+                /* ---------- start fix 1: tmp_bss was advanced for every scan entry, so a match that came after a
+                 * non-matching one was written at its scan index, past the total_count entries allocated. Advance
+                 * only when an entry was copied. */
+                tmp_bss++;
+                /* ---------- end fix 1 */
             }
         }
-        tmp_bss++;
         scan_info = hash_map_get_next(interface->scan_info_map, scan_info);
     }
     pthread_mutex_unlock(&interface->scan_info_mutex);
