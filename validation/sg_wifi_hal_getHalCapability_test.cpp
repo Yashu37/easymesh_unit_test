@@ -4,7 +4,7 @@
  * test_sg_wifi_hal_getHalCapability() POISONS what the function must not touch, calls the handler and unpoisons; run_all_tests compares the result with a reference
  * model of the CORRECT behaviour.  The runner owns the output: a heap object of exactly sizeof(wifi_hal_capability_t) (redzones: any write beyond it aborts under ASan), preset to
  * 0x5A.  During the call the guard slab, the log slot tail [HWR_LOG_USE, HWR_LOG_SZ), and the stand-in radio slots / interface maps beyond the configured radio count are POISONED.
- * Checks: return value; version 3.0; numRadios; BssMaxStaAllow == 75 (the fields around the radio arrays must not be overwritten); serialNo / manufacturerModel / manufacturer /
+ * Checks: return value; version 3.0; numRadios (clamped to MAX_NUM_RADIOS); BssMaxStaAllow == 75 (the fields around the radio arrays must not be overwritten); serialNo / manufacturerModel / manufacturer /
  * software_version equal the shell replies without the trailing newline and cut to the 63 characters the 64-byte fields can hold; cm_mac; al_1905_mac and colocated_mode as the
  * EasyMesh config / interface rules give; per radio the presence flag and the capabilities; every interface firmware_version; one band query and one adjust call per radio.
  * Rows with last = 1 break the original: they run LAST.
@@ -73,7 +73,7 @@ static int check(const hwr_ghc_case_t *t, int ret)
 	if (!t->hal_mode) return 1;
 	if (h->version.major != 3 || h->version.minor != 0) { snprintf(why, sizeof(why), "version %u.%u", h->version.major, h->version.minor); return 0; }
 	if (h->wifi_prop.BssMaxStaAllow != 75) { snprintf(why, sizeof(why), "BssMaxStaAllow = %u, expected 75 (overwritten)", h->wifi_prop.BssMaxStaAllow); return 0; }
-	if (t->nrad <= (unsigned)MAX_NUM_RADIOS && h->wifi_prop.numRadios != t->nrad) { snprintf(why, sizeof(why), "numRadios = %u, expected %u", h->wifi_prop.numRadios, t->nrad); return 0; }
+	if (h->wifi_prop.numRadios != nr) { snprintf(why, sizeof(why), "numRadios = %u, expected %u", h->wifi_prop.numRadios, nr); return 0; }
 	want_str(t->serial, sn); want_str(t->model, md); want_str(t->image, sw);
 	if (strncmp(h->wifi_prop.serialNo, sn, FLD) != 0 || strlen(h->wifi_prop.serialNo) >= FLD) { snprintf(why, sizeof(why), "serialNo is not \"%.20s...\" (len %zu)", sn, strnlen(h->wifi_prop.serialNo, 400)); return 0; }
 	if (strncmp(h->wifi_prop.manufacturerModel, md, FLD) != 0 || strlen(h->wifi_prop.manufacturerModel) >= FLD) { snprintf(why, sizeof(why), "manufacturerModel is not \"%.20s...\" (len %zu)", md, strnlen(h->wifi_prop.manufacturerModel, 400)); return 0; }
@@ -100,13 +100,22 @@ static int check(const hwr_ghc_case_t *t, int ret)
 	}
 	if (memcmp(h->wifi_prop.al_1905_mac, al, 6) != 0) { snprintf(why, sizeof(why), "al_1905_mac wrong"); return 0; }
 	if (h->wifi_prop.colocated_mode != col) { snprintf(why, sizeof(why), "colocated_mode = %d, expected %d", h->wifi_prop.colocated_mode, col); return 0; }
-	for (unsigned r = 0; r < nr; r++) {
-		if (h->wifi_prop.radio_presence[r] != hwr_ghc_world.hal.radio_info[r].radio_presence) { snprintf(why, sizeof(why), "radio_presence[%u] wrong", r); return 0; }
-		if (memcmp(&h->wifi_prop.radiocap[r], &hwr_ghc_world.hal.radio_info[r].capab, sizeof(wifi_radio_capabilities_t)) != 0) { snprintf(why, sizeof(why), "radiocap[%u] wrong", r); return 0; }
-		for (int i = 0; i < t->ifaces; i++)
-			if (strcmp(hwr_ghc_world.ifs[r][i].firmware_version, sw) != 0) { snprintf(why, sizeof(why), "radio %u interface %d firmware_version wrong", r, i); return 0; }
+	{
+		unsigned found = 0;
+		for (unsigned r = 0; r < nr; r++) {      /* radio r is the one whose RDK index is r (none: skipped) */
+			const hwr_ghc_radio_t *x = NULL;
+			for (unsigned k = 0; k < t->nrad; k++) if (hwr_ghc_world.hal.radio_info[k].rdk_radio_index == r) x = &hwr_ghc_world.hal.radio_info[k];
+			if (x == NULL) continue;
+			found++;
+			if (h->wifi_prop.radio_presence[r] != x->radio_presence) { snprintf(why, sizeof(why), "radio_presence[%u] wrong", r); return 0; }
+			if (memcmp(&h->wifi_prop.radiocap[r], &x->capab, sizeof(wifi_radio_capabilities_t)) != 0) { snprintf(why, sizeof(why), "radiocap[%u] wrong", r); return 0; }
+			for (int i = 0; i < t->ifaces; i++) {
+				const wifi_interface_info_t *ifc = x->interface_map->items[i];
+				if (strcmp(ifc->firmware_version, sw) != 0) { snprintf(why, sizeof(why), "radio %u interface %d firmware_version wrong", r, i); return 0; }
+			}
+		}
+		if (hwr_ghc_world.band_calls != found || hwr_ghc_world.adjust_calls != found) { snprintf(why, sizeof(why), "band / adjust called %u / %u times, expected %u", hwr_ghc_world.band_calls, hwr_ghc_world.adjust_calls, found); return 0; }
 	}
-	if (t->nrad <= (unsigned)MAX_NUM_RADIOS && (hwr_ghc_world.band_calls != t->nrad || hwr_ghc_world.adjust_calls != t->nrad)) { snprintf(why, sizeof(why), "band / adjust called %u / %u times, expected %u", hwr_ghc_world.band_calls, hwr_ghc_world.adjust_calls, t->nrad); return 0; }
 	return 1;
 }
 

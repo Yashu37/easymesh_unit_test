@@ -2,7 +2,8 @@
  * HANDLER: wifi_hal_getHalCapability (src/wifi_hal.c)
  *
  * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:129-378 (~/Desktop/G/rdk-wifi-hal), preprocessor branches included: with no platform macro defined the
- * generic branch is the one compiled (factory_nvram.data reads, eth0 AL mac).  This file holds the ORIGINAL code: no fix is applied.
+ * generic branch is the one compiled (factory_nvram.data reads, eth0 AL mac).  This file holds the ORIGINAL code with fixes 1-3 applied
+ * (start fix n / end fix n markers; the unfixed copy is the reproducer).
  * It fills the capability structure from shell command output (serial, model, image version, CM mac), the AL mac / colocated mode from EM_CFG_FILE and, per radio,
  * the radio presence, the interface firmware version and the radio capabilities.  The shell output is copied with strcpy into 64-byte fields and the radio loop
  * trusts g_wifi_hal.num_radios and get_radio_by_rdk_index().
@@ -149,6 +150,13 @@ INT wifi_hal_getHalCapability(wifi_hal_capability_t *hal)
     hal->version.minor = WIFI_HAL_MINOR;
 
     hal->wifi_prop.numRadios = g_wifi_hal.num_radios;
+    /* start fix 2 */
+    if (hal->wifi_prop.numRadios > MAX_NUM_RADIOS) {
+        wifi_hal_error_print("%s:%d: %u radios, only %d fit in the capability structure\n", __func__, __LINE__,
+            hal->wifi_prop.numRadios, MAX_NUM_RADIOS);
+        hal->wifi_prop.numRadios = MAX_NUM_RADIOS;
+    }
+    /* end fix 2 */
 
     /*
      * RDKB-32778: Determine max number of stations for given platform
@@ -183,7 +191,9 @@ INT wifi_hal_getHalCapability(wifi_hal_capability_t *hal)
     if (len != 0 && output[len - 1] == '\n') {
         output[len - 1] = '\0';
     }
-    strcpy(hal->wifi_prop.serialNo,output);
+    /* start fix 1 */
+    snprintf(hal->wifi_prop.serialNo, sizeof(hal->wifi_prop.serialNo), "%s", output);
+    /* end fix 1 */
 
     memset(output, '\0', sizeof(output));
 #if defined (_PLATFORM_BANANAPI_R4_)
@@ -198,8 +208,12 @@ INT wifi_hal_getHalCapability(wifi_hal_capability_t *hal)
     if (len != 0 && output[len - 1] == '\n') {
         output[len - 1] = '\0';
     }
-    strcpy(hal->wifi_prop.manufacturerModel,output);
-    strcpy(hal->wifi_prop.manufacturer,output);
+    /* start fix 1 */
+    snprintf(hal->wifi_prop.manufacturerModel, sizeof(hal->wifi_prop.manufacturerModel), "%s", output);
+    /* end fix 1 */
+    /* start fix 1 */
+    snprintf(hal->wifi_prop.manufacturer, sizeof(hal->wifi_prop.manufacturer), "%s", output);
+    /* end fix 1 */
 
     memset(output, '\0', sizeof(output));
     _syscmd("grep 'imagename:' /version.txt | cut -d ':' -f2 ", output, sizeof(output));
@@ -212,7 +226,9 @@ INT wifi_hal_getHalCapability(wifi_hal_capability_t *hal)
     if (len != 0 && output[len - 1] == '\n') {
         output[len - 1] = '\0';
     }
-    strcpy(hal->wifi_prop.software_version, output);
+    /* start fix 1 */
+    snprintf(hal->wifi_prop.software_version, sizeof(hal->wifi_prop.software_version), "%s", output);
+    /* end fix 1 */
 
     // CM mac
     memset(output, '\0', sizeof(output));
@@ -256,7 +272,9 @@ INT wifi_hal_getHalCapability(wifi_hal_capability_t *hal)
     if (len != 0 && output[len - 1] == '\n') {
         output[len - 1] = '\0';
     }
-    strcpy(hal->wifi_prop.serialNo,output);
+    /* start fix 1 */
+    snprintf(hal->wifi_prop.serialNo, sizeof(hal->wifi_prop.serialNo), "%s", output);
+    /* end fix 1 */
 
     memset(output, '\0', sizeof(output));
     _syscmd("grep -a 'Model' /proc/cpuinfo | cut -d ':' -f2", output, sizeof(output));
@@ -264,8 +282,12 @@ INT wifi_hal_getHalCapability(wifi_hal_capability_t *hal)
     if (len != 0 && output[len - 1] == '\n') {
         output[len - 1] = '\0';
     }
-    strcpy(hal->wifi_prop.manufacturerModel,output);
-    strcpy(hal->wifi_prop.manufacturer,output);
+    /* start fix 1 */
+    snprintf(hal->wifi_prop.manufacturerModel, sizeof(hal->wifi_prop.manufacturerModel), "%s", output);
+    /* end fix 1 */
+    /* start fix 1 */
+    snprintf(hal->wifi_prop.manufacturer, sizeof(hal->wifi_prop.manufacturer), "%s", output);
+    /* end fix 1 */
 
     memset(output, '\0', sizeof(output));
     _syscmd("vcgencmd version | grep 'version' | cut -d ' ' -f2", output, sizeof(output));
@@ -273,7 +295,9 @@ INT wifi_hal_getHalCapability(wifi_hal_capability_t *hal)
     if (len != 0 && output[len - 1] == '\n') {
         output[len - 1] = '\0';
     }
-    strcpy(hal->wifi_prop.software_version, output);
+    /* start fix 1 */
+    snprintf(hal->wifi_prop.software_version, sizeof(hal->wifi_prop.software_version), "%s", output);
+    /* end fix 1 */
 
     // CM mac
     memset(output, '\0', sizeof(output));
@@ -355,6 +379,12 @@ INT wifi_hal_getHalCapability(wifi_hal_capability_t *hal)
     for (i = 0; i < hal->wifi_prop.numRadios; i++) {
         radio_band = 0;
         radio = get_radio_by_rdk_index(i);
+        /* start fix 3 */
+        if (radio == NULL) {
+            wifi_hal_error_print("%s:%d: No radio with RDK radio index %d\n", __func__, __LINE__, i);
+            continue;
+        }
+        /* end fix 3 */
         wifi_hal_info_print("%s:%d:Enumerating interfaces on PHY radio index: %d, RDK radio index:%d\n", __func__, __LINE__, radio->index, i);
         hal->wifi_prop.radio_presence[i] = radio->radio_presence;
         interface = hash_map_get_first(radio->interface_map);
