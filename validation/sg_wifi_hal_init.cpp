@@ -2,7 +2,8 @@
  * HANDLER: wifi_hal_init (src/wifi_hal.c)
  *
  * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:411-581 (~/Desktop/G/rdk-wifi-hal), preprocessor branches included: with no platform macro defined the generic
- * branch is the one compiled (no CONFIG_WIFI_EMULATOR, no BANANA_PI, no CONFIG_HW_CAPABILITIES).  This file holds the ORIGINAL code: no fix is applied.
+ * branch is the one compiled (no CONFIG_WIFI_EMULATOR, no BANANA_PI, no CONFIG_HW_CAPABILITIES).  This file holds the ORIGINAL code with fix 1 applied
+ * (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).
  * It waits for the driver module, initialises the locks and the netlink socket map, brings up nl80211 / the primary interfaces / the radio info / eloop, starts the netlink
  * receive thread, registers the EAP methods, updates the hostapd interfaces of every present radio, the channel flags, and runs the platform radio-caps and flags hooks.
  *
@@ -181,6 +182,12 @@ INT wifi_hal_init()
 
     for (i = 0; i < g_wifi_hal.num_radios; i++) {
         radio = get_radio_by_rdk_index(i);
+        /* start fix 1 */
+        if (radio == NULL) {
+            wifi_hal_error_print("%s:%d: No radio with RDK radio index %d\n", __func__, __LINE__, i);
+            continue;
+        }
+        /* end fix 1 */
         if (radio->radio_presence == false) {
             wifi_hal_error_print("%s:%d: Skip the Radio %d .This is sleeping in ECO mode \n", __func__, __LINE__, radio->index);
             continue;
