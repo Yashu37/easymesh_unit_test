@@ -166,6 +166,7 @@ extern "C" void run_all_tests_sg_wifi_hal_setRadioTransmitPower(void);
 extern "C" void run_all_tests_sg_wifi_hal_sendDataFrame(void);
 extern "C" void run_all_tests_sg_wifi_hal_rnr_init(void);
 extern "C" void run_all_tests_sg_wifi_hal_startScan(void);
+extern "C" void run_all_tests_sg_wifi_hal_getNeighboringWiFiStatus(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -711,7 +712,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_rnr_init();
 
 	// src: wifi_hal_startScan (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_startScan();
+//	run_all_tests_sg_wifi_hal_startScan();
+
+	// src: wifi_hal_getNeighboringWiFiStatus (+ _test) (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_getNeighboringWiFiStatus();
 
 	return 0;
 }
