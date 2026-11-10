@@ -152,6 +152,7 @@ extern "C" void run_all_tests_sg_wifi_hal_disconnect(void);
 extern "C" void run_all_tests_sg_wifi_hal_findNetworks(void);
 extern "C" void run_all_tests_sg_wifi_hal_createVAP(void);
 extern "C" void run_all_tests_sg_wifi_hal_kickAssociatedDevice(void);
+extern "C" void run_all_tests_sg_wifi_hal_getRadioVapInfoMap(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -655,7 +656,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_createVAP();
 
 	// src: wifi_hal_kickAssociatedDevice (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_kickAssociatedDevice();
+//	run_all_tests_sg_wifi_hal_kickAssociatedDevice();
+
+	// src: wifi_hal_getRadioVapInfoMap (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_getRadioVapInfoMap();
 
 	return 0;
 }
