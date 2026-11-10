@@ -129,6 +129,7 @@ extern "C" void run_all_tests_em_wifi_wnm_send_bss_tm_req(void);
 extern "C" void run_all_tests_rp_wifi_nvram_defaultRead(void);
 extern "C" void run_all_tests_xl_wifi_setApRetrylimit(void);
 extern "C" void run_all_tests_sg_wifi_hal_getInterfaceMap(void);
+extern "C" void run_all_tests_sg_wifi_hal_getHalCapability(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -563,7 +564,10 @@ int main() {
 //	run_all_tests_xl_wifi_setApRetrylimit();
 
 	// src: wifi_hal_getInterfaceMap (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_getInterfaceMap();
+//	run_all_tests_sg_wifi_hal_getInterfaceMap();
+
+	// src: wifi_hal_getHalCapability (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_getHalCapability();
 
 	return 0;
 }
