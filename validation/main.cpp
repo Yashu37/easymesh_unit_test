@@ -160,6 +160,7 @@ extern "C" void run_all_tests_sg_wifi_hal_delHostapdDenyAclDevice(void);
 extern "C" void run_all_tests_sg_wifi_hal_addApAclDevice(void);
 extern "C" void run_all_tests_sg_wifi_hal_delApAclDevice(void);
 extern "C" void run_all_tests_sg_wifi_hal_addApAclDeviceChr(void);
+extern "C" void run_all_tests_sg_wifi_hal_delApAclDevices(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -687,7 +688,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_delApAclDevice();
 
 	// src: wifi_hal_addApAclDevice, CHAR * variant (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_addApAclDeviceChr();
+//	run_all_tests_sg_wifi_hal_addApAclDeviceChr();
+
+	// src: wifi_hal_delApAclDevices (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_delApAclDevices();
 
 	return 0;
 }
