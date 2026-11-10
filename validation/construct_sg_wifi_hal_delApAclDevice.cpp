@@ -5,7 +5,7 @@
  * NULL; interface->acl_map NULL; 0 / 1 / 3 / 20 entries in the map; the MAC the first / second / third entry, valid but not listed, the upper-case form of a listed entry, a short string ("ab:cd") listed and
  * not listed, the empty string; nl80211_set_acl succeeding / failing (-1, 5); malloc failing on the rebuild of the entry; 2 / 3 / 4 interfaces with the addressed one first / second / third / last.  The MAC
  * string is an exact heap copy.  Expected (CORRECT behaviour): no interface / STA VAP / MAC NULL -> -1; acl_map NULL or MAC not a key -> 0 with the map untouched and nl80211_set_acl not called; a listed MAC ->
- * the entry removed (order of the others kept), nl80211_set_acl called once, 0; when it fails the entry is put back (key, mac_addr_str, MAC bytes) and the result is -1; no read past the MAC string, no NULL use
+ * the entry removed (order of the others kept), nl80211_set_acl called once, 0; when it fails the entry is put back (key, mac_addr_str, MAC bytes) and the result is -1 (when the rebuild's malloc fails it cannot be put back: it stays removed, -1); no read past the MAC string, no NULL use
  * of a failed malloc.  Rows with last = 1 break the original: they run LAST.
  */
 #include "hwr_wdl.h"

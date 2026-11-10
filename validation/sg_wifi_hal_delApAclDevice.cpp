@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_delApAclDevice (src/wifi_hal.c, CHAR * variant)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:2269-2318 (~/Desktop/G/rdk-wifi-hal), the variant compiled when WIFI_HAL_VERSION_3_PHASE2 is NOT defined.  The WIFI_HAL_VERSION_3_PHASE2 variant
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-3): src/wifi_hal.c:2269-2318 (~/Desktop/G/rdk-wifi-hal), the variant compiled when WIFI_HAL_VERSION_3_PHASE2 is NOT defined.  The WIFI_HAL_VERSION_3_PHASE2 variant
  * (src/wifi_hal.c:2214-2267) does not compile: it calls to_mac_str(sta_mac, ...) and sta_mac is not declared in that function (the mac_address_t parameter is DeviceMacAddress).  This file holds the ORIGINAL
  * code (no fixes).  It looks the interface up by vap index, requires an AP VAP, returns OK when interface->acl_map is NULL or the MAC string is not a key of the map, otherwise removes the entry, frees it
  * and calls nl80211_set_acl(); when that fails the entry is rebuilt (malloc not checked, 18 bytes copied from DeviceMacAddress, MAC bytes parsed from it) and put back, result -1.
@@ -85,6 +85,12 @@ INT wifi_hal_delApAclDevice(INT apIndex, CHAR *DeviceMacAddress)
         wifi_hal_error_print("%s:%d:interface for vap index:%d not found\n", __func__, __LINE__, apIndex);
         return RETURN_ERR;
     }
+    /* ---------- start fix 1: a NULL DeviceMacAddress was passed to hash_map_get() (strncmp on NULL). */
+    if (DeviceMacAddress == NULL) {
+        wifi_hal_error_print("%s:%d: NULL MAC address for ap index %d\n", __func__, __LINE__, apIndex);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
     vap = &interface->vap_info;
     
     wifi_hal_info_print("%s:%d: Interface: %s MAC: %s\n", __func__, __LINE__, interface->name, DeviceMacAddress);
@@ -113,8 +119,16 @@ INT wifi_hal_delApAclDevice(INT apIndex, CHAR *DeviceMacAddress)
 
     if (nl80211_set_acl(interface) != 0) {
         acl_map = (acl_map_t *)malloc(sizeof(acl_map_t));
+        /* ---------- start fix 2: the malloc result was used without a check. */
+        if (acl_map == NULL) {
+            wifi_hal_error_print("%s:%d: memory allocation failure for interface:%s\n", __func__, __LINE__, interface->name);
+            return -1;
+        }
+        /* ---------- end fix 2 */
         wifi_hal_error_print("%s:%d MAC %s nl80211_set_acl failure for interface:%s\n", __func__, __LINE__, DeviceMacAddress, interface->name);
-        memcpy(acl_map->mac_addr_str, DeviceMacAddress, sizeof(mac_addr_str_t));
+        /* ---------- start fix 3: memcpy always copied sizeof(mac_addr_str_t) = 18 bytes, reading past a shorter string. */
+        snprintf(acl_map->mac_addr_str, sizeof(acl_map->mac_addr_str), "%s", DeviceMacAddress);
+        /* ---------- end fix 3 */
         to_mac_bytes(acl_map->mac_addr_str, acl_map->mac_addr);
 
         hash_map_put(interface->acl_map, strdup(DeviceMacAddress), acl_map);

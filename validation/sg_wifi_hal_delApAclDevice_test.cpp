@@ -82,7 +82,7 @@ static int check(const hwr_wdl_case_t *t)
 	if (w->set_acl_calls != (tg >= 0 ? 1 : 0)) { snprintf(why, sizeof(why), "nl80211_set_acl ran %d times, expected %d", w->set_acl_calls, tg >= 0 ? 1 : 0); return 0; }
 	if (!stops_early(t) && !t->acl_map_null) {
 		hash_map_t *mp = addressed(t)->acl_map;
-		int restored = tg >= 0 && t->set_acl_ret != 0;
+		int restored = tg >= 0 && t->set_acl_ret != 0 && !t->malloc_fail;      /* with malloc failing the entry cannot be put back: it stays removed, the result is -1 */
 		int wn = bef_n - ((tg >= 0 && !restored) ? 1 : 0);
 		if (mp->n != wn) { snprintf(why, sizeof(why), "ACL map has %d entries, expected %d", mp->n, wn); return 0; }
 		if (!restored) {
