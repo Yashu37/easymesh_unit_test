@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_getRadioVapInfoMap (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:1843-1891 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It validates the radio index and map, looks the radio up,
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:1843-1891 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It validates the radio index and map, looks the radio up,
  * and for every interface of the radio's interface map with a non-negative vap_index copies the interface's vap info into map->vap_array[itr] (itr counted from 0), stores the interface MAC as the sta mac
  * (names sim_sta* / mesh_sta*) or as the bssid (every other name) and finally sets map->num_vaps = itr.  itr is never compared with the size of map->vap_array.
  *
@@ -91,6 +91,14 @@ INT wifi_hal_getRadioVapInfoMap(wifi_radio_index_t index, wifi_vap_info_map_t *m
         // therefore check for interface vap_index
         // and don't add radio interfaces to vap map
         if ((int)interface->vap_info.vap_index >= 0){
+            /* ---------- start fix 1: itr was never compared with the vap_array size, so a radio with more than
+             * MAX_NUM_VAP_PER_RADIO VAP interfaces was written past the end of the map. */
+            if (itr >= (sizeof(map->vap_array) / sizeof(map->vap_array[0]))) {
+                wifi_hal_error_print("%s:%d: radio index:%d has more than %u vaps, the rest are not copied\n", __func__, __LINE__,
+                    index, (unsigned int)(sizeof(map->vap_array) / sizeof(map->vap_array[0])));
+                break;
+            }
+            /* ---------- end fix 1 */
             memcpy(&map->vap_array[itr], &interface->vap_info, sizeof(wifi_vap_info_t));
             if (strncmp((char *)map->vap_array[itr].vap_name, "sim_sta", strlen("sim_sta")) == 0) {
                 memcpy(map->vap_array[itr].u.sta_info.mac, interface->mac, sizeof(map->vap_array[itr].u.sta_info.mac));
