@@ -143,6 +143,7 @@ extern "C" void run_all_tests_sg_wifi_hal_get_default_radius_key(void);
 extern "C" void run_all_tests_sg_wifi_hal_get_default_wps_pin(void);
 extern "C" void run_all_tests_sg_wifi_hal_wps_event(void);
 extern "C" void run_all_tests_sg_wifi_hal_hostApGetErouter0Mac(void);
+extern "C" void run_all_tests_sg_wifi_hal_send_mgmt_frame_response(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -619,7 +620,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_wps_event();
 
 	// src: wifi_hal_hostApGetErouter0Mac (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_hostApGetErouter0Mac();
+//	run_all_tests_sg_wifi_hal_hostApGetErouter0Mac();
+
+	// src: wifi_hal_send_mgmt_frame_response (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_send_mgmt_frame_response();
 
 	return 0;
 }
