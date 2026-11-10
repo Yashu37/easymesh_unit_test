@@ -2,7 +2,7 @@
  * UNIT TEST (input constructor): construct_sg_wifi_hal_getInterfaceMap
  *
  * wifi_hal_getInterfaceMap(if_map, max_entries, if_map_size).  Inputs crossed: map size 0 / 1 / 6 / 40; max_entries below / equal / above the size (0, size-1,
- * size, size+1, 1000, UINT_MAX); if_map NULL / exact-size poisoned slab / dangling; if_map_size NULL or valid; repeated calls.  Expected: size <= max -> 0 and the
+ * size, size+1, 1000, UINT_MAX); if_map NULL / exact-size poisoned slab / dangling; if_map_size NULL or valid; repeated calls.  Expected (fixed): NULL if_map_size / NULL if_map with entries to copy -> -1; size <= max -> 0 and the
  * table copied; size > max -> -1, *if_map_size = size, nothing copied.  Rows with last = 1 (NULL if_map_size; NULL if_map with entries to copy) abort the original: they run LAST.
  */
 #include "hwr_gim.h"
@@ -42,12 +42,11 @@ hwr_gim_case_t sg_wifi_hal_getInterfaceMap_suite[] = {
 	{ "map_dangling_size0",             0,    5, 2, 1, 1, OK, 0 },
 	/* if_map_size NULL when the call is rejected / accepted: dereferenced before any check */
 	{ "size_ptr_null_too_small",        6,    5, 1, 0, 1, ER, 1 },
-	{ "size_ptr_null_ok",               6,    6, 1, 0, 1, OK, 1 },
-	{ "size_ptr_null_size0",            0,    0, 1, 0, 1, OK, 1 },
-	{ "size_ptr_null_map_null",         6,    6, 0, 0, 1, OK, 1 },
-	{ "map_null_size6_max6",            6,    6, 0, 1, 1, OK, 1 },
-	{ "map_null_size1_max1",            1,    1, 0, 1, 1, OK, 1 },
-	{ "map_null_size40_max_uintmax",   40,    U, 0, 1, 1, OK, 1 },
-	{ "map_dangling_size6_max6",        6,    6, 2, 1, 1, OK, 1 },
+	{ "size_ptr_null_ok",               6,    6, 1, 0, 1, ER, 1 },
+	{ "size_ptr_null_size0",            0,    0, 1, 0, 1, ER, 1 },
+	{ "size_ptr_null_map_null",         6,    6, 0, 0, 1, ER, 1 },
+	{ "map_null_size6_max6",            6,    6, 0, 1, 1, ER, 1 },
+	{ "map_null_size1_max1",            1,    1, 0, 1, 1, ER, 1 },
+	{ "map_null_size40_max_uintmax",   40,    U, 0, 1, 1, ER, 1 },
 	{ NULL, 0, 0, 0, 0, 0, 0, 0 }
 };

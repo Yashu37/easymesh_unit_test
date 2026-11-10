@@ -1,7 +1,8 @@
 /*
  * HANDLER: wifi_hal_getInterfaceMap (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:116-127 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code: no fix is applied.
+ * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:116-127 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fixes 1-2 applied
+ * (start fix n / end fix n markers; the unfixed copy is the reproducer).
  * It asks get_sizeof_interfaces_index_map() for the number of entries, rejects the call when max_entries is smaller, otherwise get_wifi_interface_info_map()
  * copies that many entries into if_map.  if_map and if_map_size are never checked: if_map_size NULL is dereferenced at once, if_map NULL is passed to memcpy.
  *
@@ -33,12 +34,24 @@ void get_wifi_interface_info_map(wifi_interface_name_idex_map_t *interface_map)
 INT wifi_hal_getInterfaceMap(wifi_interface_name_idex_map_t *if_map, unsigned int max_entries,
     unsigned int *if_map_size)
 {
+    /* start fix 1 */
+    if (if_map_size == NULL) {
+        wifi_hal_error_print("%s:%d: NULL if_map_size\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* end fix 1 */
     *if_map_size = get_sizeof_interfaces_index_map();
     if (max_entries < *if_map_size) {
         wifi_hal_error_print("%s:%d: Invalid buffer size %d, expected %d\n", __func__, __LINE__,
             max_entries, *if_map_size);
         return RETURN_ERR;
     }
+    /* start fix 2 */
+    if (if_map == NULL && *if_map_size != 0) {
+        wifi_hal_error_print("%s:%d: NULL if_map\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* end fix 2 */
     get_wifi_interface_info_map(if_map);
     return RETURN_OK;
 }

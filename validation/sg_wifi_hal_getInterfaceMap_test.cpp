@@ -48,8 +48,9 @@ static int check(const hwr_gim_case_t *t, int ret)
 	if (ret != t->expected_ret) { snprintf(why, sizeof(why), "returned %d, expected %d", ret, t->expected_ret); return 0; }
 	if (t->size_mode && out_size != t->size) { snprintf(why, sizeof(why), "*if_map_size = %u, expected %u", out_size, t->size); return 0; }
 	int err = t->expected_ret != 0;
+	int want_log = t->size_mode && t->max_entries < t->size;      /* the "Invalid buffer size" log belongs to the too-small path only */
 	int has = strstr(hwr_log_buf, "Invalid buffer size") != NULL;
-	if (err != has) { snprintf(why, sizeof(why), "error log %s, expected %s", has ? "present" : "missing", err ? "present" : "absent"); return 0; }
+	if (want_log != has) { snprintf(why, sizeof(why), "error log %s, expected %s", has ? "present" : "missing", want_log ? "present" : "absent"); return 0; }
 	if (t->map_mode == 1) {
 		for (size_t k = 0; k < sizeof(slab); k++) {
 			int in_map = k >= OFFE * ES && k < (OFFE + t->size) * ES;
