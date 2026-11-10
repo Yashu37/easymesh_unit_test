@@ -1,8 +1,7 @@
 /*
  * HANDLER: wifi_hal_sendDataFrame (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:2400-2458 (~/Desktop/G/rdk-wifi-hal) together with its three file-scope arrays (src/wifi_hal.c:105-107).  This file holds the ORIGINAL code (no
- * fixes).  It builds an Ethernet frame (source MAC of the VAP, destination dmac, ether type, data) in the 1600-byte stack buffer t_data, opens (once per vap_id) an AF_PACKET raw socket bound to the interface of
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-4): src/wifi_hal.c:2400-2458 (~/Desktop/G/rdk-wifi-hal) together with its three file-scope arrays (src/wifi_hal.c:105-107).  This file holds the ORIGINAL code with fixes 1-4 applied (start fix n / end fix n markers; the unfixed copy is the reproducer).  It builds an Ethernet frame (source MAC of the VAP, destination dmac, ether type, data) in the 1600-byte stack buffer t_data, opens (once per vap_id) an AF_PACKET raw socket bound to the interface of
  * the VAP and sends the frame with sendto().  The length check is t_len = data_len + sizeof(struct ether_header) compared with sizeof(t_data) (unsigned), vap_id indexes the arrays unchecked, dmac and
  * data_buff are not checked.
  *
@@ -76,6 +75,27 @@ INT wifi_hal_sendDataFrame( int vap_id, unsigned char *dmac, unsigned char *data
     int t_len=0;
     wifi_interface_info_t *interface = NULL;
     wifi_hal_dbg_print("Entering for %s:%d:for : %d\n", __func__, __LINE__, vap_id);
+
+    /* ---------- start fix 1: a negative data_len (-14..-1) passed the unsigned length check below and reached memcpy. */
+    if (data_len < 0) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
+    /* ---------- start fix 2: vap_id indexed g_fd_arr / g_IfIdx_arr / g_vapSmac (MAX_VAP entries) unchecked. */
+    if (vap_id < 0 || vap_id >= MAX_VAP) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
+    /* ---------- start fix 3: a NULL dmac was dereferenced by memcpy. */
+    if (dmac == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 3 */
+    /* ---------- start fix 4: a NULL data_buff with data_len > 0 was dereferenced by memcpy. */
+    if (data_buff == NULL && data_len > 0) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 4 */
 
     if ((t_len = (data_len + sizeof(struct ether_header))) > sizeof(t_data))
          return RETURN_ERR;
