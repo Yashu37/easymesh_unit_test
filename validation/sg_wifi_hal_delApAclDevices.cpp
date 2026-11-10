@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_delApAclDevices (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:2321-2363 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It looks the interface up by vap index, requires an AP VAP and
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:2321-2363 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It looks the interface up by vap index, requires an AP VAP and
  * a non-NULL acl_map (NULL -> error, an empty map -> OK), then walks the map: for every entry it copies the 18 bytes of acl_map->mac_addr_str into the stack array mac_str, advances the iterator, removes the
  * entry by the key mac_str (hash_map_remove compares with strncmp(.., 100), so mac_str must be a terminated string) and frees it; finally it returns nl80211_set_acl().
  *
@@ -70,7 +70,10 @@ INT wifi_hal_delApAclDevices(INT apIndex)
     wifi_interface_info_t *interface = NULL;
     wifi_vap_info_t *vap;
     acl_map_t *acl_map, *temp_acl_map;
-    mac_addr_str_t mac_str;
+    /* ---------- start fix 1: mac_str held exactly the 18 bytes of mac_addr_str with no terminator, so hash_map_remove()
+     * (strncmp on the key) read past it for an entry whose key has 18 or more characters. One more byte, terminated. */
+    char mac_str[sizeof(mac_addr_str_t) + 1];
+    /* ---------- end fix 1 */
 
     interface = get_interface_by_vap_index(apIndex);
     if(!interface){
@@ -99,6 +102,7 @@ INT wifi_hal_delApAclDevices(INT apIndex)
 
     while (acl_map != NULL) {
         memcpy(&mac_str, &acl_map->mac_addr_str, sizeof(mac_addr_str_t));
+        mac_str[sizeof(mac_addr_str_t)] = '\0';      /* fix 1 */
         acl_map = hash_map_get_next(interface->acl_map, acl_map);
         temp_acl_map = hash_map_remove(interface->acl_map, mac_str);
         if (temp_acl_map != NULL) {
