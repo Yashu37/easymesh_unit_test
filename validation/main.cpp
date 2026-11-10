@@ -133,6 +133,7 @@ extern "C" void run_all_tests_sg_wifi_hal_getHalCapability(void);
 extern "C" void run_all_tests_sg_wifi_hal_setApWpsButtonPush(void);
 extern "C" void run_all_tests_sg_wifi_hal_setApWpsCancel(void);
 extern "C" void run_all_tests_sg_wifi_hal_setApWpsPin(void);
+extern "C" void run_all_tests_sg_wifi_hal_init(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -579,7 +580,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_setApWpsCancel();
 
 	// src: wifi_hal_setApWpsPin (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_setApWpsPin();
+//	run_all_tests_sg_wifi_hal_setApWpsPin();
+
+	// src: wifi_hal_init (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_init();
 
 	return 0;
 }
