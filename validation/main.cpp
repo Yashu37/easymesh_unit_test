@@ -140,6 +140,7 @@ extern "C" void run_all_tests_sg_wifi_hal_get_default_ssid(void);
 extern "C" void run_all_tests_sg_wifi_hal_get_default_country_code(void);
 extern "C" void run_all_tests_sg_wifi_hal_get_default_keypassphrase(void);
 extern "C" void run_all_tests_sg_wifi_hal_get_default_radius_key(void);
+extern "C" void run_all_tests_sg_wifi_hal_get_default_wps_pin(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -607,7 +608,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_get_default_keypassphrase();
 
 	// src: wifi_hal_get_default_radius_key (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_get_default_radius_key();
+//	run_all_tests_sg_wifi_hal_get_default_radius_key();
+
+	// src: wifi_hal_get_default_wps_pin (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_get_default_wps_pin();
 
 	return 0;
 }
