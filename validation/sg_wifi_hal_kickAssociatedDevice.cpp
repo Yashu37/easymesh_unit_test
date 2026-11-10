@@ -1,8 +1,8 @@
 /*
  * HANDLER: wifi_hal_kickAssociatedDevice (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:1784-1841 (~/Desktop/G/rdk-wifi-hal), compiled without BANANA_PI_PORT / KERNEL_6_6 (the plain wifi_drv_sta_disassoc call).  This file holds the
- * ORIGINAL code (no fixes).  It looks the interface up by ap_index, reads the hostapd own_addr and station list from interface->u.ap.hapd under the hapd lock, and disassociates every station of the list
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-2): src/wifi_hal.c:1784-1841 (~/Desktop/G/rdk-wifi-hal), compiled without BANANA_PI_PORT / KERNEL_6_6 (the plain wifi_drv_sta_disassoc call).  This file holds the
+ * ORIGINAL code with fixes 1-2 applied (start fix n / end fix n markers; the unfixed copy is the reproducer).  It looks the interface up by ap_index, reads the hostapd own_addr and station list from interface->u.ap.hapd under the hapd lock, and disassociates every station of the list
  * when mac is the broadcast address, otherwise just mac, with wifi_drv_sta_disassoc(interface, own_addr, addr, WLAN_REASON_UNSPECIFIED).  mac is dereferenced by memcmp without a NULL check and the
  * interface is read through the AP member of its union whatever its mode (a STA VAP holds wpa_supplicant data there).
  *
@@ -46,11 +46,24 @@ INT wifi_hal_kickAssociatedDevice(INT ap_index, mac_address_t mac)
 {
     wifi_interface_info_t *interface;
 
+    /* ---------- start fix 1: mac was dereferenced by memcmp below without a NULL check. */
+    if (mac == NULL) {
+        wifi_hal_error_print("%s:%d: NULL mac pointer \n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
     interface  = get_interface_by_vap_index(ap_index);
     if (interface ==  NULL) {
         wifi_hal_error_print("%s:%d: NULL Interface pointer \n", __func__, __LINE__);
         return RETURN_ERR;
     }
+    /* ---------- start fix 2: the hostapd data below lives in the AP member of the interface union; a STA VAP holds
+     * wpa_supplicant data there, so own_addr / sta_list were garbage. */
+    if (interface->vap_info.vap_mode != wifi_vap_mode_ap) {
+        wifi_hal_error_print("%s:%d: vap index:%d is not an AP vap \n", __func__, __LINE__, ap_index);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
     u8 own_addr[ETH_ALEN];
     mac_address_t bcastmac= {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     pthread_mutex_lock(&g_wifi_hal.hapd_lock);
