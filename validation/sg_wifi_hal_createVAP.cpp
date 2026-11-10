@@ -1,8 +1,8 @@
 /*
  * HANDLER: wifi_hal_createVAP (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:1394-1782 (~/Desktop/G/rdk-wifi-hal), generic Linux build (no CONFIG_WIFI_EMULATOR, CONFIG_WIFI_EMULATOR_EXT_AGENT, BANANA_PI_PORT,
- * CONFIG_GENERIC_MLO, VNTXER5_PORT, TARGET_GEMINI7_2, NL80211_ACL, EASY_MESH_NODE or BEACON_PROT).  This file holds the ORIGINAL code (no fixes).  It validates the radio index and map, runs the platform
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:1394-1782 (~/Desktop/G/rdk-wifi-hal), generic Linux build (no CONFIG_WIFI_EMULATOR, CONFIG_WIFI_EMULATOR_EXT_AGENT, BANANA_PI_PORT,
+ * CONFIG_GENERIC_MLO, VNTXER5_PORT, TARGET_GEMINI7_2, NL80211_ACL, EASY_MESH_NODE or BEACON_PROT).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It validates the radio index and map, runs the platform
  * pre-create hook, then for every vap of the map (map->num_vaps entries of map->vap_array): validates an AP vap, finds or creates its interface, copies the vap into it, sets the mode / bridge / hostapd
  * parameters / MAC filter, starts the BSS when the radio is configured and enabled; finally it runs the platform post-create hook and returns the last start_bss / enable result.
  *
@@ -159,6 +159,15 @@ INT wifi_hal_createVAP(wifi_radio_index_t index, wifi_vap_info_map_t *map)
 
     RADIO_INDEX_ASSERT(index);
     NULL_PTR_ASSERT(map);
+
+    /* ---------- start fix 1: map->num_vaps was not checked against the vap_array size, so the loop below read (and
+     * wrote the bssid / mac of) vap_array[MAX_NUM_VAP_PER_RADIO ...] beyond the map. */
+    if (map->num_vaps > (sizeof(map->vap_array) / sizeof(map->vap_array[0]))) {
+        wifi_hal_error_print("%s:%d: radio index:%d num_vaps:%u exceeds the vap array size:%u\n", __func__, __LINE__,
+            index, map->num_vaps, (unsigned int)(sizeof(map->vap_array) / sizeof(map->vap_array[0])));
+        return WIFI_HAL_INVALID_ARGUMENTS;
+    }
+    /* ---------- end fix 1 */
 
     radio = get_radio_by_rdk_index(index);
     if (radio == NULL) {
