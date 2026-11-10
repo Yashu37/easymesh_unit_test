@@ -1,8 +1,7 @@
 /*
  * HANDLER: wifi_hal_startScan (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:2488-2612 (~/Desktop/G/rdk-wifi-hal), generic build (no _PLATFORM_BANANAPI_R4_, FEATURE_SINGLE_PHY not defined).  This file holds the ORIGINAL
- * code (no fixes).  It validates index / dwell_time, finds the STA interface of the radio, turns the requested channels (the radio's own channel for ONCHAN, chan_list[0..num-1] for OFFCHAN) into a
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:2488-2612 (~/Desktop/G/rdk-wifi-hal), generic build (no _PLATFORM_BANANAPI_R4_, FEATURE_SINGLE_PHY not defined).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It validates index / dwell_time, finds the STA interface of the radio, turns the requested channels (the radio's own channel for ONCHAN, chan_list[0..num-1] for OFFCHAN) into a
  * frequency list (freq_list[MAX_FREQ_LIST_SIZE]) while building the log string chan_list_str[512], flushes the interface's scan results, sets radio->rnr_enabled when a radio is 6 GHz and starts the scan.
  *
  * Scaffolding only: get_radio_by_rdk_index / hash_map_* / get_coutry_str_from_code / get_op_class_from_radio_params / ieee80211_chan_to_freq / nl80211_start_scan are stubs over the runner's world;
@@ -210,7 +209,11 @@ INT wifi_hal_startScan(wifi_radio_index_t index, wifi_neighborScanMode_t scan_mo
             continue;
         }
         sprintf(tmp_str, "%d ", freq_list[freq_num]);
-        strcat(chan_list_str, tmp_str);
+        /* ---------- start fix 1: chan_list_str[512] overflowed with 103+ usable channels (5 chars each); the string is only logged, so stop appending when it is full. */
+        if (strlen(chan_list_str) + strlen(tmp_str) < sizeof(chan_list_str)) {
+            strcat(chan_list_str, tmp_str);
+        }
+        /* ---------- end fix 1 */
 
 	freq_num++;
     }
