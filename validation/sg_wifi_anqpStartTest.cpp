@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_anqpStartTest (src/wifi_hal_anqp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_anqp.c:820-889 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It opens a UDP socket (RETURN_ERR when that fails),
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal_anqp.c:820-889 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer; the apIndex %d wrong-behaviour failures are not fixed).  It opens a UDP socket (RETURN_ERR when that fails),
  * builds the 8-byte test signature plus four TLVs (ANQP command, vap name "ath<apIndex>" as 16 bytes, station mac, 42 bytes of canned ANQP query data) with set_tlv, sends the 92 bytes to
  * 127.0.0.1:8889, closes the socket and returns RETURN_OK (RETURN_ERR, after closing, when sendto fails).
  *
@@ -84,6 +84,14 @@ int wifi_anqpStartTest(unsigned int apIndex, mac_address_t sta)
     wifi_test_command_id_t cmd = wifi_test_command_id_anqp;
 
     printf("%s:%d: Enter\n", __func__, __LINE__);
+
+    /* ---------- start fix 1: sta was passed to set_tlv (memcpy of 6 bytes) without a NULL check. */
+    if (sta == NULL)
+    {
+        wifi_anqp_dbg_print(1, "%s:%d: NULL sta\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
     {
