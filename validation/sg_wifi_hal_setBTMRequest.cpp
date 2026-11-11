@@ -1,8 +1,8 @@
 /*
  * HANDLER: wifi_hal_setBTMRequest (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:3718-3898 (~/Desktop/G/rdk-wifi-hal) together with the static helper build_candidates_list and its constants (NEI_LEN, NEIREP_LEN, MAX_TOKENS).
- * This file holds the ORIGINAL code (no fixes).  It reads request->requestMode, checks peerMac / request, finds the AP interface, looks the station up under g_wifi_hal.hapd_lock, builds the BSS termination
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-2): src/wifi_hal.c:3718-3898 (~/Desktop/G/rdk-wifi-hal) together with the static helper build_candidates_list and its constants (NEI_LEN, NEIREP_LEN, MAX_TOKENS).
+ * This file holds the ORIGINAL code with fixes 1-2 applied (start fix n / end fix n markers; the unfixed copy is the reproducer).  It reads request->requestMode, checks peerMac / request, finds the AP interface, looks the station up under g_wifi_hal.hapd_lock, builds the BSS termination
  * sub-element, the candidate list (build_candidates_list into a malloc'ed NEIREP_LEN buffer) and the URL copy (malloc(request->urlLen + 1) + wifi_strncpy) and sends the BSS Transition Management Request.
  *
  * Scaffolding only: get_interface_by_vap_index / ap_get_sta / wifi_wnm_send_bss_tm_req are recording stubs over the runner's world; wifi_strncpy is the real function (wifi_hal_nl80211_utils.c:5019-5041);
@@ -176,7 +176,9 @@ static int build_candidates_list(const wifi_BTMRequest_t *request, u8 *nei_rep, 
 INT wifi_hal_setBTMRequest(UINT apIndex, mac_address_t peerMac, wifi_BTMRequest_t *request)
 {
     wifi_interface_info_t *interface;
-    u8 requestMode = request->requestMode;
+    /* ---------- start fix 1: request->requestMode was read here, before the NULL check on request below. */
+    u8 requestMode = 0;
+    /* ---------- end fix 1 */
     struct sta_info *sta = NULL;
     u8 bss_term_dur[12] = {0};
     char *url = NULL;
@@ -192,6 +194,10 @@ INT wifi_hal_setBTMRequest(UINT apIndex, mac_address_t peerMac, wifi_BTMRequest_
     if (_IS_INVALID_ARG(request == NULL)) {
         return WIFI_HAL_INVALID_ARGUMENTS;
     }
+
+    /* ---------- start fix 1 (cont.): read requestMode after the argument checks */
+    requestMode = request->requestMode;
+    /* ---------- end fix 1 (cont.) */
 
     interface = get_interface_by_vap_index(apIndex);
     if (interface == NULL) {
@@ -258,12 +264,18 @@ INT wifi_hal_setBTMRequest(UINT apIndex, mac_address_t peerMac, wifi_BTMRequest_
 
     /// - url:
     if (requestMode & WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT) {
-        url = (char*) malloc(request->urlLen + 1);
+        /* ---------- start fix 2: urlLen is a caller-supplied USHORT; wifi_strncpy() scanned urlLen + 1 bytes of request->url[MAX_URL_LEN] (over-read when there is no NUL). */
+        size_t url_len = strnlen(request->url, MAX_URL_LEN);
+        if (url_len > request->urlLen) {
+            url_len = request->urlLen;
+        }
+        /* ---------- end fix 2 */
+        url = (char*) malloc(url_len + 1);
         if (url == NULL) {
             wifi_hal_error_print("%s:%d: [BTM] BTM request: Cannot allocate memory\n", __func__, __LINE__);
             goto exit;
         }
-        wifi_strncpy(url, request->urlLen + 1, request->url, request->urlLen);
+        wifi_strncpy(url, url_len + 1, request->url, url_len);
         wifi_hal_dbg_print("%s:%d: [BTM]  - WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT, url:'%s'\n", __func__, __LINE__, url);
     }
 
