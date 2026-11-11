@@ -4,7 +4,7 @@
  * test_sg_wifi_anqp_dbg_print() POISONS what the function must not touch, calls the handler and unpoisons: the world's unrelated members, the guard slab and the log slot tail
  * [HWR_LOG_USE, HWR_LOG_SZ).  The format ("%s") and the message are exact heap blocks.  The 4096-byte local buffer lives on the stack inside the function, so its overflow is reported by ASan itself.  The
  * output goes to a runner temp file; run_all_tests compares it with a reference model of the CORRECT behaviour (see the construct file), including the model of the function-static FILE * (opened once, only
- * while access is OK): access / open / time calls, exact bytes appended (truncated to 4095 characters), nothing appended when the flag file is missing or the open fails, guard slab unchanged.
+ * while access is OK): access / open / time calls (not prescribed for a NULL format), exact bytes appended (truncated to 4095 characters), nothing appended when the flag file is missing or the open fails, guard slab unchanged.
  * Rows with last = 1 break the original: they run LAST.
  */
 #include <stdio.h>
@@ -58,7 +58,7 @@ static int check(const hwr_wdp_case_t *t)
 		expect = std::string(HWR_WDP_TS) + " " + m;
 		if (expect.size() > 4095) expect.resize(4095);
 	}
-	if (w->access_calls != 1) { snprintf(why, sizeof(why), "access ran %d times, expected 1", w->access_calls); return 0; }
+	if (t->msg_len >= 0 && w->access_calls != 1) { snprintf(why, sizeof(why), "access ran %d times, expected 1", w->access_calls); return 0; }
 	if (want_open_call >= 0 && w->fopen_calls != want_open_call) { snprintf(why, sizeof(why), "fopen ran %d times, expected %d", w->fopen_calls, want_open_call); return 0; }
 	fflush(w->file);
 	fstat(fileno(w->file), &st);

@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_anqp_dbg_print (src/wifi_hal_anqp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_anqp.c:69-103 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  When /nvram/wifiAnqpDbg is readable it builds
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1 and fix 2): src/wifi_hal_anqp.c:69-103 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fixes 1-2 applied (start fix n / end fix n markers; the unfixed copy is the reproducer).  When /nvram/wifiAnqpDbg is readable it builds
  * "<formatted time> <message>" in the local buff[4096] with strcat + vsprintf, opens /tmp/wifiAnqp once into a function-static FILE * and appends the text.
  *
  * Scaffolding only: access() and fopen() are the runner-controlled stubs of hwr_wdp.h (macros below), get_formatted_time is a deterministic stand-in writing HWR_WDP_TS; fputs / fflush / strcat / vsprintf
@@ -28,6 +28,12 @@ void wifi_anqp_dbg_print(int level, char *format, ...)
     va_list list;
     static FILE *fpg = NULL;
 
+    /* ---------- start fix 1: a NULL format was passed to vsprintf. */
+    if (format == NULL) {
+        return;
+    }
+    /* ---------- end fix 1 */
+
     if ((access("/nvram/wifiAnqpDbg", R_OK)) != 0)
     {
         return;
@@ -36,7 +42,9 @@ void wifi_anqp_dbg_print(int level, char *format, ...)
     strcat(buff, " ");
 
     va_start(list, format);
-    vsprintf(&buff[strlen(buff)], format, list);
+    /* ---------- start fix 2: vsprintf wrote an unbounded message into the 4096-byte stack buffer (after the time stamp), overflowing it for messages of 4073 characters or more. */
+    vsnprintf(&buff[strlen(buff)], sizeof(buff) - strlen(buff), format, list);
+    /* ---------- end fix 2 */
     va_end(list);
     if (fpg == NULL)
     {
