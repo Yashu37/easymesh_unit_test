@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_getRadioTemperature (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:4855-4873 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It asks for the platform's get-radio-phytemperature function
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:4855-4873 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It asks for the platform's get-radio-phytemperature function
  * (RETURN_ERR when there is none), calls it with (radioIndex, radioPhyTemperature) and returns RETURN_ERR when it returns a negative value; otherwise it logs radioPhyTemperature->radio_Temperature and
  * returns RETURN_OK.
  *
@@ -36,6 +36,13 @@ INT wifi_hal_getRadioTemperature(wifi_radio_index_t radioIndex,
     wifi_radioTemperature_t *radioPhyTemperature)
 {
     platform_get_radio_phytemperature_t get_radio_phytemperature_fn;
+
+    /* ---------- start fix 1: radioPhyTemperature was dereferenced for the debug print after a successful platform call (the banana-pi / emulator platform functions return 0 without writing it) even when it is NULL. */
+    if (radioPhyTemperature == NULL) {
+        wifi_hal_stats_error_print("%s:%d: radioPhyTemperature is NULL\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
 
     get_radio_phytemperature_fn = get_platform_get_radio_phytemperature_fn();
     if (get_radio_phytemperature_fn == NULL) {
