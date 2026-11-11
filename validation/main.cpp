@@ -179,6 +179,7 @@ extern "C" void run_all_tests_sg_wifi_hal_apDeAuthEvent_callback_register(void);
 extern "C" void run_all_tests_sg_wifi_hal_apFrameDropUnencrypted_callback_register(void);
 extern "C" void run_all_tests_sg_wifi_vapstatus_callback_register(void);
 extern "C" void run_all_tests_sg_wifi_hal_ap_max_client_rejection_callback_register(void);
+extern "C" void run_all_tests_sg_wifi_hal_apDisassociatedDevice_callback_register(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -763,7 +764,10 @@ int main() {
 //	run_all_tests_sg_wifi_vapstatus_callback_register();
 
 	// src: wifi_hal_ap_max_client_rejection_callback_register (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_ap_max_client_rejection_callback_register();
+//	run_all_tests_sg_wifi_hal_ap_max_client_rejection_callback_register();
+
+	// src: wifi_hal_apDisassociatedDevice_callback_register (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_apDisassociatedDevice_callback_register();
 
 	return 0;
 }
