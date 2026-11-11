@@ -216,6 +216,7 @@ extern "C" void run_all_tests_sg_wifi_8021x_data_tx_callback_register(void);
 extern "C" void run_all_tests_sg_wifi_8021x_data_rx_callback_register(void);
 extern "C" void run_all_tests_sg_wifi_dpp_dbg_print(void);
 extern "C" void run_all_tests_sg_wifi_dppCreateReconfigContext(void);
+extern "C" void run_all_tests_sg_wifi_dppCreateCSignIntance(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -911,7 +912,10 @@ int main() {
 //	run_all_tests_sg_wifi_dpp_dbg_print();
 
 	// src: wifi_dppCreateReconfigContext (rdk-wifi-hal src/wifi_hal_dpp.c)
-	run_all_tests_sg_wifi_dppCreateReconfigContext();
+//	run_all_tests_sg_wifi_dppCreateReconfigContext();
+
+	// src: wifi_dppCreateCSignIntance (rdk-wifi-hal src/wifi_hal_dpp.c)
+	run_all_tests_sg_wifi_dppCreateCSignIntance();
 
 	return 0;
 }
