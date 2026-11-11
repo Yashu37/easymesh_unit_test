@@ -170,6 +170,7 @@ extern "C" void run_all_tests_sg_wifi_hal_getNeighboringWiFiStatus(void);
 extern "C" void run_all_tests_sg_wifi_hal_register_frame_hook(void);
 extern "C" void run_all_tests_sg_wifi_hal_setBTMRequest(void);
 extern "C" void run_all_tests_sg_wifi_hal_setRMBeaconRequest(void);
+extern "C" void run_all_tests_sg_wifi_hal_cancelRMBeaconRequest(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -727,7 +728,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_setBTMRequest();
 
 	// src: wifi_hal_setRMBeaconRequest (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_setRMBeaconRequest();
+//	run_all_tests_sg_wifi_hal_setRMBeaconRequest();
+
+	// src: wifi_hal_cancelRMBeaconRequest (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_cancelRMBeaconRequest();
 
 	return 0;
 }
