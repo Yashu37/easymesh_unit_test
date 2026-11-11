@@ -203,6 +203,7 @@ extern "C" void run_all_tests_sg_wifi_hal_getRadioTemperature(void);
 extern "C" void run_all_tests_sg_wifi_hal_setApMacAddressControlMode(void);
 extern "C" void run_all_tests_sg_wifi_hal_add_station_bridge(void);
 extern "C" void run_all_tests_sg_wifi_hal_get_RegDomain(void);
+extern "C" void run_all_tests_sg_wifi_getNASta(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -859,7 +860,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_add_station_bridge();
 
 	// src: wifi_hal_get_RegDomain (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_get_RegDomain();
+//	run_all_tests_sg_wifi_hal_get_RegDomain();
+
+	// src: wifi_getNASta (rdk-wifi-hal src/wifi_hal.c, MXL_WIFI build)
+	run_all_tests_sg_wifi_getNASta();
 
 	return 0;
 }
