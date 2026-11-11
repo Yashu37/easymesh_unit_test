@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppCreateCSignIntance (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:1820-1966 (~/Desktop/G/rdk-wifi-hal), compiled for OpenSSL 1.1+.  This file holds the ORIGINAL code (no fixes).  It frees an existing
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-3): src/wifi_hal_dpp.c:1820-1966 (~/Desktop/G/rdk-wifi-hal), compiled for OpenSSL 1.1+.  This file holds the ORIGINAL code with fixes 1-3 applied (start fix n / end fix n markers, in the function and in the delete helper; the unfixed copy is the reproducer).  It frees an existing
  * C-sign context, allocates a new wifi_dpp_csign_instance_t, decodes the base64 C-sign private key into keyasn1[1024], builds the EC key / public point / curve data, the uncompressed public key bn
  * (0x04 || X || Y), its SHA-256 based key id (kid) and the caller's sign_key_hash (compute_key_hash) and sets the algorithm name (ES256 / ES384 / ES521); failure paths call delete_dpp_csign_instance.
  *
@@ -171,9 +171,8 @@ int delete_dpp_csign_instance(unsigned int ap_index, wifi_dpp_csign_instance_t *
 		BN_free(instance->prime);
 	}
 
-	if (instance->pt != NULL) {
-		EC_POINT_free(instance->pt);
-	}
+	/* ---------- start fix 1: instance->pt is the key's own public point (EC_KEY_get0_public_key); EC_KEY_free above already released it, freeing it again was a double free. */
+	/* ---------- end fix 1 */
 
 	if (instance->bn != NULL) {
 		free(instance->bn);
@@ -214,6 +213,15 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
 #endif
 		return RETURN_ERR;
 	}
+	/* ---------- start fix 3: c_sign_key was passed to strlen and sign_key_hash to compute_key_hash (memset) without a NULL check; a key longer than keyasn1 can hold after base64 decoding overflowed keyasn1. */
+	if (c_sign_key == NULL || sign_key_hash == NULL || strlen(c_sign_key) > (sizeof(keyasn1) / 3) * 4) {
+		printf("%s:%d:Invalid parameter\n", __func__, __LINE__);
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+		EVP_MD_CTX_free(ctx);
+#endif
+		return RETURN_ERR;
+	}
+	/* ---------- end fix 3 */
 
 	instance = *inst;
 	
@@ -230,6 +238,9 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
     memset(keyasn1, 0, sizeof(keyasn1));
     if ((asn1len = EVP_DecodeBlock(keyasn1, (unsigned char *)c_sign_key, strlen(c_sign_key))) < 0) { 
 		delete_dpp_csign_instance(ap_index, instance);
+		/* ---------- start fix 2: *inst was left pointing at the freed context. */
+		*inst = NULL;
+		/* ---------- end fix 2 */
         printf("%s:%d Failed to decode base 64 private access key\n", __func__, __LINE__);
         return RETURN_ERR;
     }    
@@ -240,6 +251,9 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
 
 	if ((instance->key = d2i_ECPrivateKey(NULL,  &key, asn1len)) == NULL) {
 		delete_dpp_csign_instance(ap_index, instance);
+		/* ---------- start fix 2: *inst was left pointing at the freed context. */
+		*inst = NULL;
+		/* ---------- end fix 2 */
         printf("%s:%d Failed to create EC key\n", __func__, __LINE__);
         return RETURN_ERR;
 
@@ -249,6 +263,9 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
     instance->pt = (EC_POINT*)EC_KEY_get0_public_key(instance->key);
     if (instance->pt == NULL) {
 		delete_dpp_csign_instance(ap_index, instance);
+		/* ---------- start fix 2: *inst was left pointing at the freed context. */
+		*inst = NULL;
+		/* ---------- end fix 2 */
         printf("%s:%d Could not get access public key\n", __func__, __LINE__);
         return RETURN_ERR;
     }
@@ -261,6 +278,9 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
 
 	if (!EC_GROUP_get_curve_GFp(instance->group, instance->prime, NULL, NULL, instance->bnctx)) {
 		delete_dpp_csign_instance(ap_index, instance);
+		/* ---------- start fix 2: *inst was left pointing at the freed context. */
+		*inst = NULL;
+		/* ---------- end fix 2 */
 		printf("%s:%d Could not get affine coordinates for  private key\n", __func__, __LINE__);
         return RETURN_ERR;
 	}
@@ -268,6 +288,9 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
     if (!EC_POINT_get_affine_coordinates_GFp(EC_KEY_get0_group(instance->key), instance->pt, instance->x, 
 				instance->y, instance->bnctx)) {
 		delete_dpp_csign_instance(ap_index, instance);
+		/* ---------- start fix 2: *inst was left pointing at the freed context. */
+		*inst = NULL;
+		/* ---------- end fix 2 */
 		printf("%s:%d Could not get affine coordinates for  private key\n", __func__, __LINE__);
         return RETURN_ERR;
 	}
@@ -286,10 +309,17 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
 			bnlen = 66;
             break;
         default:
+        	/* ---------- start fix 2: an unsupported curve returned an error but left a half-built context in *inst. */
+        	delete_dpp_csign_instance(ap_index, instance);
+        	*inst = NULL;
+        	/* ---------- end fix 2 */
         	return RETURN_ERR;
     }
     if ((instance->bn = (unsigned char *)malloc(2*bnlen + 1)) == NULL) {
 		delete_dpp_csign_instance(ap_index, instance);
+		/* ---------- start fix 2: *inst was left pointing at the freed context. */
+		*inst = NULL;
+		/* ---------- end fix 2 */
 		printf("%s:%d Could not get affine coordinates for  private key\n", __func__, __LINE__);
         return RETURN_ERR;
     }
@@ -322,6 +352,9 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
     
 	if ((b64len = base64urlencode(instance->kid, digest, mdlen)) < 0) {
 		delete_dpp_csign_instance(ap_index, instance);
+		/* ---------- start fix 2: *inst was left pointing at the freed context. */
+		*inst = NULL;
+		/* ---------- end fix 2 */
 		printf("%s:%d Could not get affine coordinates for  private key\n", __func__, __LINE__);
         return RETURN_ERR;
     }
