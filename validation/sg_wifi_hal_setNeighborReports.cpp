@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_setNeighborReports (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:4170-4416 (~/Desktop/G/rdk-wifi-hal), HOSTAPD_VERSION >= 210 branch.  This file holds the ORIGINAL code (no fixes).  It checks the arguments, finds the
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:4170-4416 (~/Desktop/G/rdk-wifi-hal), HOSTAPD_VERSION >= 210 branch.  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It checks the arguments, finds the
  * AP interface, takes g_wifi_hal.hapd_lock, logs hapd->conf->iface, clears the neighbour database, requires the neighbour report bit in hapd->conf->radio_measurements[0] and, for every report, builds a
  * neighbour report element in a wpabuf (13 fixed bytes plus every optional sub-element that is flagged present, buffer sized 13 + 5 + sub_max_size) and installs it with hostapd_neighbor_set().
  *
@@ -143,6 +143,13 @@ INT wifi_hal_setNeighborReports(UINT apIndex, UINT numNeighborReports, wifi_Neig
         wifi_hal_error_print("%s:%d: [BTM] interface with ap index:%u not in AP mode\n", __func__, __LINE__, apIndex);
         return WIFI_HAL_ERROR;
     }
+
+    /* ---------- start fix 1: hapd->conf is NULL while hostapd is not set up for the VAP; it was dereferenced for the log line below (and for radio_measurements) while holding hapd_lock. */
+    if (interface->u.ap.hapd.conf == NULL) {
+        wifi_hal_error_print("%s:%d: [BTM] hostapd configuration of ap index:%u is not available\n", __func__, __LINE__, apIndex);
+        return WIFI_HAL_ERROR;
+    }
+    /* ---------- end fix 1 */
 
     pthread_mutex_lock(&g_wifi_hal.hapd_lock);
     hapd = &interface->u.ap.hapd;
