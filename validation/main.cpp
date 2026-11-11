@@ -205,6 +205,7 @@ extern "C" void run_all_tests_sg_wifi_hal_add_station_bridge(void);
 extern "C" void run_all_tests_sg_wifi_hal_get_RegDomain(void);
 extern "C" void run_all_tests_sg_wifi_getNASta(void);
 extern "C" void run_all_tests_sg_wifi_anqp_dbg_print(void);
+extern "C" void run_all_tests_sg_wifi_storeInitialPassPointSettings(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -867,7 +868,10 @@ int main() {
 //	run_all_tests_sg_wifi_getNASta();
 
 	// src: wifi_anqp_dbg_print (rdk-wifi-hal src/wifi_hal_anqp.c)
-	run_all_tests_sg_wifi_anqp_dbg_print();
+//	run_all_tests_sg_wifi_anqp_dbg_print();
+
+	// src: wifi_storeInitialPassPointSettings (rdk-wifi-hal src/wifi_hal_anqp.c, FEATURE_SUPPORT_PASSPOINT build)
+	run_all_tests_sg_wifi_storeInitialPassPointSettings();
 
 	return 0;
 }
