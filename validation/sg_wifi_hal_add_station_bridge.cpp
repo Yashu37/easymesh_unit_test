@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_add_station_bridge (src/wifi_hal.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal.c:4968-4977 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It removes the interface from any bridge
+ * Function copied from rdk-wifi-hal (verbatim apart from fix 1): src/wifi_hal.c:4968-4977 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fix 1 applied (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It removes the interface from any bridge
  * (nl80211_remove_from_bridge, result ignored) and then puts it on the given bridge (nl80211_create_bridge); a non-zero result of the latter -> RETURN_ERR, otherwise 0.
  *
  * Scaffolding only: the two nl80211 helpers are recording stubs that dereference their name arguments like the real ones (see hwr_wsb.h); the print macro goes to the log sink hwr_print; renamed
@@ -32,6 +32,12 @@ static int nl80211_create_bridge(const char *if_name, const char *br_name)
 /* --- wifi_hal.c:4968-4977 --- */
 int wifi_hal_add_station_bridge( char *interface_name,char *bridge_name)
 {
+    /* ---------- start fix 1: both names were forwarded to nl80211_remove_from_bridge / nl80211_create_bridge, which dereference them unconditionally. */
+    if (interface_name == NULL || bridge_name == NULL) {
+        wifi_hal_error_print("%s:%d: invalid interface or bridge name\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
     nl80211_remove_from_bridge(interface_name);
     if (nl80211_create_bridge(interface_name, bridge_name) != 0) {
         wifi_hal_error_print("%s:%d: Interface:%s failed to create bridge:%s\n",
