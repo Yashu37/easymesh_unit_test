@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_anqpTestFrameHandler (src/wifi_hal_anqp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_anqp.c:692-811 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It is the ANQP test-frame receive thread: it binds a UDP
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-5): src/wifi_hal_anqp.c:692-811 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code with fixes 1-5 applied (start fix n / end fix n markers; the unfixed copy is the reproducer; the two wrong-behaviour failures are not fixed).  It is the ANQP test-frame receive thread: it binds a UDP
  * socket to 127.0.0.1:8889, and for every datagram that starts with the 8-byte test signature it looks up TLVs (command, vap name, station mac, raw frame) with get_tlv and, for the ANQP command, copies them into
  * the local cmd / interface_name[32] / bmac[6] / frame[128] with the TLV's own length and hands the frame to mgmt_frame_received_callback; it ends when select fails and returns its argument.
  *
@@ -152,6 +152,12 @@ void *wifi_anqpTestFrameHandler(void *arg)
         {
             continue;
         }
+        /* ---------- start fix 5: a datagram shorter than the signature was compared / parsed, and get_tlv was given the whole datagram length although it starts after the 8-byte signature (read past msg[1024]). */
+        if (ret < (int)sizeof(wifi_common_hal_test_signature))
+        {
+            continue;
+        }
+        /* ---------- end fix 5 */
 
         if (memcmp(msg, wifi_common_hal_test_signature, sizeof(wifi_common_hal_test_signature)) != 0)
         {
@@ -160,33 +166,60 @@ void *wifi_anqpTestFrameHandler(void *arg)
 
         wifi_anqp_dbg_print(1, "%s:%d: Received test signature\n", __func__, __LINE__);
 
-        if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_cmd, ret)) == NULL)
+        if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_cmd, ret - sizeof(wifi_common_hal_test_signature))) == NULL)
         {
             continue;
         }
+        /* ---------- start fix 1: the TLV length (taken from the datagram) was used to copy into the 4-byte cmd without any check. */
+        if (tlv->length != sizeof(cmd) || tlv->value + tlv->length > msg + ret)
+        {
+            continue;
+        }
+        /* ---------- end fix 1 */
         memcpy((unsigned char *)&cmd, tlv->value, tlv->length);
 
         switch (cmd)
         {
         case wifi_test_command_id_anqp:
             wifi_anqp_dbg_print(1, "%s:%d: Received anqp test command\n", __func__, __LINE__);
-            if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_vap_name, ret)) == NULL)
+            if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_vap_name, ret - sizeof(wifi_common_hal_test_signature))) == NULL)
             {
                 continue;
             }
+            /* ---------- start fix 2: the TLV length was copied into interface_name[32] without a check (and the name was not NUL terminated for sscanf). */
+            if (tlv->length >= sizeof(interface_name) || tlv->value + tlv->length > msg + ret)
+            {
+                continue;
+            }
+            /* ---------- end fix 2 */
             memcpy(interface_name, tlv->value, tlv->length);
+            /* ---------- start fix 2b */
+            interface_name[tlv->length] = '\0';
+            /* ---------- end fix 2b */
             sscanf(interface_name, "ath%d", &ap_index);
 
-            if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_sta_mac, ret)) == NULL)
+            if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_sta_mac, ret - sizeof(wifi_common_hal_test_signature))) == NULL)
             {
                 continue;
             }
+            /* ---------- start fix 3: the TLV length was copied into the 6-byte bmac without a check. */
+            if (tlv->length != sizeof(bmac) || tlv->value + tlv->length > msg + ret)
+            {
+                continue;
+            }
+            /* ---------- end fix 3 */
             memcpy(bmac, tlv->value, tlv->length);
 
-            if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_raw, ret)) == NULL)
+            if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_raw, ret - sizeof(wifi_common_hal_test_signature))) == NULL)
             {
                 continue;
             }
+            /* ---------- start fix 4: the TLV length was copied into frame[128] without a check. */
+            if (tlv->length > sizeof(frame) || tlv->value + tlv->length > msg + ret)
+            {
+                continue;
+            }
+            /* ---------- end fix 4 */
             memcpy(frame, tlv->value, tlv->length);
             wifi_anqp_dbg_print(1, "%s:%d: Calling mgmt frame receive\n", __func__, __LINE__);
 
