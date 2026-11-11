@@ -202,6 +202,7 @@ extern "C" void run_all_tests_sg_wifi_hal_set_neighbor_report(void);
 extern "C" void run_all_tests_sg_wifi_hal_getRadioTemperature(void);
 extern "C" void run_all_tests_sg_wifi_hal_setApMacAddressControlMode(void);
 extern "C" void run_all_tests_sg_wifi_hal_add_station_bridge(void);
+extern "C" void run_all_tests_sg_wifi_hal_get_RegDomain(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -855,7 +856,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_setApMacAddressControlMode();
 
 	// src: wifi_hal_add_station_bridge (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_add_station_bridge();
+//	run_all_tests_sg_wifi_hal_add_station_bridge();
+
+	// src: wifi_hal_get_RegDomain (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_hal_get_RegDomain();
 
 	return 0;
 }
