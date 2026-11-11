@@ -212,6 +212,7 @@ extern "C" void run_all_tests_sg_wifi_setGASConfiguration(void);
 extern "C" void run_all_tests_sg_wifi_anqpTestFrameHandler(void);
 extern "C" void run_all_tests_sg_wifi_anqpStartReceivingTestFrame(void);
 extern "C" void run_all_tests_sg_wifi_anqpStartTest(void);
+extern "C" void run_all_tests_sg_wifi_8021x_data_tx_callback_register(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -895,7 +896,10 @@ int main() {
 //	run_all_tests_sg_wifi_anqpStartReceivingTestFrame();
 
 	// src: wifi_anqpStartTest (rdk-wifi-hal src/wifi_hal_anqp.c)
-	run_all_tests_sg_wifi_anqpStartTest();
+//	run_all_tests_sg_wifi_anqpStartTest();
+
+	// src: wifi_8021x_data_tx_callback_register (rdk-wifi-hal src/wifi_hal_data_rx.c)
+	run_all_tests_sg_wifi_8021x_data_tx_callback_register();
 
 	return 0;
 }
