@@ -189,6 +189,7 @@ extern "C" void run_all_tests_sg_wifi_hal_radius_eap_failure_callback_register(v
 extern "C" void run_all_tests_sg_wifi_hal_radiusFallback_failover_callback_register(void);
 extern "C" void run_all_tests_sg_wifi_hal_staConnectionStatus_callback_register(void);
 extern "C" void run_all_tests_sg_wifi_hal_scanResults_callback_register(void);
+extern "C" void run_all_tests_sg_wifi_wpsEvent_callback_register(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -803,7 +804,10 @@ int main() {
 //	run_all_tests_sg_wifi_hal_staConnectionStatus_callback_register();
 
 	// src: wifi_hal_scanResults_callback_register (rdk-wifi-hal src/wifi_hal.c)
-	run_all_tests_sg_wifi_hal_scanResults_callback_register();
+//	run_all_tests_sg_wifi_hal_scanResults_callback_register();
+
+	// src: wifi_wpsEvent_callback_register (rdk-wifi-hal src/wifi_hal.c)
+	run_all_tests_sg_wifi_wpsEvent_callback_register();
 
 	return 0;
 }
