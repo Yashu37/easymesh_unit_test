@@ -390,6 +390,9 @@ int main() {
 //	run_all_tests_link_quality_init();
 
 	// analyze_client_assoc (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp).
-	run_all_tests_analyze_client_assoc();
+//	run_all_tests_analyze_client_assoc();
+
+	// analyze_beacon_metrics_query (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp).
+	run_all_tests_analyze_beacon_metrics_query();
 	return 0;
 }
