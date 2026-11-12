@@ -1,9 +1,9 @@
 /*
  * HANDLER: wf6ap_get_inner
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::wf6ap_get_inner, with get_table_instance()
- * (same file, verbatim). Local arrays: instance[32], mcsnss_str[256], temp[32],
+ * (same file); fixes 1-4 applied (start fix n / end fix n markers). Local arrays: instance[32], mcsnss_str[256], temp[32],
  * and the array accesses dm->m_radio[radio_instance - 1] (EM_MAX_BANDS = 3),
  * rci->wifi6_cap.roles[i] (MAP_AP_ROLE_MAX = 2), role->sprt_tx_rx_mcs[j] (MAX_MCS = 3).
  * Scaffolding: a list of data models (w6g::dm_spec_t) with a radio table / radio caps;
@@ -46,13 +46,21 @@ public:
 static em_ctrl_t g_ctrl;
 em_ctrl_t *em_ctrl_t::get_em_ctrl_instance() { return &g_ctrl; }
 
-/* --- copied verbatim from src/ctrl/dm_easy_mesh_ctrl.cpp --- */
+/* --- copied from src/ctrl/dm_easy_mesh_ctrl.cpp (verbatim apart from the fixes) --- */
 const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *instance, size_t max_len, bool *is_num)
 {
 	char *dst = instance;
 	size_t len = 0;
 
+/* start fix 2 */
+    if (src == NULL) {
+        return NULL;
+    }
     src = strstr(src, ".");
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 2 */
     ++src;
 
 	if (*src == '[') {
@@ -62,14 +70,23 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src += 2;
+/* start fix 2 */
+        if (*src != ']' || src[1] != '.') {
+            return NULL;
+        }
+        src += 2;
+/* end fix 2 */
 	} else {
 		*is_num = true;
 		while (*src && *src != '.' && ++len < max_len) {
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src++;
+/* start fix 2 */
+        if (*src) {
+            src++;
+        }
+/* end fix 2 */
 	}
 
 	return src;
@@ -98,8 +115,18 @@ bus_error_t dm_easy_mesh_ctrl_t::wf6ap_get_inner(char *event_name, raw_data_t *p
     ++param;
 
     dm_easy_mesh_ctrl_t *dm_ctrl = em_ctrl_t::get_em_ctrl_instance()->get_dm_ctrl();
+/* start fix 1 */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     device_instance = is_num ? atoi(instance) : 0;
 
     dm_easy_mesh_t *dm = dm_ctrl->get_first_dm();
@@ -113,7 +140,18 @@ bus_error_t dm_easy_mesh_ctrl_t::wf6ap_get_inner(char *event_name, raw_data_t *p
     }
 
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     radio_instance = is_num ? atoi(instance) : 0;
+/* start fix 3 */
+    if (radio_instance < 1 || radio_instance > EM_MAX_BANDS) {
+        em_printfout("radio instance %d out of range", radio_instance);
+        return bus_error_invalid_input;
+    }
+/* end fix 3 */
     dm_radio_t *radio = &dm->m_radio[radio_instance - 1];
     if (radio == NULL) {
         em_printfout("radio is NULL\n");
@@ -130,7 +168,13 @@ bus_error_t dm_easy_mesh_ctrl_t::wf6ap_get_inner(char *event_name, raw_data_t *p
     em_radio_cap_info_t *rci = radio_cap->get_radio_cap_info();
     unsigned int i;
 
-    for (i = 0; i < rci->wifi6_cap.num_role; i++) {
+/* start fix 4 */
+    unsigned int num_role = rci->wifi6_cap.num_role;
+    if (num_role > MAP_AP_ROLE_MAX) {
+        num_role = MAP_AP_ROLE_MAX;
+    }
+/* end fix 4 */
+    for (i = 0; i < num_role; i++) {
         char mcsnss_str[256] = { 0 };
         memcpy(&role_temp, &rci->wifi6_cap.roles[i], sizeof(em_wifi6_role_wire_t));
 

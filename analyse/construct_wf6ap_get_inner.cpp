@@ -12,8 +12,10 @@
  * Only 2 roles are really stored (MAP_AP_ROLE_MAX); the runner poisons the fields after them.
  *
  * expect_rc: 0 success, 2 invalid_input. Cases marked [spec] are wrong behaviour (no abort). The
- * crash_* cases ABORT on the original handler: they run last and UNFORKED (a plain make stops at
- * the first ASan report); FORK_CRASH=1 runs each in a forked child so all of them show.
+ * last 9 cases (short method name, path without Radio / Device, radio index 0 / 4 / 1000000 / alias,
+ * num_role 3 / 255) ABORTED on the original handler; with the fixes the first 7 are rejected (rc 2)
+ * and num_role is capped at 2 (the last stored role answers). A case
+ * flagged crash=true would run last and UNFORKED (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -32,7 +34,7 @@ alignas(16) char name_store[W6G_LEFT + W6G_NAME_SZ + W6G_PAD];
 /* {name, event, no_pdata, dms[4], expect_rc, expect_val, check_val, crash} */
 #define OKV(n, p, v) {n, EV("1", "1", p), false, {D1, E0, E0, E0}, 0, v, true, false}
 #define RJ(n, ev, ...) {n, ev, false, {__VA_ARGS__}, 2, NULL, false, false}
-#define CR(n, ev, ...) {n, ev, false, {__VA_ARGS__}, 2, NULL, false, true}
+#define RJC(n, ev, ...) {n, ev, false, {__VA_ARGS__}, 2, NULL, false, false}
 
 test_case_t suite[] = {
  /* ---- every parameter name (role 0) ---- */
@@ -74,16 +76,16 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort (only the first two data models are looked at) ---- */
  {"rej_device_9_of_2 [spec]", EV("9", "1", "MaxDLOFDMA"), false, {{1, 1, true, false, false}, {2, 1, true, false, false}, E0, E0}, 2, NULL, false, false},
  {"ok_device_3_of_3 [spec]", EV("3", "1", "MaxDLOFDMA"), false, {{1, 1, true, false, false}, {2, 1, true, false, false}, {3, 1, true, false, false}, E0}, 0, "30", true, false},
- /* ---- CRASH cases (run last, unforked) ---- */
- CR("crash_method_short", "X.HE160", D1, E0, E0, E0),
- CR("crash_path_without_radio", N "Device.1.HE160", D1, E0, E0, E0),
- CR("crash_path_without_device", N "HE160", D1, E0, E0, E0),
- CR("crash_radio_0", EV("1", "0", "HE160"), D1, E0, E0, E0),
- CR("crash_radio_4", EV("1", "4", "HE160"), D1, E0, E0, E0),
- CR("crash_radio_huge", EV("1", "1000000", "HE160"), D1, E0, E0, E0),
- CR("crash_radio_alias", EV("1", "[x]", "HE160"), D1, E0, E0, E0),
- CR("crash_num_role_3", EV("1", "1", "HE160"), {1, 3, true, false, false}, E0, E0, E0),
- CR("crash_num_role_255", EV("1", "1", "HE160"), {1, 255, true, false, false}, E0, E0, E0),
+ /* ---- were CRASH cases on the original handler (now rejected cleanly, rc 2) ---- */
+ RJC("rej_method_short", "X.HE160", D1, E0, E0, E0),
+ RJC("rej_path_without_radio", N "Device.1.HE160", D1, E0, E0, E0),
+ RJC("rej_path_without_device", N "HE160", D1, E0, E0, E0),
+ RJC("rej_radio_0", EV("1", "0", "HE160"), D1, E0, E0, E0),
+ RJC("rej_radio_4", EV("1", "4", "HE160"), D1, E0, E0, E0),
+ RJC("rej_radio_huge", EV("1", "1000000", "HE160"), D1, E0, E0, E0),
+ RJC("rej_radio_alias", EV("1", "[x]", "HE160"), D1, E0, E0, E0),
+ {"ok_num_role_3_capped_to_2", EV("1", "1", "HE160"), false, {{1, 3, true, false, false}, E0, E0, E0}, 0, "0", true, false},
+ {"ok_num_role_255_capped_to_2", EV("1", "1", "HE160"), false, {{1, 255, true, false, false}, E0, E0, E0}, 0, "0", true, false},
 
  { NULL, NULL, false, {E0, E0, E0, E0}, 0, NULL, false, false }  /* sentinel */
 };
