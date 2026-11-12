@@ -5908,3 +5908,59 @@ void construct_input(const test_case_t *tc);
 }
 #define ABQ_EVT_SZ (sizeof(abq::em_bus_event_t) + ABQ_BUF_MAX + ABQ_PAD)
 void run_all_tests_analyze_beacon_metrics_query(void);
+
+/* --- cmd_channelselect harness (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp), namespace ccs --- */
+namespace ccs {
+#define CCS_MAXP 140
+#define CCS_VAL_SZ 384
+#define CCS_PAD 64
+#ifndef BUS_MAX_NAME_LENGTH
+#define BUS_MAX_NAME_LENGTH 128
+#endif
+typedef enum {
+    bus_error_success = 0, bus_error_general = 1, bus_error_invalid_input = 2,
+    bus_error_out_of_resources = 4, bus_error_invalid_method = 22, bus_error_invalid_namespace = 25
+} bus_error_t;
+typedef enum { bus_data_type_string = 1, bus_data_type_int8, bus_data_type_uint8, bus_data_type_int16,
+               bus_data_type_uint16, bus_data_type_int32, bus_data_type_uint32 } bus_data_type_t;
+typedef union { int8_t i8; uint8_t u8; int16_t i16; uint16_t u16; int32_t i32; uint32_t u32; void *bytes; } raw_data_format_t;
+typedef struct { bus_data_type_t data_type; raw_data_format_t raw_data; unsigned int raw_data_len; } raw_data_t;
+typedef struct bus_data_prop {
+    uint32_t name_len;
+    char name[BUS_MAX_NAME_LENGTH];
+    bool is_data_set;
+    bus_error_t status;
+    raw_data_t value;
+    struct bus_data_prop *next_data;
+} bus_data_prop_t;
+typedef struct {
+    const char *name;     /* property name */
+    int kind;             /* 0 string, 1 int32, 2 uint8, 3 string with explicit len (embedded NUL) */
+    const char *s;
+    int i;
+    int len;              /* kind 3: raw_data_len */
+} prop_spec_t;
+typedef struct {
+    const char *test_name;
+    const char *method;   /* NULL passes a NULL method_name */
+    int gen;              /* 1: 32 classes, 2: 300-char channel list */
+    int radio_band;       /* 0 = 5G default */
+    bool no_props;        /* input_params == NULL */
+    prop_spec_t props[10];
+    int expect_rc;
+    const char *json_has; /* substring expected in the JSON sent to io_process (accept cases) */
+    bool crash;           /* expected to abort: run in a forked child */
+} test_case_t;
+extern test_case_t suite[];
+extern char method_buf[256 + CCS_PAD];
+extern bus_data_prop_t props_buf[];
+extern char val_buf[][CCS_VAL_SZ + CCS_PAD];
+extern int num_props;
+extern int io_calls;
+extern char io_json[];
+extern char last_status[];
+extern int g_radio_band;
+bus_error_t invoke(const char *method, const bus_data_prop_t *in, bus_data_prop_t **out);
+void construct_input(const test_case_t *tc);
+}
+void run_all_tests_cmd_channelselect(void);
