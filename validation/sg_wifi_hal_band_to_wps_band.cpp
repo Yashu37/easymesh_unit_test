@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_band_to_wps_band (src/wifi_hal_hostapd.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_hostapd.c:989-1010 (~/Desktop/G/rdk-wifi-hal; static, compiled under CONFIG_WPS).  This file holds the ORIGINAL code (no fixes).  It converts a HAL
+ * Function copied (verbatim apart from the marked fix) from rdk-wifi-hal: src/wifi_hal_hostapd.c:989-1010 (~/Desktop/G/rdk-wifi-hal; static, compiled under CONFIG_WPS).  This file holds the code WITH fix 1 (start fix 1 / end fix 1 markers; the unfixed copy is the reproducer).  It converts a HAL
  * frequency band to the WPS RF band value: 2.4 GHz -> WPS_RF_24GHZ, 5 / 5L / 5H -> WPS_RF_50GHZ, 6 GHz -> 0 (WPS not supported there), anything else -> RETURN -1 (nothing written).
  *
  * Scaffolding only: WPS_RF_* constants as in hostap wps_defs.h; wifi_hal_error_print is a no-op; renamed hwr_sg_wifi_hal_band_to_wps_band.
@@ -19,6 +19,12 @@ extern "C" {
 /* --- wifi_hal_hostapd.c:989-1010 --- */
 int wifi_hal_band_to_wps_band(wifi_freq_bands_t hal_band, u8 *wps_band)
 {
+    /* ---------- start fix 1: wps_band was written through without a NULL check. */
+    if (wps_band == NULL) {
+        return -1;
+    }
+    /* ---------- end fix 1 */
+
     switch (hal_band) {
     case WIFI_FREQUENCY_2_4_BAND:
         *wps_band = WPS_RF_24GHZ;
