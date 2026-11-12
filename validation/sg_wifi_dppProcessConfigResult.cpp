@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppProcessConfigResult (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:2392-2520 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It handles a received DPP Configuration Result
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-4; start fix n / end fix n markers; the unfixed copy is the reproducer): src/wifi_hal_dpp.c:2392-2520 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-4.  It handles a received DPP Configuration Result
  * frame: finds the wrapped data attribute (attributes start after the 6-byte action frame body), decrypts it with AES-SIV using the session key ke (SIV_256 / 384 / 512 by digestlen), looks for the
  * DPP status attribute (1 byte) in the plaintext and sets dpp_ctx->enrollee_status (RESPONDER_STATUS_OK on status 0, RESPONDER_STATUS_CONFIGURATION_FAILURE otherwise) and returns RETURN_OK / RETURN_ERR.
  * The CONFIG_RESULT_SIMULATE block is never compiled (the macro is not defined anywhere in rdk-wifi-hal) and is kept as in the source.
@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
 #define RETURN_OK 0
 #define RETURN_ERR -1
@@ -68,11 +69,24 @@ wifi_dppProcessConfigResult(wifi_device_dpp_context_t *dpp_ctx)
     wifi_tlv_t *wrapped_tlv;
 #endif
 
+    /* ---------- start fix 1: a NULL context was dereferenced at once (dpp_ctx->session_data.instance). */
+    if (dpp_ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
+
     data = &dpp_ctx->session_data;
     instance = (wifi_dpp_instance_t *)data->instance;
 
     frame = (wifi_dppPublicActionFrameBody_t*)dpp_ctx->received_frame.frame;
     len = dpp_ctx->received_frame.length;
+
+    /* ---------- start fix 2: a NULL session instance was dereferenced (instance->digestlen / ke) after the wrapped data was found. */
+    if (instance == NULL) {
+        dpp_ctx->enrollee_status = RESPONDER_STATUS_CONFIGURATION_FAILURE;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
 
 #ifdef CONFIG_RESULT_SIMULATE
 	// temporarily simulate a buffer until encryption is fixed
@@ -121,6 +135,13 @@ wifi_dppProcessConfigResult(wifi_device_dpp_context_t *dpp_ctx)
 	print_hex_dump(len, frame);
 #endif
 
+    /* ---------- start fix 3: frame == NULL, or a frame shorter than the 6-byte action frame body, made attrib_len = len - 6 wrap to a huge value (get_tlv then read past the frame). */
+    if ((frame == NULL) || (len < sizeof(wifi_dppPublicActionFrameBody_t)) ||
+        ((len - sizeof(wifi_dppPublicActionFrameBody_t)) > USHRT_MAX)) {
+        dpp_ctx->enrollee_status = RESPONDER_STATUS_CONFIGURATION_FAILURE;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 3 */
     attrib_len = len - sizeof(wifi_dppPublicActionFrameBody_t);
     if ((tlv = get_tlv(frame->attrib, wifi_dpp_attrib_id_wrapped_data, attrib_len)) == NULL) {
         dpp_ctx->enrollee_status = RESPONDER_STATUS_CONFIGURATION_FAILURE;
@@ -174,6 +195,16 @@ wifi_dppProcessConfigResult(wifi_device_dpp_context_t *dpp_ctx)
         dpp_ctx->enrollee_status = RESPONDER_STATUS_CONFIGURATION_FAILURE;
 		return RETURN_ERR;
 	}
+
+    /* ---------- start fix 4: the enrollee nonce of the wrapped data was never compared with instance->enrollee_nonce, so a result without it, or an old / foreign one, was accepted. */
+    if (((tlv = get_tlv(plain, wifi_dpp_attrib_id_enrollee_nonce, len)) == NULL) ||
+        (tlv->length != instance->noncelen) || (tlv->length > sizeof(instance->enrollee_nonce)) ||
+        (memcmp(tlv->value, instance->enrollee_nonce, tlv->length) != 0)) {
+        wifi_dpp_dbg_print("%s:%d enrollee nonce missing or mismatch\n", __func__, __LINE__);
+        dpp_ctx->enrollee_status = RESPONDER_STATUS_CONFIGURATION_FAILURE;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 4 */
         
 	dpp_ctx->enrollee_status = RESPONDER_STATUS_OK;
 
