@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppChirp (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:3645-3709 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It builds the 8-byte test signature plus four TLVs (chirp
+ * Function copied (verbatim apart from the marked fixes) from rdk-wifi-hal: src/wifi_hal_dpp.c:3645-3709 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-2 (start fix n / end fix n markers; the unfixed copy is the reproducer).  It builds the 8-byte test signature plus four TLVs (chirp
  * command, vap name "ath<apIndex>" as 16 bytes, station mac, 44 bytes of canned chirp frame) with set_tlv, sends the datagram to 127.0.0.1:8888, closes the socket and
  * returns RETURN_OK (RETURN_ERR, after closing, when sendto fails).
  *
@@ -84,6 +84,12 @@ int wifi_dppChirp(unsigned int apIndex, mac_address_t sta)
     wifi_test_command_id_t cmd = wifi_test_command_id_chirp;
 
     printf("%s:%d: Enter\n", __func__, __LINE__);
+
+    /* ---------- start fix 1: sta was passed to set_tlv (memcpy of 6 bytes) without a NULL check. */
+    if (sta == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
    
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
         printf("%s:%d: Error opening raw socket, err:%d\n", __func__, __LINE__, errno);
@@ -104,7 +110,9 @@ int wifi_dppChirp(unsigned int apIndex, mac_address_t sta)
     tlv = set_tlv((unsigned char*)tlv, wifi_test_attrib_cmd, sizeof(wifi_test_command_id_t), (unsigned char*)&cmd);
     tlv_len += (4 + sizeof(wifi_test_command_id_t));
 
-    sprintf(interface_name, "ath%d", apIndex);
+    /* ---------- start fix 2: apIndex is unsigned; %d printed a negative name for values >= 0x80000000. */
+    sprintf(interface_name, "ath%u", apIndex);
+    /* ---------- end fix 2 */
     tlv = set_tlv((unsigned char*)tlv, wifi_test_attrib_vap_name, IFNAMSIZ, interface_name);
     tlv_len += (4 + IFNAMSIZ);
 
