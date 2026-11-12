@@ -29,6 +29,11 @@
 #include <vector>
 #include "common.h"
 
+/* CCS_FIX 1 = fixed handler (FIX 1-3 below), 0 = verbatim original (crashes) */
+#ifndef CCS_FIX
+#define CCS_FIX 1
+#endif
+
 namespace ccs {
 
 #ifndef MAX_INSTANCE_LEN
@@ -198,6 +203,12 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	size_t len = 0;
 
     src = strstr(src, ".");
+#if CCS_FIX
+    /* FIX 3: no '.' left in the path -> strstr() returns NULL and ++src / *src dereferenced it */
+    if (src == NULL) {
+        return NULL;
+    }
+#endif
     ++src;
 
 	if (*src == '[') {
@@ -207,14 +218,27 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
+#if CCS_FIX
+        /* FIX 3: never step past the terminating NUL (callers feed the result back into strstr) */
+        for (int k = 0; k < 2 && *src; k++) {
+            src++;
+        }
+#else
 		src += 2;
+#endif
 	} else {
 		*is_num = true;
 		while (*src && *src != '.' && ++len < max_len) {
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
+#if CCS_FIX
+        if (*src) {
+            src++;
+        }
+#else
 		src++;
+#endif
 	}
 
 	return src;
@@ -240,6 +264,16 @@ bus_error_t em_ctrl_t::cmd_channelselect(const char *method_name, const bus_data
     size_t json_len = 0;
     bus_error_t rc = bus_error_success;
 
+#if CCS_FIX
+    /* FIX 1: NULL method_name went straight into strrchr() */
+    if (name == NULL) {
+        em_printfout("Invalid method name");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_input;
+    }
+#endif
     param = strrchr(name, '.');
     if (param == NULL) {
         em_printfout("Invalid method name");
@@ -269,8 +303,28 @@ bus_error_t em_ctrl_t::cmd_channelselect(const char *method_name, const bus_data
     dm_easy_mesh_ctrl_t *dm_ctrl = em_ctrl->get_dm_ctrl();
 
     // Skip the static network prefix and parse the device instance from the TR-181 path
+#if CCS_FIX
+    /* FIX 2: a method name shorter than the network prefix made "name +=" run past the NUL */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        em_printfout("Invalid method path");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_namespace;
+    }
+#endif
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+#if CCS_FIX
+    /* FIX 3: get_table_instance() now returns NULL when the path has no further '.' */
+    if (name == NULL) {
+        em_printfout("Invalid method path");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_namespace;
+    }
+#endif
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         em_printfout("Device not found");
@@ -281,6 +335,16 @@ bus_error_t em_ctrl_t::cmd_channelselect(const char *method_name, const bus_data
     }
 
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+#if CCS_FIX
+    /* FIX 3: no Radio.{i} component in the path */
+    if (name == NULL) {
+        em_printfout("Radio not found");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_namespace;
+    }
+#endif
     dm_radio_t *radio = dm_ctrl->get_dm_radio(dm, instance, is_num);
     if (radio == NULL) {
         em_printfout("Radio not found");

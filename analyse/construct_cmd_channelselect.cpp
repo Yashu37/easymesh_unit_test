@@ -11,8 +11,9 @@
  * 22 invalid_method, 25 invalid_namespace). Accept cases also check the
  * JSON handed to io_process. Cases marked [spec] are inputs a strict parser
  * should reject (sign / whitespace in an index or channel). The last 3 cases
- * are expected to ABORT (short method name, path without a Radio instance,
- * NULL method name) and run in forked children so the report is visible.
+ * (short method name, path without a Radio instance, NULL method name) ABORT
+ * on the original handler (build with -DCCS_FIX=0); with the fix they are
+ * rejected (crash=true re-enables the forked-child runner for them).
  */
 
 #include <stdio.h>
@@ -98,10 +99,10 @@ test_case_t suite[] = {
  /* ---- [spec] ---- */
  RJ("rej_channel_plus_sign [spec]", I32("Class.1.OpClass", 115), S("Class.1.Channel.1.Channel", "+36"), I32("Class.1.Channel.1.Preference", 1)),
  RJ("rej_class_index_plus [spec]", I32("Class.+1.OpClass", 115), S("Class.+1.Channel.1.Channel", "36"), I32("Class.+1.Channel.1.Preference", 1)),
- /* ---- expected to abort (forked) ---- */
- {"CRASH_method_name_short", "X.ChannelSelectionRequest()", 0, 0, false, {C1, E0}, 25, NULL, true},
- {"CRASH_path_without_radio", "Device.WiFi.DataElements.Network.Device.1.ChannelSelectionRequest()", 0, 0, false, {C1, E0}, 25, NULL, true},
- {"CRASH_method_name_null", NULL, 0, 0, false, {C1, E0}, 2, NULL, true},
+ /* ---- were CRASH cases on the original handler (CCS_FIX 0): now rejected cleanly ---- */
+ {"rej_method_name_short", "X.ChannelSelectionRequest()", 0, 0, false, {C1, E0}, 25, NULL, false},
+ {"rej_path_without_radio", "Device.WiFi.DataElements.Network.Device.1.ChannelSelectionRequest()", 0, 0, false, {C1, E0}, 25, NULL, false},
+ {"rej_method_name_null", NULL, 0, 0, false, {C1, E0}, 2, NULL, false},
 
  { NULL, NULL, 0, 0, false, {E0}, 0, NULL, false }  /* sentinel */
 };
