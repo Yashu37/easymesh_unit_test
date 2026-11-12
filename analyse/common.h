@@ -1668,6 +1668,7 @@ typedef struct {
 	struct { int radio_count; } radio_metrics_policies;
 } em_config_t;
 
+typedef struct { double last_score; double last_threshold; int score_log_timer_id; int last_service_state; int iteration_count; char ignite_service_status[32]; } ignite_lq_state_t;   // source/apps/linkquality/wifi_linkquality.h
 struct wifi_app {                            // subset: desc first, ctrl last (as in source)
 	wifi_app_descriptor_t desc;
 	unsigned char         rest[512];        // lock, cond, queue, tid, handle, ... (not touched)
@@ -1715,6 +1716,7 @@ struct wifi_app {                            // subset: desc first, ctrl last (a
 				int  probe_collector_sched_handler_id;
 				struct { int (*csi_start_fn)(void *, unsigned int, unsigned char *, int); int (*csi_stop_fn)(void *, unsigned int, unsigned char *, int); } csi_fns;   // csi_base_app_t (used by levl_init)
 			} levl;
+			struct { ignite_lq_state_t ignite; } linkquality;   // data.u.linkquality (subset: only .ignite, used by link_quality_init)
 		} u;
 	} data;
 	struct { unsigned char handle[256]; } *ctrl;   // real: wifi_ctrl_t* (needs ->handle for easyconnect_init)
@@ -3032,8 +3034,9 @@ void construct_set_bus_csi_sta_maclist_input(const set_bus_csi_sta_maclist_test_
 int  test_set_bus_csi_sta_maclist(const set_bus_csi_sta_maclist_test_case_t *tc);
 void run_all_tests_set_bus_csi_sta_maclist(void);
 
+typedef struct { unsigned int rss_check_interval; unsigned int rss_threshold; unsigned int rss_maxlimit; unsigned int heapwalk_duration; unsigned int heapwalk_interval; bool enable; } __attribute__((packed)) memwraptool_config_t;   // include/wifi_base.h
 typedef struct { unsigned char clientMac[6]; int max_num_csi_clients; int levl_sounding_duration; int levl_publish_interval; } levl_config_t;   // include/wifi_base.h
-typedef struct webconfig_subdoc_decoded_data { void *csi_data_queue; levl_config_t levl; } webconfig_subdoc_decoded_data_t;
+typedef struct webconfig_subdoc_decoded_data { void *csi_data_queue; levl_config_t levl; struct { struct { memwraptool_config_t memwraptool; } global_parameters; } config; } webconfig_subdoc_decoded_data_t;
 typedef struct { int type; struct { webconfig_subdoc_decoded_data_t decoded; } u; } webconfig_subdoc_data_t;   // subset of include/wifi_webconfig.h
 // --- webconfig_hal_csi_data_apply harness (OneWifi source/apps/csi/wifi_csi_analytics.c) ---
 #define WHC_MAC_SZ 18
@@ -5662,3 +5665,178 @@ typedef struct lv_lli_test_case lv_lli_test_case_t;
 extern lv_lli_test_case_t levl_init_suite[];
 void construct_levl_init_input(const lv_lli_test_case_t *tc);
 void run_all_tests_levl_init(void);
+
+/* --- link_quality_init harness --- */
+#define LQI_PAD 64
+extern char lqi_app_buf[];
+extern char lqi_ctrl_buf[];       /* 256-byte handle stand-in + LQI_PAD */
+extern int  lqi_app_init_ret, lqi_bus_open_ret, lqi_bus_reg_ret;
+extern int  lqi_app_init_calls, lqi_open_calls, lqi_reg_calls, lqi_reg_n, lqi_reg_type, lqi_reg_fmt;
+extern char lqi_reg_name[128], lqi_open_name[64];
+extern void *lqi_reg_handle;
+struct lv_lqi_test_case { const char *test_name; int app_init_ret; int bus_open_ret; int bus_reg_ret; int want_ret; int want_open; int want_reg; int want_state_reset; };
+typedef struct lv_lqi_test_case lv_lqi_test_case_t;
+extern lv_lqi_test_case_t link_quality_init_suite[];
+void construct_link_quality_init_input(const lv_lqi_test_case_t *tc);
+void run_all_tests_link_quality_init(void);
+
+/* --- shared bus / levl / linkquality types and constants (used by the levl_*, radio_temperature_response, link_quality_init and memwraptool harnesses) --- */
+#ifndef LV_OWN_BUS_TYPES      /* older harness files that carry their own local bus types define this before including common.h */
+typedef enum { bus_error_success = 0, bus_error_general = 1, bus_error_invalid_input = 2, bus_error_out_of_resources = 3 } bus_error_t;
+typedef enum { bus_element_type_table = 1, bus_element_type_method = 2, bus_element_type_event = 3, bus_element_type_property = 4 } bus_element_type_t;
+typedef enum { slow_speed = 0 } bus_speed_t;
+typedef enum { bus_data_type_none = 0, bus_data_type_string = 3, bus_data_type_uint32 = 7, bus_data_type_bytes = 10, bus_data_type_object = 11 } bus_data_type_t;
+typedef struct { int data_type; union { uint32_t u32; void *bytes; } raw_data; size_t raw_data_len; } raw_data_t;
+typedef struct { int unused; } bus_user_data_t;
+typedef struct {
+    void *get_handler, *set_handler, *table_add_row_handler,
+         *table_remove_row_handler, *event_sub_handler, *method_handler;
+} bus_callback_table_t;
+typedef struct {
+    bus_data_type_t data_format;
+    bool            data_permission;
+    long int        min_data_range;
+    long int        max_data_range;
+    uint32_t        num_of_str_validation;
+    char          **str_validation;
+} data_model_properties_t;
+typedef struct bus_data_element {
+    char                   *full_name;
+    bus_element_type_t      type;
+    bus_callback_table_t    cb_table;
+    bus_speed_t             bus_speed;
+    uint32_t                num_of_table_row;
+    data_model_properties_t data_model_prop;
+} bus_data_element_t;
+typedef struct {
+    bus_error_t (*bus_open_fn)(void *handle, const char *component);
+    bus_error_t (*bus_reg_data_element_fn)(void *handle, bus_data_element_t *elems, uint32_t num);
+    bus_error_t (*bus_event_publish_fn)(void *handle, const char *name, raw_data_t *data);
+} wifi_bus_desc_t;
+#endif /* LV_OWN_BUS_TYPES */
+typedef int wifi_event_subtype_t;
+#ifndef WIFI_APPS
+#define WIFI_APPS 0
+#endif
+#ifndef WIFI_CTRL
+#define WIFI_CTRL 0
+#endif
+#ifndef WIFI_WEBCONFIG
+#define WIFI_WEBCONFIG 0
+#endif
+#ifndef ZERO_TABLE
+#define ZERO_TABLE 0
+#endif
+#ifndef RETURN_OK
+#define RETURN_OK  0
+#endif
+#ifndef RETURN_ERR
+#define RETURN_ERR (-1)
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef wifi_app_inst_levl
+#define wifi_app_inst_levl 5
+#endif
+#ifndef wifi_app_inst_csi
+#define wifi_app_inst_csi 4096
+#endif
+#ifndef webconfig_subdoc_type_levl
+#define webconfig_subdoc_type_levl 5
+#endif
+#ifndef MAX_LEVL_CSI_CLIENTS
+#define MAX_LEVL_CSI_CLIENTS 5
+#endif
+#ifndef DEFAULT_SOUNDING_DURATION_MS
+#define DEFAULT_SOUNDING_DURATION_MS 2000
+#endif
+#ifndef MIN_LEVL_PUBLISH_INTERVAL_MS
+#define MIN_LEVL_PUBLISH_INTERVAL_MS 100
+#endif
+#ifndef MIN_LEVL_SOUNDING_DURATION_MS
+#define MIN_LEVL_SOUNDING_DURATION_MS 1000
+#endif
+#ifndef APPS_FRAME_EXEC_TIMEOUT_PERIOD
+#define APPS_FRAME_EXEC_TIMEOUT_PERIOD (30 * 60)
+#endif
+#ifndef CSI_LEVL_PIPE
+#define CSI_LEVL_PIPE "/tmp/csi_levl_pipe"
+#endif
+#ifndef MIN_MAC_LEN
+#define MIN_MAC_LEN 12
+#endif
+#define WIFI_EVENTS_VAP_TABLE               "Device.WiFi.Events.VAP.{i}."
+#define WIFI_ANALYTICS_FRAME_EVENTS         "Device.WiFi.Events.VAP.{i}.Frames.Mgmt"
+#define WIFI_ANALYTICS_DATA_EVENTS          "Device.WiFi.Events.VAP.{i}.Frames.Data"
+#define WIFI_LEVL_CLIENTMAC                 "Device.WiFi.X_RDK_CSI_LEVL.clientMac"
+#define WIFI_LEVL_NUMBEROFENTRIES           "Device.WiFi.X_RDK_CSI_LEVL.maxNumberCSIClients"
+#define WIFI_LEVL_CSI_DATA                  "Device.WiFi.X_RDK_CSI_LEVL.data"
+#define WIFI_LEVL_CSI_DATAFIFO              "Device.WiFi.X_RDK_CSI_LEVL.datafifo"
+#define WIFI_LEVL_SOUNDING_DURATION         "Device.WiFi.X_RDK_CSI_LEVL.Duration"
+#define WIFI_LEVL_CSI_STATUS                "Device.WiFi.X_RDK_CSI_LEVL.soundingStatus"
+#define WIFI_LEVL_CSI_MAC_DATA              "Device.WiFi.X_RDK_CSI_LEVL.clientMacData"
+#define RADIO_LEVL_TEMPERATURE_TABLE        "Device.WiFi.Events.Radio.{i}."
+#define RADIO_LEVL_TEMPERATURE_EVENT        "Device.WiFi.Events.Radio.{i}.Temperature"
+#define WIFI_QUALITY_LINKREPORT             "Device.WiFi.LinkReport"
+/* construct_levl_get_handler / construct_levl_set_handler case-table helpers */
+#define LGH_P   "Device.WiFi.X_RDK_CSI_LEVL."
+#define LGH_L199 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+#define LGH_L250 LGH_L199 "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+#define LGH_STR 3
+#define LGH_U32 7
+
+/* --- analyze_client_assoc harness (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp) --- */
+#ifndef MAX_STA_LIST
+#define MAX_STA_LIST 20
+#endif
+#ifndef EM_MAX_CMD
+#define EM_MAX_CMD 16
+#endif
+#ifndef EM_PARSE_NO_ERR
+#define EM_PARSE_NO_ERR 0
+#endif
+#ifndef EM_PARSE_ERR_GEN
+#define EM_PARSE_ERR_GEN EM_PARSE_NO_ERR - 1
+#endif
+#define AC_BUF_MAX 8192
+#define AC_PAD 64
+#define AC_EVT_SZ (sizeof(em_bus_event_t) + AC_BUF_MAX + AC_PAD)
+typedef struct {
+    mac_address_t bssid;
+    unsigned char assoc_control;
+    unsigned short validity_period;
+    unsigned char sta_count;
+    mac_address_t sta_list[MAX_STA_LIST];
+} em_cmd_client_assoc_params_t;
+typedef struct {
+    char name[64];
+    char buff[0];
+} __attribute__((__packed__)) em_subdoc_info_t;
+typedef struct {
+    int type;
+    unsigned int data_len;
+    union { em_subdoc_info_t subdoc; } u;
+} em_bus_event_t;
+typedef struct {
+    const char *test_name;
+    const char *json;          /* NULL -> generated by gen */
+    int gen;                   /* 1: 21 STAs, 2: 20 STAs, 3: 5000-char BSSID, 4: 3000-char STA entry */
+    int expect_num;            /* return value: 1 accept, 0 reject, -1 parse error */
+    unsigned char bssid[6];
+    unsigned char assoc;
+    unsigned short vp;
+    unsigned char sta_count;
+    unsigned char sta0[6];
+} ac_test_case_t;
+extern ac_test_case_t analyze_client_assoc_suite[];
+extern em_cmd_client_assoc_params_t ac_last_params;
+extern int ac_cmd_created;
+extern char ac_evt_buf[AC_EVT_SZ];
+extern void *ac_pcmd_buf[];
+int ac_invoke(em_bus_event_t *evt, void **pcmd);
+void construct_analyze_client_assoc_input(const ac_test_case_t *tc);
+void run_all_tests_analyze_client_assoc(void);
