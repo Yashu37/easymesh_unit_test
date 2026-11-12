@@ -222,6 +222,7 @@ extern "C" void run_all_tests_sg_wifi_dppProcessReconfigAuthResponse(void);
 extern "C" void run_all_tests_sg_wifi_dppProcessReconfigAnnouncement(void);
 extern "C" void run_all_tests_sg_wifi_dppProcessConfigResult(void);
 extern "C" void run_all_tests_sg_wifi_dppProcessConfigRequest(void);
+extern "C" void run_all_tests_sg_wifi_dppProcessAuthResponse(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -935,7 +936,10 @@ int main() {
 //	run_all_tests_sg_wifi_dppProcessConfigResult();
 
 	// src: wifi_dppProcessConfigRequest (rdk-wifi-hal src/wifi_hal_dpp.c)
-	run_all_tests_sg_wifi_dppProcessConfigRequest();
+//	run_all_tests_sg_wifi_dppProcessConfigRequest();
+
+	// src: wifi_dppProcessAuthResponse (rdk-wifi-hal src/wifi_hal_dpp.c)
+	run_all_tests_sg_wifi_dppProcessAuthResponse();
 
 	return 0;
 }
