@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppProcessReconfigAnnouncement (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:2365-2389 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It checks a received DPP Reconfiguration Announcement
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-3; start fix n / end fix n markers; the unfixed copy is the reproducer): src/wifi_hal_dpp.c:2365-2389 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-3.  It checks a received DPP Reconfiguration Announcement
  * frame: finds the C-sign key hash attribute in the attributes after the 6-byte action frame body, dumps it next to the caller's key hash and returns RETURN_OK only when the attribute is exactly
  * SHA256_DIGEST_LENGTH bytes long and equal to the first 32 bytes of key_hash (OneWifi passes g_easy_connect.csign[apIndex].sign_key_hash, a 512-byte field).
  *
@@ -92,14 +92,30 @@ wifi_dppProcessReconfigAnnouncement(unsigned char *frame, unsigned int len, unsi
 	wifi_tlv_t *tlv;
 	wifi_dppPublicActionFrameBody_t *action;
 
+	/* ---------- start fix 1: a NULL frame (action->attrib was read at once), a NULL key_hash (memcmp) and a frame shorter than the 6-byte action frame body were not rejected. */
+	if ((frame == NULL) || (key_hash == NULL) || (len < sizeof(wifi_dppPublicActionFrameBody_t))) {
+		return RETURN_ERR;
+	}
+	/* ---------- end fix 1 */
+
 	action = (wifi_dppPublicActionFrameBody_t *)frame;
 
 	tlv = (wifi_tlv_t *)action->attrib;
-        tlv = get_tlv((unsigned char*)tlv, wifi_dpp_attrib_id_C_sign_key_hash, len);
+	/* ---------- start fix 2: the attributes start after the 6-byte body, so only len - 6 bytes hold attributes; get_tlv was given the whole len and scanned 6 bytes past the end of the frame
+	   (a frame without the hash attribute, or with a truncated one, was read out of bounds). */
+        tlv = get_tlv((unsigned char*)tlv, wifi_dpp_attrib_id_C_sign_key_hash, len - sizeof(wifi_dppPublicActionFrameBody_t));
+	/* ---------- end fix 2 */
 	if (tlv == NULL) {
 		return RETURN_ERR;
 
 	}
+
+	/* ---------- start fix 3: the attribute must be exactly SHA256_DIGEST_LENGTH bytes long BEFORE it is dumped: print_hex_dump(tlv->length, key_hash) read tlv->length bytes of the caller's key hash
+	   (a 32-byte digest in a 512-byte field), so a longer attribute read past the digest and, above 512 bytes, past the field. */
+	if (tlv->length != SHA256_DIGEST_LENGTH) {
+		return RETURN_ERR;
+	}
+	/* ---------- end fix 3 */
 
 	printf("%s:%d Matching C-sign\n", __func__, __LINE__);
 	print_hex_dump(tlv->length, tlv->value);
