@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppProcessConfigRequest (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:2522-2569 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It handles a received DPP Configuration Request
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-3; start fix n / end fix n markers; the unfixed copy is the reproducer): src/wifi_hal_dpp.c:2522-2569 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-3.  It handles a received DPP Configuration Request
  * (the GAS payload attributes: received_frame.frame points at the first attribute and .length is the attribute length): decrypts the wrapped data attribute with AES-SIV (get_config_frame_wrapped_data,
  * key instance->ke, SIV_256 / 384 / 512 by digestlen, no associated data) into buff[1024], finds the enrollee nonce attribute in the plaintext, stores it in instance->enrollee_nonce (32 bytes) and sets
  * ctx->enrollee_status (RESPONDER_STATUS_OK, or RESPONDER_STATUS_AUTH_FAILURE on every failure), returning RETURN_OK / RETURN_ERR.
@@ -144,11 +144,24 @@ wifi_dppProcessConfigRequest(wifi_device_dpp_context_t *ctx)
 	unsigned char  *attrib;
 	unsigned int len;
 
+	/* ---------- start fix 1: a NULL context was dereferenced at once (ctx->session_data.instance). */
+	if (ctx == NULL) {
+		return RETURN_ERR;
+	}
+	/* ---------- end fix 1 */
+
 	data = &ctx->session_data;
 	instance = (wifi_dpp_instance_t *)data->instance;
 
 	attrib = ctx->received_frame.frame;
 	len = ctx->received_frame.length;
+
+	/* ---------- start fix 2: a NULL session instance (instance->digestlen in get_config_frame_wrapped_data) and a NULL frame pointer with a non-zero length (get_tlv read attrib[0]) were dereferenced. */
+	if ((instance == NULL) || (attrib == NULL)) {
+		ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
+		return RETURN_ERR;
+	}
+	/* ---------- end fix 2 */
 
     printf("%s:%d:Enter\n", __func__, __LINE__);
     
@@ -166,12 +179,14 @@ wifi_dppProcessConfigRequest(wifi_device_dpp_context_t *ctx)
         return RETURN_ERR;
     }
 
-    if (tlv->length > sizeof(instance->enrollee_nonce)) {
+    /* ---------- start fix 3: the enrollee nonce is exactly noncelen bytes long (the message below already prints tlv->length / noncelen); a shorter or empty nonce was accepted and copied. */
+    if ((tlv->length != instance->noncelen) || (tlv->length > sizeof(instance->enrollee_nonce))) {
         wifi_dpp_dbg_print("%s:%d enrollee nonce length mismatch %u/%u\n", __func__, __LINE__,
             (unsigned int)tlv->length, (unsigned int)instance->noncelen);
         ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
         return RETURN_ERR;
     }
+    /* ---------- end fix 3 */
 
     memcpy(instance->enrollee_nonce, tlv->value, tlv->length);
     printf("%s:%d: Enrollee nonce: E noncelen: %u I/R noncelen: %u\n", __func__, __LINE__, (unsigned int)tlv->length, (unsigned int)instance->noncelen);
