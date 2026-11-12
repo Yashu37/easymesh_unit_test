@@ -10,9 +10,9 @@
  * 22 invalid_method, 25 invalid_namespace). Accept cases also check the JSON
  * handed to io_process. Cases marked [spec] are inputs a strict handler should
  * reject (over-long values silently truncated, BSSID that is not a MAC). The
- * crash_* cases (method name shorter than the Network prefix, path that stops
- * before the Radio / BSS / STA instance) ABORT on the original handler; they run
- * in forked children so the ASan report is visible and the run continues.
+ * former crash cases (method name shorter than the Network prefix, path that stops
+ * before the Radio / BSS / STA instance) ABORTED on the original handler; with
+ * the fix they are rejected (rej_*, rc 25).
  */
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ int num_props = 0;
 #define OK(n, j, ...) {n, P, false, false, {__VA_ARGS__, E0}, 0, j, false}
 #define RJ(n, ...) {n, P, false, false, {__VA_ARGS__, E0}, 2, NULL, false}
 #define RP(n, m, rc) {n, m, false, false, {BASE, E0}, rc, NULL, false}
-#define CR(n, m) {n, m, false, false, {BASE, E0}, 25, NULL, true}
+#define CR(n, m) {n, m, false, false, {BASE, E0}, 25, NULL, false}
 
 test_case_t suite[] = {
  /* ---- accepted ---- */
@@ -98,11 +98,11 @@ test_case_t suite[] = {
  RJ("rej_bssid_not_mac [spec]", BASE, S("BSSID", "garbage")),
  RJ("rej_elements_128_chars [spec]", BASE, I32("ReportingDetail", 1), R("ElementIDList", "1", 128)),
  RJ("rej_report_list_64_chars [spec]", OC(115), CH(255), SD("Net"), I32("APChannelReport.1.OperatingClass", 115), R("APChannelReport.1.ChannelList", "1", 64)),
- /* ---- were CRASH cases (original handler): name += sizeof(DATAELEMS_NETWORK) / get_table_instance() NULL ---- */
- CR("crash_method_name_short", "X.X_AIRTIES_BeaconMetricsQuery()"),
- CR("crash_path_without_radio", N "Device.1.X_AIRTIES_BeaconMetricsQuery()"),
- CR("crash_path_without_bss", N "Device.1.Radio.1.X_AIRTIES_BeaconMetricsQuery()"),
- CR("crash_path_without_sta", N "Device.1.Radio.1.BSS.1.X_AIRTIES_BeaconMetricsQuery()"),
+ /* ---- were CRASH cases on the original handler (now rejected cleanly): name += sizeof(DATAELEMS_NETWORK) / get_table_instance() NULL ---- */
+ CR("rej_method_name_short", "X.X_AIRTIES_BeaconMetricsQuery()"),
+ CR("rej_path_without_radio", N "Device.1.X_AIRTIES_BeaconMetricsQuery()"),
+ CR("rej_path_without_bss", N "Device.1.Radio.1.X_AIRTIES_BeaconMetricsQuery()"),
+ CR("rej_path_without_sta", N "Device.1.Radio.1.BSS.1.X_AIRTIES_BeaconMetricsQuery()"),
 
  { NULL, NULL, false, false, {E0}, 0, NULL, false }  /* sentinel */
 };

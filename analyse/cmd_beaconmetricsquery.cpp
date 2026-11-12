@@ -1,10 +1,10 @@
 /*
  * HANDLER: cmd_beaconmetricsquery
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), em_ctrl_t::cmd_beaconmetricsquery, with get_table_instance()
  * and the tr_181_t helpers it calls (verbatim from tr_181_helper.cpp) and
- * util::split_by_delim (verbatim from src/utils/util.cpp).
+ * util::split_by_delim (verbatim from src/utils/util.cpp). Fixes 2-3 applied (start fix n / end fix n markers).
  * Local arrays: instance[32], bssid[33], ssid[33], elem_list[129],
  * ch_rep_items[6] (each ch_list[64]), buff[sizeof(em_subdoc_info_t)+EM_IO_BUFF_SZ].
  * Scaffolding: one device / radio / BSS / STA (numeric index 1 or MAC alias),
@@ -260,13 +260,23 @@ bool tr_181_t::tr181_get_prop_int(const bus_data_prop_t *prop, int *value)
     return true;
 }
 
-/* --- copied verbatim from src/ctrl/dm_easy_mesh_ctrl.cpp --- */
+/* --- copied from src/ctrl/dm_easy_mesh_ctrl.cpp (verbatim apart from the fixes) --- */
 const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *instance, size_t max_len, bool *is_num)
 {
 	char *dst = instance;
 	size_t len = 0;
 
+/* start updated fix 3 */
+    if (src == NULL) {
+        return NULL;
+    }
+/* end updated fix 3 */
     src = strstr(src, ".");
+/* start fix 3 */
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 3 */
     ++src;
 
 	if (*src == '[') {
@@ -276,14 +286,23 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src += 2;
+/* start updated fix 3 */
+        if (*src != ']' || src[1] != '.') {
+            return NULL;
+        }
+        src += 2;
+/* end updated fix 3 */
 	} else {
 		*is_num = true;
 		while (*src && *src != '.' && ++len < max_len) {
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src++;
+/* start fix 3 */
+        if (*src) {
+            src++;
+        }
+/* end fix 3 */
 	}
 
 	return src;
@@ -352,8 +371,26 @@ bus_error_t em_ctrl_t::cmd_beaconmetricsquery(const char *method_name, const bus
 
     /* Extract device instance (numeric or alias) and find the dm object for
      * that device instance */
+/* start fix 2 */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        em_printfout("Invalid method path");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_namespace;
+    }
+/* end fix 2 */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 3 */
+    if (name == NULL) {
+        em_printfout("Invalid method path");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_namespace;
+    }
+/* end fix 3 */
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         em_printfout("Device not found");
@@ -367,6 +404,15 @@ bus_error_t em_ctrl_t::cmd_beaconmetricsquery(const char *method_name, const bus
     /* Extract radio instance (numeric or alias), find the radio dm object
      * for that instance, and finally get info struct for radio dm object */
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 3 */
+    if (name == NULL) {
+        em_printfout("Radio not found");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_namespace;
+    }
+/* end fix 3 */
     dm_radio_t *radio = dm_ctrl->get_dm_radio(dm, instance, is_num);
     if (radio == NULL) {
         em_printfout("Radio not found");
@@ -380,6 +426,15 @@ bus_error_t em_ctrl_t::cmd_beaconmetricsquery(const char *method_name, const bus
     /* Extract bss instance (numeric or alias), find the bss dm object
      * for that instance, and finally get info struct for bss dm object */
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 3 */
+    if (name == NULL) {
+        em_printfout("BSS not found");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_namespace;
+    }
+/* end fix 3 */
     dm_bss_t *bss = dm_ctrl->get_dm_bss(dm, ri, instance, is_num);
     if (bss == NULL) {
         em_printfout("BSS not found");
@@ -393,6 +448,15 @@ bus_error_t em_ctrl_t::cmd_beaconmetricsquery(const char *method_name, const bus
     /* Extract sta instance (numeric or alias), find the sta dm object
      * for that instance, and finally get info struct for sta dm object */
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 3 */
+    if (name == NULL) {
+        em_printfout("STA not found");
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_namespace;
+    }
+/* end fix 3 */
     dm_sta_t *sta = dm_ctrl->get_dm_sta(dm, bi, instance, is_num);
     if (sta == NULL) {
         em_printfout("STA not found");
