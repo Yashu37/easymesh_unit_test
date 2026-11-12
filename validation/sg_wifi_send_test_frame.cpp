@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_send_test_frame (src/wifi_hal_frame_test.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_frame_test.c:59-116 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It builds the 8-byte test signature plus five TLVs
+ * Function copied (verbatim apart from the marked fixes) from rdk-wifi-hal: src/wifi_hal_frame_test.c:59-116 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-4 (start fix n / end fix n markers; the unfixed copy is the reproducer).  It builds the 8-byte test signature plus five TLVs
  * (command, vap name from arg->interface_name as 16 bytes, station mac from arg->mac, direction, the raw frame) in a local msg[2048] with set_tlv, sends the datagram to 127.0.0.1:8888, closes the socket
  * and returns RETURN_OK (RETURN_ERR, after closing, when sendto fails; RETURN_ERR when the socket cannot be created).
  *
@@ -76,6 +76,24 @@ int wifi_send_test_frame(unsigned char *frame, size_t frame_len, frame_test_arg_
 
    //printf("%s:%d: Enter: data length:%d\n", __func__, __LINE__, frame_len);
 
+    /* ---------- start fix 1: arg was dereferenced (interface_name, mac) without a NULL check. */
+   if (arg == NULL) {
+       return RETURN_ERR;
+   }
+   /* ---------- end fix 1 */
+
+   /* ---------- start fix 2: frame was copied by set_tlv (memcpy of frame_len bytes) without a NULL check. */
+   if (frame == NULL && frame_len > 0) {
+       return RETURN_ERR;
+   }
+   /* ---------- end fix 2 */
+
+   /* ---------- start fix 3: frame_len was never checked against the room left in msg[2048] (stack overflow; also wraps in set_tlv's unsigned short length). */
+   if (frame_len > sizeof(msg) - sizeof(wifi_common_hal_test_signature) - (4 + sizeof(wifi_test_command_id_t)) - (4 + IFNAMSIZ) - (4 + sizeof(mac_address_t)) - (4 + 1) - 4) {
+       return RETURN_ERR;
+   }
+   /* ---------- end fix 3 */
+
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
        printf("%s:%d: Error opening raw socket, err:%d\n", __func__, __LINE__, errno);
        return RETURN_ERR;
@@ -103,7 +121,9 @@ int wifi_send_test_frame(unsigned char *frame, size_t frame_len, frame_test_arg_
     tlv_len += (4 + sizeof(mac_address_t));
 
     tlv = set_tlv((unsigned char*)tlv, wifi_test_attrib_direction, 1, (unsigned char*)&dir);
-    tlv_len += (1 + sizeof(mac_address_t));
+    /* ---------- start fix 4: the direction TLV is 4 header bytes + 1 value byte; it was counted as 1 + sizeof(mac_address_t) = 7, sending 2 bytes past the data. */
+    tlv_len += (4 + 1);
+    /* ---------- end fix 4 */
 
 
     tlv = set_tlv((unsigned char*)tlv, wifi_test_attrib_raw, frame_len, frame);
