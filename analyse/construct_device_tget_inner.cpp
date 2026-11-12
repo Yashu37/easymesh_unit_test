@@ -8,9 +8,9 @@
  * property_append_tail records "idx:name=value" lines; the checks look for `has` / `not_has`.
  *
  * expect_rc: 0 success, 2 invalid_input, 6 invalid_operation (stand-in values). Cases marked [spec] are
- * wrong behaviour (no abort). The crash_* cases ABORT on the original handler: the runner executes
- * them last and UNFORKED (a plain make shows the ASan report and stops); FORK_CRASH=1 runs each
- * in a forked child so all of them show.
+ * wrong behaviour (no abort). The last 4 cases (empty event_name, num_backhaul_down_mac 17 / 255, val_str
+ * accumulating over 5 devices) ABORTED on the original handler; with the fixes they pass. A case flagged
+ * crash=true would run last and UNFORKED (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -72,11 +72,11 @@ test_case_t suite[] = {
  {"rej_single_char_no_dot", "x", false, {DV(1, 1), E0}, 6, -1, NULL, NULL, false},
  /* ---- [spec]: wrong behaviour, no abort ---- */
  OK("ok_down_list_not_stale_second_device [spec]", 2, "2:BackhaulDownMACAddress=02:00:00:00:02:00,02:00:00:00:02:01\n", NULL, DVD(1, 1, 2, 2), DVD(2, 2, 2, 2)),
- /* ---- CRASH cases (run last, unforked) ---- */
- {"crash_event_name_empty", "", false, {DV(1, 1), E0}, 6, -1, NULL, NULL, true},
- CR("crash_down_count_17", 1, DVD(1, 1, 17, 16)),
- CR("crash_down_count_255", 1, DVD(1, 1, 255, 16)),
- CR("crash_val_str_overflow_5_devices", 5, DVD(1, 1, 15, 15), DVD(2, 2, 15, 15), DVD(3, 3, 15, 15), DVD(4, 4, 15, 15), DVD(5, 5, 15, 15)),
+ /* ---- were CRASH cases on the original handler (now handled) ---- */
+ {"rej_event_name_empty", "", false, {DV(1, 1), E0}, 6, -1, NULL, NULL, false},
+ OK("ok_down_count_17_capped", 1, "1:BackhaulDownNumberOfEntries=17\n", NULL, DVD(1, 1, 17, 16)),
+ OK("ok_down_count_255_capped", 1, "1:BackhaulDownNumberOfEntries=255\n", NULL, DVD(1, 1, 255, 16)),
+ OK("ok_down_lists_5_devices", 5, "5:BackhaulDownMACAddress=02:00:00:00:05:00,02:00:00:00:05:01,02:00:00:00:05:02,02:00:00:00:05:03,02:00:00:00:05:04,02:00:00:00:05:05,02:00:00:00:05:06,02:00:00:00:05:07,02:00:00:00:05:08,02:00:00:00:05:09,02:00:00:00:05:0a,02:00:00:00:05:0b,02:00:00:00:05:0c,02:00:00:00:05:0d,02:00:00:00:05:0e\n", NULL, DVD(1, 1, 15, 15), DVD(2, 2, 15, 15), DVD(3, 3, 15, 15), DVD(4, 4, 15, 15), DVD(5, 5, 15, 15)),
 
  { NULL, NULL, false, {E0}, 0, 0, NULL, NULL, false }  /* sentinel */
 };

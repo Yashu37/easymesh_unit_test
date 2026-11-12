@@ -1,8 +1,8 @@
 /*
  * HANDLER: device_tget_inner
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
- * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::device_tget_inner, with fill_comma_sep()
+ * Function copied from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::device_tget_inner (fixes 1-3 applied, start fix n / end fix n markers), with fill_comma_sep()
  * (same file) and dm_easy_mesh_t::maclist_to_string() (src/dm/dm_easy_mesh.cpp), both verbatim.
  * Local arrays: path[512], val_str[MAX_EM_BUFF_SZ=1024], maclist_str[256],
  * maclist[14], tmp (vector of em_short_string_t[64]).
@@ -129,6 +129,12 @@ bus_error_t dm_easy_mesh_ctrl_t::device_tget_inner(char *event_name, raw_data_t 
     if (!event_name || !p_data) {
         return bus_error_invalid_input;
     }
+/* start fix 1 */
+    if (*event_name == '\0') {
+        /* empty name: strlen() - 1 below would read the byte in front of the buffer */
+        return bus_error_invalid_operation;
+    }
+/* end fix 1 */
     if (*(event_name + (strlen(event_name) - 1)) != '.') {
         /* Only partial paths are valid */
         return bus_error_invalid_operation;
@@ -212,13 +218,21 @@ bus_error_t dm_easy_mesh_ctrl_t::device_tget_inner(char *event_name, raw_data_t 
         } else {
             dm_ctrl->property_append_tail(&property, root, idx, "BackhaulMACAddress", di->backhaul_mac.mac);
         }
-        const size_t n = static_cast<size_t>(di->num_backhaul_down_mac);
+/* start fix 2 */
+        size_t n = static_cast<size_t>(di->num_backhaul_down_mac);
+        if (n > EM_BACKHAUL_DOWNMAC_ADDR) {
+            n = EM_BACKHAUL_DOWNMAC_ADDR;
+        }
+/* end fix 2 */
         std::vector<em_short_string_t> tmp(n);
 
         for (size_t i = 0; i < n; i++) {
             std::strncpy(tmp[i], di->backhaul_down_mac[i], sizeof(tmp[i]) - 1);
             tmp[i][sizeof(tmp[i]) - 1] = '\0';
         }
+/* start fix 3 */
+        val_str[0] = '\0';
+/* end fix 3 */
         dm_ctrl->fill_comma_sep(tmp.data(), n, val_str);
         dm_ctrl->property_append_tail(&property, root, idx, "BackhaulDownMACAddress", val_str);
         if (memcmp(di->backhaul_mac.mac, ZERO_MAC_ADDR, sizeof(ZERO_MAC_ADDR)) == 0) {
