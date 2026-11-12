@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppCancel (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:3144-3150 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It cancels the DPP session of a context: it calls
+ * Function copied (verbatim apart from the marked fixes) from rdk-wifi-hal: src/wifi_hal_dpp.c:3144-3150 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-3 (start fix n / end fix n markers; the unfixed copy is the reproducer).  It cancels the DPP session of a context: it calls
  * delete_dpp_session_instance, which frees the session instance (N, M, responder protocol point, the reconfig responder connector, the initiator protocol key, bn context, prime, n, m, y, x and the instance
  * itself), sets session_data.instance = NULL, and returns RETURN_OK.
  *
@@ -28,10 +28,22 @@ void delete_dpp_session_instance(wifi_device_dpp_context_t *ctx)
     wifi_dpp_session_data_t    *data = NULL;
     wifi_dpp_instance_t *instance;
 
+    /* ---------- start fix 1: a NULL context was dereferenced (ctx->session_data). */
+    if (ctx == NULL) {
+        return;
+    }
+    /* ---------- end fix 1 */
+
     wifi_dpp_dbg_print("%s:%d Here\n", __func__, __LINE__);
 
     data = &ctx->session_data;
 	instance = data->instance;
+
+    /* ---------- start fix 2: no session instance (never created, or already cancelled): nothing to free; a second cancel crashed on instance->N. */
+    if (instance == NULL) {
+        return;
+    }
+    /* ---------- end fix 2 */
 
     if (instance->N != NULL) {
         EC_POINT_free(instance->N);
@@ -87,6 +99,12 @@ void delete_dpp_session_instance(wifi_device_dpp_context_t *ctx)
 int 
 wifi_dppCancel(wifi_device_dpp_context_t *ctx)
 {
+    /* ---------- start fix 3: a NULL context is an error (and is not passed on). */
+    if (ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 3 */
+
 	delete_dpp_session_instance(ctx);
 
     return RETURN_OK;
