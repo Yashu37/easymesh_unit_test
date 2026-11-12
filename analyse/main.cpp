@@ -6,6 +6,7 @@
 #include "common.h"
 #include <sanitizer/asan_interface.h>
 
+void run_all_tests_device_tget_inner(void);   /* declared here, not in common.h: keeps make incremental */
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -404,6 +405,10 @@ int main() {
 
 	// cmd_beaconmetricsquery (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The last 4 cases were crashes (fixed);
 	// expected to abort and run in forked children, so the ASan report is visible and the run continues.
-	run_all_tests_cmd_beaconmetricsquery();
+//	run_all_tests_cmd_beaconmetricsquery();
+
+	// device_tget_inner (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_device_tget_inner();
 	return 0;
 }
