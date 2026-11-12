@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppSendReconfigAuthCnf (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:2931-3038 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It builds the DPP Reconfiguration Authentication
+ * Function copied (verbatim apart from fixes 1-2: start fix n / end fix n markers; the unfixed copy is the reproducer) from rdk-wifi-hal: src/wifi_hal_dpp.c:2931-3038 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-2.  It builds the DPP Reconfiguration Authentication
  * Confirm public action frame (header + wrapped data = AES-SIV (key instance->ke by digestlen, AAD = the 6-byte DPP frame body) of the transaction id, protocol version, initiator nonce, responder nonce and
  * reconfig flags), sends it with wifi_sendActionFrame(ap_index, sta_mac, frequency of the session channel, frame, len), re-reads the radio channel into session_data.channel, clears match_tran_id and
  * returns RETURN_OK; an unsupported digestlen -> enrollee_status = RESPONDER_STATUS_CONFIGURATION_FAILURE, RETURN_ERR.
@@ -120,11 +120,24 @@ wifi_dppSendReconfigAuthCnf(wifi_device_dpp_context_t *dpp_ctx)
     wifi_dpp_instance_t *instance;
     ULONG channel;
 
+    /* ---------- start fix 1: a NULL context was dereferenced at once. */
+    if (dpp_ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
+
     wifi_dpp_dbg_print("%s:%d Enter\n", __func__, __LINE__);
     printf("%s:%d: credentials.keyManagement:%u\n", __func__, __LINE__, dpp_ctx->config.credentials.keyManagement);
 
 	data = &dpp_ctx->session_data;
     instance = (wifi_dpp_instance_t *)data->instance;
+
+    /* ---------- start fix 2: a NULL session instance was dereferenced (instance->noncelen / initiator_nonce / digestlen). */
+    if (instance == NULL) {
+        dpp_ctx->enrollee_status = RESPONDER_STATUS_CONFIGURATION_FAILURE;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
 
     public_action_frame = (wifi_dppPublicActionFrame_t *)buff;
 
