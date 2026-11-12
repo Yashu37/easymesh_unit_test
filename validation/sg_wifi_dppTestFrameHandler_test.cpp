@@ -52,6 +52,7 @@ static int expect_cb(const hwr_wtd_dg_t *d, int *ap, unsigned char *mac, unsigne
 		if (t->type == 0 && !c) c = t; else if (t->type == 1 && !v) v = t; else if (t->type == 2 && !m) m = t; else if (t->type == 4 && !r) r = t;
 	}
 	if (!c || !v || !m || !r) return 0;
+	{ unsigned tot = 8; for (int i = 0; i < d->n; i++) tot += 4 + d->t[i].len; if (tot > 1024) return 0; }   /* recvfrom delivers at most 1024 bytes: a TLV that is not completely inside is not valid */
 	if (c->len != 4 || c->val >= 2) return 0;
 	if (v->len < 1 || v->len > 31 || v->val < 0) return 0;
 	if (m->len != 6 || r->len > 1024) return 0;

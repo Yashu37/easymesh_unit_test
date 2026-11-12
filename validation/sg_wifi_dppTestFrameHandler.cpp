@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppTestFrameHandler (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:3431-3532 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It is the thread routine of the DPP test frame receiver: when the
+ * Function copied (verbatim apart from the marked fixes) from rdk-wifi-hal: src/wifi_hal_dpp.c:3431-3532 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-7 (start fix n / end fix n markers; the unfixed copy is the reproducer).  It is the thread routine of the DPP test frame receiver: when the
  * file /nvram/wifiDppTest is readable it opens the test socket (create_test_socket) and loops forever: for every datagram that starts with the 8-byte test signature it looks up TLVs (command, vap name, station
  * mac, raw frame) with get_tlv and, for the chirp / reconfig auth response commands, copies them into the local cmd / interface_name[32] / bmac[6] / frame[1024] with the TLV's own length, parses the ap index out of
  * "ath<N>" and hands the frame to mgmt_frame_received_callback.
@@ -135,6 +135,11 @@ static void *wifi_dppTestFrameHandler(void *arg)
         if (retval == 0) {
             continue;
         } else if (retval == -1) {
+            /* ---------- start fix 7: a failing select (not an interrupted one) never ended the loop: the thread spun on the error at full speed. */
+            if (errno != EINTR) {
+                exit = true;
+            }
+            /* ---------- end fix 7 */
             continue;
         }
 
@@ -149,35 +154,68 @@ static void *wifi_dppTestFrameHandler(void *arg)
 
 		wifi_dpp_dbg_print("%s:%d: Received data: %d, select returned:%d\n", __func__, __LINE__, ret, retval);
 
+        /* ---------- start fix 6: a datagram shorter than the signature was compared with stale bytes of the previous datagram, and get_tlv was given the whole datagram length although it starts after the 8-byte signature (read past msg, parse of stale TLVs). */
+        if (ret < (int)sizeof(wifi_common_hal_test_signature)) {
+            continue;
+        }
+        /* ---------- end fix 6 */
+
         if (memcmp(msg, wifi_common_hal_test_signature, sizeof(wifi_common_hal_test_signature)) != 0) {
             continue;
         }
 
         wifi_dpp_dbg_print("%s:%d: Received test signature\n", __func__, __LINE__);
 
-        if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_cmd, ret)) == NULL) {
+        if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_cmd, ret - sizeof(wifi_common_hal_test_signature))) == NULL) {
             continue;
         }
+        /* ---------- start fix 1: the TLV length (taken from the datagram) was used to copy into the 4-byte cmd without any check. */
+        if (tlv->length != sizeof(cmd) || tlv->value + tlv->length > msg + ret) {
+            continue;
+        }
+        /* ---------- end fix 1 */
         memcpy((unsigned char *)&cmd, tlv->value, tlv->length);
 
         switch (cmd) {
             case wifi_test_command_id_chirp:
 			case wifi_test_command_id_reconf_auth_resp:
                 wifi_dpp_dbg_print("%s:%d: Received chirp test command\n", __func__, __LINE__);
-                if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_vap_name, ret)) == NULL) {
+                if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_vap_name, ret - sizeof(wifi_common_hal_test_signature))) == NULL) {
                     continue;
                 }
+                /* ---------- start fix 2: the TLV length was copied into interface_name[32] without a check (and the name was not NUL terminated for sscanf). */
+                if (tlv->length >= sizeof(interface_name) || tlv->value + tlv->length > msg + ret) {
+                    continue;
+                }
+                /* ---------- end fix 2 */
                 memcpy(interface_name, tlv->value, tlv->length);
-                sscanf(interface_name, "ath%d", &ap_index);
-
-                if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_sta_mac, ret)) == NULL) {
+                /* ---------- start fix 2b */
+                interface_name[tlv->length] = '\0';
+                /* ---------- end fix 2b */
+                /* ---------- start fix 3: a name that is not "ath<N>" left ap_index uninitialised and the frame was still delivered with it. */
+                if (sscanf(interface_name, "ath%d", &ap_index) != 1) {
                     continue;
                 }
+                /* ---------- end fix 3 */
+
+                if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_sta_mac, ret - sizeof(wifi_common_hal_test_signature))) == NULL) {
+                    continue;
+                }
+                /* ---------- start fix 4: the TLV length was copied into the 6-byte bmac without a check. */
+                if (tlv->length != sizeof(bmac) || tlv->value + tlv->length > msg + ret) {
+                    continue;
+                }
+                /* ---------- end fix 4 */
                 memcpy(bmac, tlv->value, tlv->length);
 
-                if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_raw, ret)) == NULL) {
+                if ((tlv = get_tlv(&msg[sizeof(wifi_common_hal_test_signature)], wifi_test_attrib_raw, ret - sizeof(wifi_common_hal_test_signature))) == NULL) {
                     continue;
                 }
+                /* ---------- start fix 5: the TLV length was copied into frame[1024] without checking that the TLV lies inside the received bytes (read past msg). */
+                if (tlv->length > sizeof(frame) || tlv->value + tlv->length > msg + ret) {
+                    continue;
+                }
+                /* ---------- end fix 5 */
                 memcpy(frame, tlv->value, tlv->length);
                 wifi_dpp_dbg_print("%s:%d: Calling mgmt frame receive\n", __func__, __LINE__);
 
