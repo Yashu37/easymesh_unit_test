@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppProcessReconfigAuthResponse (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:2180-2362 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It handles a received DPP Reconfiguration
+ * Function copied from rdk-wifi-hal (verbatim apart from fixes 1-6; start fix n / end fix n markers, also in the get_tlv and dpp_build_point_from_connector_string support copies; the unfixed copy is the reproducer): src/wifi_hal_dpp.c:2180-2362 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-6.  It handles a received DPP Reconfiguration
  * Authentication Response frame: reads the transaction id (matched against the session's tran_id table), protocol version, connector (builds the responder connector point) and responder protocol key,
  * computes the reconfig key ke (HKDF over M = privkey * (responder_proto_pt + responder_connector)), decrypts the wrapped data with AES-SIV and checks the responder / initiator nonces.  It sets
  * enrollee_status = RESPONDER_STATUS_AUTH_FAILURE on the key / decrypt / nonce failure paths and returns RETURN_OK / RETURN_ERR.
@@ -40,15 +40,20 @@ wifi_tlv_t *get_tlv(unsigned char *buff, unsigned short attrib, unsigned short l
     bool found = false;
     wifi_tlv_t *tlv = (wifi_tlv_t *)buff;
 
-    while (total_len < len) {
+    /* ---------- start fix 3: the attribute header (4 bytes) and the attribute value must lie inside the len bytes of the frame: a truncated header, or a length field larger than what is left,
+       made the walk (and the callers' memcpy / BN_bin2bn / siv_decrypt on tlv->value) read past the frame buffer. */
+    while (total_len + 2*sizeof(unsigned short) <= len) {
         if (tlv->type == attrib) {
-            found = true;
+            if (total_len + 2*sizeof(unsigned short) + tlv->length <= len) {
+                found = true;
+            }
             break;
         }
 
         total_len += (2*sizeof(unsigned short) + tlv->length);
         tlv = (wifi_tlv_t *)((unsigned char *)tlv + 2*sizeof(unsigned short) + tlv->length);
     }
+    /* ---------- end fix 3 */
 
     return (found == true) ? tlv:NULL;
 }
@@ -174,6 +179,20 @@ EC_POINT *dpp_build_point_from_connector_string(wifi_device_dpp_context_t *ctx, 
 		return NULL;
 	}
 
+	/* ---------- start fix 4: "x" / "y" must be json strings (a number / object has valuestring == NULL, strlen(NULL) crashed). */
+	if (!cJSON_IsString(x_json) || (x_json->valuestring == NULL) || !cJSON_IsString(y_json) || (y_json->valuestring == NULL)) {
+		printf("%s:%d: x or y is not a string\n", __func__, __LINE__);
+		cJSON_Delete(connector_json);
+		return NULL;
+	}
+	/* ---------- end fix 4 */
+	/* ---------- start fix 5: x[] and y[] hold SHA512_DIGEST_LENGTH (64) bytes; base64urldecode copies the whole decoded value into them, a longer x / y overflowed the stack buffers. */
+	if (((strlen(x_json->valuestring) * 3) / 4 > sizeof(x)) || ((strlen(y_json->valuestring) * 3) / 4 > sizeof(y))) {
+		printf("%s:%d: x or y too long\n", __func__, __LINE__);
+		cJSON_Delete(connector_json);
+		return NULL;
+	}
+	/* ---------- end fix 5 */
 	printf("%s:%d:X:%s\n", __func__, __LINE__, x_json->valuestring);
 	printf("%s:%d:Y:%s\n", __func__, __LINE__, y_json->valuestring);
 
@@ -495,7 +514,18 @@ wifi_dppProcessReconfigAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
 
     wifi_dpp_dbg_print("%s:%d: Enter\n", __func__, __LINE__);
 
+    /* ---------- start fix 1: a NULL context, a NULL reconfigCtx / reconfig key (dereferenced at EC_KEY_get0_private_key(recfg->key)) and a NULL frame were dereferenced. */
+    if (dpp_ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
+
     recfg = (wifi_dpp_reconfig_instance_t *)obj->reconfigCtx;
+    /* ---------- start fix 1 (cont.) */
+    if ((recfg == NULL) || (recfg->key == NULL)) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 (cont.) */
 
     data = &dpp_ctx->session_data;
     instance = (wifi_dpp_instance_t *)data->instance;
@@ -507,6 +537,12 @@ wifi_dppProcessReconfigAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
     frame = (wifi_dppPublicActionFrameBody_t*)dpp_ctx->received_frame.frame;
     len = dpp_ctx->received_frame.length;
 
+    /* ---------- start fix 2: frame == NULL, or a frame shorter than the 6-byte action frame body, made attrib_len = len - 6 wrap to a huge value (get_tlv then walked far past the frame). */
+    if ((frame == NULL) || (len < sizeof(wifi_dppPublicActionFrameBody_t)) ||
+        ((len - sizeof(wifi_dppPublicActionFrameBody_t)) > USHRT_MAX)) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
     attrib_len = len - sizeof(wifi_dppPublicActionFrameBody_t);
 
     if ((tlv = get_tlv(frame->attrib, wifi_dpp_attrib_id_transaction_id, attrib_len)) == NULL) {
@@ -625,12 +661,14 @@ wifi_dppProcessReconfigAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
         return RETURN_ERR;
     }
 
-    if (tlv->length > sizeof(instance->responder_nonce)) {
+    /* ---------- start fix 6: the responder nonce is exactly noncelen bytes long (the message below already prints tlv->length / noncelen); a shorter nonce was accepted and copied. */
+    if ((tlv->length != instance->noncelen) || (tlv->length > sizeof(instance->responder_nonce))) {
         wifi_dpp_dbg_print("%s:%d responder nonce length mismatch %u/%u\n", __func__, __LINE__,
             (unsigned int)tlv->length, (unsigned int)instance->noncelen);
         dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
         return RETURN_ERR;
     }
+    /* ---------- end fix 6 (responder nonce; the initiator nonce check below uses the same rule) */
 
     printf("Responder nonce: ");
     print_hex_dump(tlv->length, tlv->value);
@@ -648,7 +686,7 @@ wifi_dppProcessReconfigAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
         wifi_dpp_dbg_print("%s:%d: Failed to get initiator nonce nonce\n", __func__, __LINE__);
         dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
         return RETURN_ERR;
-    } else if (tlv->length > sizeof(instance->initiator_nonce)) {
+    } else if ((tlv->length != instance->noncelen) || (tlv->length > sizeof(instance->initiator_nonce))) {
         wifi_dpp_dbg_print("%s:%d: initiator nonce length invalid\n", __func__, __LINE__);
         dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
         return RETURN_ERR;
