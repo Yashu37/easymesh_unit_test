@@ -227,6 +227,7 @@ extern "C" void run_all_tests_sg_callback_dpp_config_req_frame_received(void);
 extern "C" void run_all_tests_sg_wifi_dppSendConfigResponse(void);
 extern "C" void run_all_tests_sg_wifi_dppSendReconfigAuthCnf(void);
 extern "C" void run_all_tests_sg_wifi_dppSendAuthCnf(void);
+extern "C" void run_all_tests_sg_wifi_dppCancel(void);
 extern "C" void run_all_tests_wifi_getApAssociatedDeviceDiagnosticResult3(void);
 extern "C" void run_all_tests_wifi_startNeighborScan(void);
 
@@ -955,7 +956,10 @@ int main() {
 //	run_all_tests_sg_wifi_dppSendReconfigAuthCnf();
 
 	// src: wifi_dppSendAuthCnf (rdk-wifi-hal src/wifi_hal_dpp.c)
-	run_all_tests_sg_wifi_dppSendAuthCnf();
+//	run_all_tests_sg_wifi_dppSendAuthCnf();
+
+	// src: wifi_dppCancel (rdk-wifi-hal src/wifi_hal_dpp.c)
+	run_all_tests_sg_wifi_dppCancel();
 
 	return 0;
 }
