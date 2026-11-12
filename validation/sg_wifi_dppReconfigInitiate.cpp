@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppReconfigInitiate (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:3168-3251 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL wifi_dppReconfigInitiate (no fixes); the connector builder copy carries the shared leak fix 6 (finding #239, not recounted).  It starts a DPP reconfiguration: it creates the session
+ * Function copied (verbatim apart from the marked fixes) from rdk-wifi-hal: src/wifi_hal_dpp.c:3168-3251 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-6 (start fix n / end fix n markers: 1, 2, 4, 6 in the handler, 3 in the create_dpp_session_instance copy, 5 in the connector builder copy); the connector builder copy also carries the shared leak fix (finding #239, not recounted, marked fix L there).  It starts a DPP reconfiguration: it creates the session
  * instance (create_dpp_session_instance: initiator protocol key, nonce, group from the initiator bootstrap key iPubKey), draws a random transaction id into reconfig_data.tran_id[dpp_init_retries], builds the
  * Reconfiguration Authentication Request (transaction id, protocol version, signed connector, initiator nonce) and sends it with wifi_sendActionFrame on the frequency of the session channel.
  *
@@ -204,8 +204,10 @@ int dpp_build_connector(wifi_device_dpp_context_t *dpp_ctx, char* connector, boo
     BIGNUM *x, *y;
     BIGNUM *r = NULL, *s = NULL;
     ECDSA_SIG *ecsig;
-    unsigned char b64x[SHA512_DIGEST_LENGTH];
-    unsigned char b64y[SHA512_DIGEST_LENGTH];
+    /* ---------- start fix 5: base64url of a P-384 (48 bytes -> 64 chars + NUL) / P-521 (66 bytes -> 88 chars + NUL) coordinate overflowed the 64-byte buffers. */
+    unsigned char b64x[2 * SHA512_DIGEST_LENGTH];
+    unsigned char b64y[2 * SHA512_DIGEST_LENGTH];
+    /* ---------- end fix 5 */
     unsigned char *bn;
     wifi_dpp_configuration_object_t *obj = &dpp_ctx->config;
     wifi_dpp_instance_t *instance = dpp_ctx->session_data.instance;
@@ -315,11 +317,11 @@ int dpp_build_connector(wifi_device_dpp_context_t *dpp_ctx, char* connector, boo
 #endif
 
     if ((ecsig = ECDSA_do_sign_ex(digest, mdlen, NULL, NULL, sign->key)) == NULL) {
-        /* ---------- start fix 6: shared with wifi_dppSendConfigResponse (finding #239, not recounted): EVP_MD_CTX and ECDSA_SIG were leaked. */
+        /* ---------- start fix L: shared with wifi_dppSendConfigResponse (finding #239, not recounted): EVP_MD_CTX and ECDSA_SIG were leaked. */
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
         EVP_MD_CTX_free(ctx);
 #endif
-        /* ---------- end fix 6 */
+        /* ---------- end fix L */
         return -1;
     }
     ECDSA_SIG_get0(ecsig, (const BIGNUM **)&r, (const BIGNUM **)&s);
@@ -335,12 +337,12 @@ int dpp_build_connector(wifi_device_dpp_context_t *dpp_ctx, char* connector, boo
     conn_len += base64urlencode(connector + conn_len, sig, siglen);
     printf("%s:%d connector:%s\n", __func__, __LINE__, connector);
 
-    /* ---------- start fix 6 */
+    /* ---------- start fix L */
     ECDSA_SIG_free(ecsig);
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
     EVP_MD_CTX_free(ctx);
 #endif
-    /* ---------- end fix 6 */
+    /* ---------- end fix L */
     return conn_len;
 }
 
@@ -408,11 +410,23 @@ wifi_dpp_session_data_t *create_dpp_session_instance(wifi_device_dpp_context_t *
     	memset(keyasn1, 0, sizeof(keyasn1));
     	if ((asn1len = EVP_DecodeBlock(keyasn1, (unsigned char *)data->u.reconfig_data.iPubKey, strlen(data->u.reconfig_data.iPubKey))) < 0) {
         	printf("%s:%d Failed to decode base 64 initiator public key\n", __func__, __LINE__);
+        	/* ---------- start fix 3: the half initialised instance block stayed in data->instance (garbage pointers for a later cancel). */
+        	free(instance);
+        	data->instance = NULL;
+        	/* ---------- end fix 3 */
         	return NULL;
     	}
 
     	key = keyasn1;
     	initiator_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    	/* ---------- start fix 3: d2i_EC_PUBKEY returns NULL for text that is not a public key (EC_KEY_set_conv_form(NULL) crashed). */
+    	if (initiator_key == NULL) {
+        	printf("%s:%d Could not decode initiator public key\n", __func__, __LINE__);
+        	free(instance);
+        	data->instance = NULL;
+        	return NULL;
+    	}
+    	/* ---------- end fix 3 */
 
     	EC_KEY_set_conv_form(initiator_key, POINT_CONVERSION_COMPRESSED);
     	EC_KEY_set_asn1_flag(initiator_key, OPENSSL_EC_NAMED_CURVE);
@@ -553,11 +567,28 @@ wifi_dppReconfigInitiate(wifi_device_dpp_context_t *ctx)
 	int conn_len = 0;
 	wifi_dpp_configuration_object_t *obj = &ctx->config;
 
+    /* ---------- start fix 1: a NULL context was dereferenced at once. */
+    if (ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
+
     printf("%s:%d: credentials.keyManagement:%u \n", __func__, __LINE__, ctx->config.credentials.keyManagement);
 	wifi_dpp_dbg_print("%s:%d Enter recfg ctx:%p csign instance:%p\n", __func__, __LINE__,
 		obj->reconfigCtx, obj->cSignInstance);
     
+    /* ---------- start fix 4: tran_id has 120 entries; dpp_init_retries >= 120 wrote tran_id[retries] outside the table (iPubKey[0] for 120, past the context for more). */
+    if (ctx->dpp_init_retries >= sizeof(ctx->session_data.u.reconfig_data.tran_id)) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 4 */
+
 	data = create_dpp_session_instance(ctx);
+    /* ---------- start fix 2: create_dpp_session_instance returns NULL when the session instance cannot be built; data was dereferenced. */
+    if (data == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
 	instance = (wifi_dpp_instance_t *)data->instance;
     int retry_cnt= ctx->dpp_init_retries;
 	
@@ -614,6 +645,11 @@ wifi_dppReconfigInitiate(wifi_device_dpp_context_t *ctx)
 
 
     ch_freq = (unsigned long) channel_to_frequency(data->channel);
+    /* ---------- start fix 6: a channel without a frequency (unknown -> 0) or channel 0 (-> 2407 MHz, not a channel) was sent. */
+    if ((ch_freq == 0) || (data->channel == 0)) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 6 */
 	wifi_dpp_dbg_print("%s:%d Trying sending frame on channel:%d\n", __func__, __LINE__, data->channel);
 
 	wifi_sendActionFrame(ctx->ap_index, data->sta_mac, ch_freq, (unsigned char *)public_action_frame, sizeof(wifi_dppPublicActionFrame_t) + tlv_len);
