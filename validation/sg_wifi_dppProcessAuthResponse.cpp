@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppProcessAuthResponse (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:2571-2837 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It handles a received DPP Authentication Response
+ * Function copied (verbatim apart from the fixes) from rdk-wifi-hal: src/wifi_hal_dpp.c:2571-2837 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-9 (start fix n / end fix n markers; the unfixed copy is the reproducer).  It handles a received DPP Authentication Response
  * (ctx->received_frame = public action frame body + attributes): reads the protocol version and status, checks the responder boot hash against the configured rPubKey, takes the responder protocol key,
  * derives N = pi * PR and the second intermediate key k2, decrypts the wrapped data (AES-SIV, AAD = frame header + the attributes in front of it) into primary[512], takes the responder nonce / capabilities /
  * initiator nonce from it, derives the encryption key ke, decrypts the secondary wrapped data (responder auth tag) into secondary[512], computes I-auth / R-auth (create_auth_tags) and the operating channel;
@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
+#include <openssl/crypto.h>
 
 #define RETURN_OK 0
 #define RETURN_ERR -1
@@ -614,6 +616,15 @@ int create_auth_tags    (wifi_dpp_instance_t *instance, char *iPubKeyInfoB64, ch
 
     key = keyasn1;
     responder_boot_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    /* ---------- start fix 8: d2i_EC_PUBKEY returns NULL for a base64 text that is not a public key (EC_KEY_set_conv_form(NULL) crashed). */
+    if (responder_boot_key == NULL) {
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+	EVP_MD_CTX_free(ictx);
+	EVP_MD_CTX_free(rctx);
+#endif
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 8 */
 
     EC_KEY_set_conv_form(responder_boot_key, POINT_CONVERSION_COMPRESSED);
     EC_KEY_set_asn1_flag(responder_boot_key, OPENSSL_EC_NAMED_CURVE);
@@ -624,6 +635,7 @@ int create_auth_tags    (wifi_dpp_instance_t *instance, char *iPubKeyInfoB64, ch
 	EVP_MD_CTX_free(ictx);
 	EVP_MD_CTX_free(rctx);
 #endif
+        EC_KEY_free(responder_boot_key);   /* fix 9 */
         return RETURN_ERR;
     }
 
@@ -633,6 +645,7 @@ int create_auth_tags    (wifi_dpp_instance_t *instance, char *iPubKeyInfoB64, ch
 	EVP_MD_CTX_free(ictx);
 	EVP_MD_CTX_free(rctx);
 #endif
+        EC_KEY_free(responder_boot_key);   /* fix 9 */
         return RETURN_ERR;
 
     }
@@ -653,14 +666,26 @@ int create_auth_tags    (wifi_dpp_instance_t *instance, char *iPubKeyInfoB64, ch
 	EVP_MD_CTX_free(ictx);
 	EVP_MD_CTX_free(rctx);
 #endif
+        EC_KEY_free(responder_boot_key);   /* fix 9 */
         return RETURN_ERR;
     }
 
     key = keyasn1;
     initiator_boot_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    /* ---------- start fix 8: same for the initiator boot key. */
+    if (initiator_boot_key == NULL) {
+        EC_KEY_free(responder_boot_key);   /* fix 9 */
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+	EVP_MD_CTX_free(ictx);
+	EVP_MD_CTX_free(rctx);
+#endif
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 8 */
 
     EC_KEY_set_conv_form(initiator_boot_key, POINT_CONVERSION_COMPRESSED);
     EC_KEY_set_asn1_flag(initiator_boot_key, OPENSSL_EC_NAMED_CURVE);
+    EC_KEY_free(initiator_boot_key);   /* fix 9: not used afterwards */
 
     if (instance->mutual == true) {
         memset(tag, 0, primelen);
@@ -689,6 +714,7 @@ int create_auth_tags    (wifi_dpp_instance_t *instance, char *iPubKeyInfoB64, ch
 	EVP_MD_CTX_free(ictx);
 	EVP_MD_CTX_free(rctx);
 #endif
+        EC_KEY_free(responder_boot_key);   /* fix 9 */
         return RETURN_ERR;
 
     }
@@ -744,6 +770,7 @@ int create_auth_tags    (wifi_dpp_instance_t *instance, char *iPubKeyInfoB64, ch
     EVP_MD_CTX_free(rctx);
 #endif
     
+    EC_KEY_free(responder_boot_key);   /* fix 9 */
     return RETURN_OK;
 }
 
@@ -769,6 +796,12 @@ INT wifi_dppProcessAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
     wifi_dpp_session_data_t *data = NULL;
 	wifi_dpp_instance_t *instance;
 
+    /* ---------- start fix 1: a NULL context was dereferenced at once. */
+    if (dpp_ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
+
     data = &dpp_ctx->session_data;
 	instance = (wifi_dpp_instance_t *)data->instance;
 
@@ -778,6 +811,13 @@ INT wifi_dppProcessAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
 
 	frame = (wifi_dppPublicActionFrameBody_t*)dpp_ctx->received_frame.frame;
 	len = dpp_ctx->received_frame.length; 
+
+	/* ---------- start fix 2: a NULL frame pointer (get_tlv read attrib[0]) and a frame shorter than the 6-byte body (attrib_len = len - 6 wrapped) were not rejected. */
+	if ((frame == NULL) || (len < sizeof(wifi_dppPublicActionFrameBody_t)) || ((len - sizeof(wifi_dppPublicActionFrameBody_t)) > USHRT_MAX)) {
+		dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
+		return RETURN_ERR;
+	}
+	/* ---------- end fix 2 */
 
 	attrib_len = len - sizeof(wifi_dppPublicActionFrameBody_t);
     if ((tlv = get_tlv(frame->attrib, wifi_dpp_attrib_id_proto_version, attrib_len)) == NULL) {
@@ -826,18 +866,31 @@ INT wifi_dppProcessAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
 
     key = keyasn1;
     responder_boot_key = d2i_EC_PUBKEY(NULL, (const unsigned char **)&key, asn1len);
+    /* ---------- start fix 3: d2i_EC_PUBKEY returns NULL for a base64 text that is not a public key (EC_KEY_set_conv_form(NULL) crashed). */
+    if (responder_boot_key == NULL) {
+        printf("%s:%d Failed to parse responder public key\n", __func__, __LINE__);
+        dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 3 */
 
     EC_KEY_set_conv_form(responder_boot_key, POINT_CONVERSION_COMPRESSED);
     EC_KEY_set_asn1_flag(responder_boot_key, OPENSSL_EC_NAMED_CURVE);
 
-    if (compute_key_hash(responder_boot_key, keyhash) < 1) {
+    /* ---------- start fix 9: the responder boot key was never freed (leaked on every call). */
+    int hash_ret = compute_key_hash(responder_boot_key, keyhash);
+    EC_KEY_free(responder_boot_key);
+    /* ---------- end fix 9 */
+    if (hash_ret < 1) {
         printf("%s:%d Computing responder bootstrap key hash failed\n", __func__, __LINE__);
 		dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
         return RETURN_ERR;
     }
 
     printf("%s:%d: Comparing Responder boot hash\n", __func__, __LINE__);
-    if (memcmp(tlv->value, keyhash, tlv->length) != 0) {
+    /* ---------- start fix 4: the boot hash is a full SHA-256 (32 bytes); memcmp(tlv->length) accepted a shorter prefix or an empty hash and read keyhash past its 64 bytes for longer ones. */
+    if ((tlv->length != SHA256_DIGEST_LENGTH) || (memcmp(tlv->value, keyhash, tlv->length) != 0)) {
+    /* ---------- end fix 4 */
         printf("%s:%d: Comparing Responder boot hash with recived hash failed\n", __func__, __LINE__);
 		dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
         return RETURN_ERR;
@@ -918,7 +971,9 @@ INT wifi_dppProcessAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
         return RETURN_ERR;
     }
 
-    else if (tlv->length > sizeof(instance->responder_nonce)) {
+    /* ---------- start fix 5: the responder nonce is exactly noncelen bytes long (the message below prints noncelen); 0..32 bytes were accepted. */
+    else if ((tlv->length != instance->noncelen) || (tlv->length > sizeof(instance->responder_nonce))) {
+    /* ---------- end fix 5 */
         wifi_dpp_dbg_print("%s:%d: Invalid responder nonce length=%u\n",__func__, __LINE__, (unsigned int)tlv->length);
         dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
         return RETURN_ERR;
@@ -940,6 +995,13 @@ INT wifi_dppProcessAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
 		dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
         return RETURN_ERR;
     }
+    /* ---------- start fix 6: the initiator nonce of the response must be the one sent in the Authentication Request. */
+    if ((tlv->length != instance->noncelen) || (CRYPTO_memcmp(tlv->value, instance->initiator_nonce, instance->noncelen) != 0)) {
+        printf("%s:%d: Initiator nonce mismatch\n", __func__, __LINE__);
+        dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 6 */
 
     if ((tlv = get_tlv(frame->attrib, wifi_dpp_attrib_id_initiator_boot_hash, attrib_len)) == NULL) {
         printf("%s:%d: Mutual authentication not required\n", __func__, __LINE__);
@@ -1007,6 +1069,14 @@ INT wifi_dppProcessAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
         return RETURN_ERR;
 
     }
+
+    /* ---------- start fix 7: the received responder auth tag was never compared with the R-auth the function computed. */
+    if ((tlv->length != instance->digestlen) || (CRYPTO_memcmp(tlv->value, instance->rauth, instance->digestlen) != 0)) {
+        printf("%s:%d: Responder auth tag mismatch\n", __func__, __LINE__);
+        dpp_ctx->enrollee_status = RESPONDER_STATUS_AUTH_FAILURE;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 7 */
 
     // success, we should change the channel to current operating channel
     wifi_getRadioChannel(dpp_ctx->ap_index%2, &channel);
