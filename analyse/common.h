@@ -5964,3 +5964,41 @@ bus_error_t invoke(const char *method, const bus_data_prop_t *in, bus_data_prop_
 void construct_input(const test_case_t *tc);
 }
 void run_all_tests_cmd_channelselect(void);
+
+/* --- cmd_setssid harness (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp), namespace css --- */
+namespace css {
+#define CSS_VAL_SZ 128
+#define CSS_PAD 64
+#define CSS_CFG_SZ 4096
+typedef struct {
+    const char *name;     /* property name */
+    int kind;             /* 0 string, 1 int32, 5 string of `len` copies of s[0] */
+    const char *s;
+    int i;
+    int len;
+} prop_spec_t;
+typedef struct {
+    const char *test_name;
+    int cfg;              /* config JSON returned by get_config: see construct file */
+    bool no_props;        /* input_params == NULL */
+    bool no_out;          /* output_params == NULL */
+    bool ctrl_null;       /* em_ctrl instance missing */
+    prop_spec_t props[8];
+    int expect_rc;
+    const char *json_has; /* substring expected in the JSON sent to io_process (accept cases) */
+    const char *json_not; /* substring that must NOT be in it */
+} test_case_t;
+extern test_case_t suite[];
+extern ccs::bus_data_prop_t props_buf[];
+extern char val_buf[][CSS_VAL_SZ + CSS_PAD];
+extern char cfg_store[CSS_CFG_SZ + CSS_PAD];
+extern int num_props;
+extern int io_calls;
+extern char io_json[];
+extern char last_status[];
+extern const char *cfg_json;
+void set_ctrl(bool present);
+void construct_input(const test_case_t *tc);
+ccs::bus_error_t invoke(const ccs::bus_data_prop_t *in, ccs::bus_data_prop_t **out);
+}
+void run_all_tests_cmd_setssid(void);
