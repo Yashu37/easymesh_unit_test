@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppInitiate (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:3253-3379 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It starts a DPP authentication (config session): it decodes the
+ * Function copied (verbatim apart from the marked fixes) from rdk-wifi-hal: src/wifi_hal_dpp.c:3253-3379 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-7 (start fix n / end fix n markers: 1-6 in the handler (6 = EC_KEY_free marked inline), 7 in the create_dpp_session_instance copy, config branch + unsupported curve).  It starts a DPP authentication (config session): it decodes the
  * responder / initiator bootstrap keys (rPubKey / iPubKey), creates the session instance (create_dpp_session_instance: initiator protocol key, nonce, group, M and m), derives k1 (compute_intermediate_key),
  * builds the Authentication Request (initiator / responder boot key hashes, protocol version for version 2, initiator protocol key x || y, channel attribute of the radio's home channel, wrapped data = AES-SIV
  * with k1 of the initiator nonce / capabilities) and sends it with wifi_sendActionFrame on the frequency of the session channel; state = STATE_DPP_AUTH_RSP_PENDING.
@@ -582,11 +582,22 @@ wifi_dpp_session_data_t *create_dpp_session_instance(wifi_device_dpp_context_t *
     	memset(keyasn1, 0, sizeof(keyasn1));
     	if ((asn1len = EVP_DecodeBlock(keyasn1, (unsigned char *)data->u.config_data.rPubKey, strlen(data->u.config_data.rPubKey))) < 0) {
         	printf("%s:%d Failed to decode base 64 initiator public key\n", __func__, __LINE__);
+        	/* ---------- start fix 7: the half initialised instance block stayed in data->instance (garbage pointers for a later cancel). */
+        	free(instance);
+        	data->instance = NULL;
+        	/* ---------- end fix 7 */
         	return NULL;
     	}
 
     	key = keyasn1;
     	responder_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    	/* ---------- start fix 7: d2i_EC_PUBKEY returns NULL for text that is not a public key. */
+    	if (responder_key == NULL) {
+        	free(instance);
+        	data->instance = NULL;
+        	return NULL;
+    	}
+    	/* ---------- end fix 7 */
 
     	EC_KEY_set_conv_form(responder_key, POINT_CONVERSION_COMPRESSED);
     	EC_KEY_set_asn1_flag(responder_key, OPENSSL_EC_NAMED_CURVE);
@@ -606,11 +617,22 @@ wifi_dpp_session_data_t *create_dpp_session_instance(wifi_device_dpp_context_t *
     	memset(keyasn1, 0, sizeof(keyasn1));
     	if ((asn1len = EVP_DecodeBlock(keyasn1, (unsigned char *)data->u.config_data.iPubKey, strlen(data->u.config_data.iPubKey))) < 0) {
         	printf("%s:%d Failed to decode base 64 initiator public key\n", __func__, __LINE__);
+        	/* ---------- start fix 7 */
+        	free(instance);
+        	data->instance = NULL;
+        	/* ---------- end fix 7 */
         	return NULL;
     	}
 
     	key = keyasn1;
     	initiator_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    	/* ---------- start fix 7 */
+    	if (initiator_key == NULL) {
+        	free(instance);
+        	data->instance = NULL;
+        	return NULL;
+    	}
+    	/* ---------- end fix 7 */
 
     	EC_KEY_set_conv_form(initiator_key, POINT_CONVERSION_COMPRESSED);
     	EC_KEY_set_asn1_flag(initiator_key, OPENSSL_EC_NAMED_CURVE);
@@ -671,6 +693,13 @@ wifi_dpp_session_data_t *create_dpp_session_instance(wifi_device_dpp_context_t *
             break;
         default:
             printf("%s:%d nid:%d not handled\n", __func__, __LINE__, instance->nid);
+            /* ---------- start fix 7: everything allocated so far and the instance block were left behind (partly uninitialised instance in data->instance). */
+            EC_POINT_free(instance->responder_proto_pt);
+            BN_CTX_free(instance->bnctx);
+            BN_free(instance->prime); BN_free(instance->n); BN_free(instance->m); BN_free(instance->y); BN_free(instance->x);
+            free(instance);
+            data->instance = NULL;
+            /* ---------- end fix 7 */
             return NULL;
     }
 
@@ -756,7 +785,7 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
     unsigned char keyasn1[1024];
     const unsigned char *key;
     int asn1len;
-    EC_KEY *responder_boot_key, *initiator_boot_key;
+    EC_KEY *responder_boot_key = NULL, *initiator_boot_key = NULL;   /* fix 6: initialised so that the early returns can free them */
     unsigned char buff[2048];
     unsigned int wrapped_len;
     unsigned char keyhash[SHA512_DIGEST_LENGTH];
@@ -768,6 +797,12 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
 	wifi_dpp_instance_t	*instance;
     ULONG hm_channel = 0;
     ULONG ch_freq = 0;
+
+    /* ---------- start fix 1: a NULL context was dereferenced (ctx->ap_index). */
+    if (ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
 
     wifi_dpp_dbg_print("%s:%d Enter\n", __func__, __LINE__);
     wifi_getRadioChannel(ctx->ap_index%2, &hm_channel);
@@ -782,6 +817,12 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
 
     key = keyasn1;
     responder_boot_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    /* ---------- start fix 2: d2i_EC_PUBKEY returns NULL for text that is not a public key (EC_KEY_set_conv_form(NULL) crashed). */
+    if (responder_boot_key == NULL) {
+        ctx->activation_status = ActStatus_Failed;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
 
     EC_KEY_set_conv_form(responder_boot_key, POINT_CONVERSION_COMPRESSED);
     EC_KEY_set_asn1_flag(responder_boot_key, OPENSSL_EC_NAMED_CURVE);
@@ -790,21 +831,37 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
     if ((asn1len = EVP_DecodeBlock(keyasn1, (unsigned char *)ctx->session_data.u.config_data.iPubKey, strlen(ctx->session_data.u.config_data.iPubKey))) < 0) {
         ctx->activation_status = ActStatus_Failed;
         wifi_dpp_dbg_print("%s:%d Failed to decode base 64 initiator public key\n", __func__, __LINE__);
+        EC_KEY_free(responder_boot_key);   /* fix 6 */
         return RETURN_ERR;
     }
 
     key = keyasn1;
     initiator_boot_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    /* ---------- start fix 2 */
+    if (initiator_boot_key == NULL) {
+        ctx->activation_status = ActStatus_Failed;
+        EC_KEY_free(responder_boot_key);   /* fix 6 */
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
 
     EC_KEY_set_conv_form(initiator_boot_key, POINT_CONVERSION_COMPRESSED);
     EC_KEY_set_asn1_flag(initiator_boot_key, OPENSSL_EC_NAMED_CURVE);
 
     data = create_dpp_session_instance(ctx);
+    /* ---------- start fix 3: create_dpp_session_instance returns NULL when the session instance cannot be built (e.g. a curve it does not handle); data was dereferenced. */
+    if (data == NULL) {
+        ctx->activation_status = ActStatus_Failed;
+        EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 6 */
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 3 */
 	instance = (wifi_dpp_instance_t *)data->instance;
     
     if (compute_intermediate_key(instance, true) != 0) {
         ctx->activation_status = ActStatus_Failed;
         wifi_dpp_dbg_print("%s:%d failed to generate key\n", __func__, __LINE__);
+        EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 6 */
         return RETURN_ERR;
     }
 
@@ -827,6 +884,7 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
 
     if (compute_key_hash(initiator_boot_key, keyhash) < 1) {
         ctx->activation_status = ActStatus_Failed;
+        EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 6 */
         return RETURN_ERR;
     }
 
@@ -836,6 +894,7 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
     if (compute_key_hash(responder_boot_key, keyhash) < 1) {
         ctx->activation_status = ActStatus_Failed;
         wifi_dpp_dbg_print("%s:%d unable to get x, y of the curve\n", __func__, __LINE__);
+        EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 6 */
         return RETURN_ERR;
     }
 
@@ -847,10 +906,13 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
     	tlv_len += (sizeof(ctx->configurator_version) + 4);
 	}
 
+    /* ---------- start fix 4: x and y are each right aligned in a prime-length field: the buffer was not cleared (stack garbage in the leading bytes) and y was placed with the length of x. */
+    memset(protocol_key_buff, 0, 2*BN_num_bytes(instance->prime));
     BN_bn2bin((const BIGNUM *)instance->x, 
         &protocol_key_buff[BN_num_bytes(instance->prime) - BN_num_bytes(instance->x)]);
     BN_bn2bin((const BIGNUM *)instance->y, 
-        &protocol_key_buff[2*BN_num_bytes(instance->prime) - BN_num_bytes(instance->x)]);
+        &protocol_key_buff[2*BN_num_bytes(instance->prime) - BN_num_bytes(instance->y)]);
+    /* ---------- end fix 4 */
     tlv = set_tlv((unsigned char *)tlv, wifi_dpp_attrib_id_initiator_protocol_key, 2*BN_num_bytes(instance->prime), protocol_key_buff);
     tlv_len += (2*BN_num_bytes(instance->prime) + 4);
 
@@ -861,6 +923,7 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
     wrapped_len = set_auth_frame_wrapped_data(&public_action_frame->public_action_body, tlv_len, instance, true);
     if (wrapped_len == UINT_MAX) {
         printf("%s:%d: Failed to set wrapped data\n", __func__, __LINE__);
+        EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 6 */
         return RETURN_ERR;
     }
     tlv_len += (wrapped_len + 4);
@@ -869,12 +932,20 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
     //printf("%s:%d: Frame buffer:\n", __func__, __LINE__);
     //print_hex_dump(tlv_len, buff);
     ch_freq = (unsigned long) channel_to_frequency(data->channel);
+    /* ---------- start fix 5: a session channel without a frequency (unknown -> 0) or channel 0 (-> 2407 MHz, not a channel) was sent. */
+    if ((ch_freq == 0) || (data->channel == 0)) {
+        ctx->activation_status = ActStatus_Failed;
+        EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 6 */
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 5 */
     wifi_sendActionFrame(ctx->ap_index, data->sta_mac, ch_freq/*data->channel*/, (unsigned char *)public_action_frame, sizeof(wifi_dppPublicActionFrame_t) + tlv_len);
     data->state = STATE_DPP_AUTH_RSP_PENDING;
         
 
     wifi_dpp_dbg_print("%s:%d Exit\n", __func__, __LINE__);
 
+    EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 6 */
     return RETURN_OK;
 }
 }
