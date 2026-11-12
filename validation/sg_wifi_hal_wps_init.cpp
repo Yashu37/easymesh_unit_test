@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_hal_wps_init (src/wifi_hal_hostapd.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_hostapd.c:1019-1090 (~/Desktop/G/rdk-wifi-hal; static, compiled under CONFIG_WPS).  This file holds the ORIGINAL code (no fixes) for the function;
+ * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_hostapd.c:1019-1090 (~/Desktop/G/rdk-wifi-hal; static, compiled under CONFIG_WPS).  This file holds the code WITH fixes 1-3 (start fix n / end fix n markers; the unfixed copy is the reproducer) for the function;
  * its callees wifi_hal_is_wps_enabled (#277) and wifi_hal_band_to_wps_band (#276) carry the fixes found in their own harnesses.  It resets the BSS config WPS state / RF bands, returns when WPS is not enabled
  * for the VAP or its type prefix (name up to the last '_') cannot be derived, then marks WPS configured, ORs in the WPS band of every radio that has an interface of the same type, generates the UUID from
  * the first such interface when it is nil, sets the config methods string from the onboarding methods, copies the PIN and sets credential processing / pbc_in_m1.
@@ -66,9 +66,11 @@ int wifi_hal_get_vap_interface_type(wifi_vap_name_t vap_name, wifi_vap_type_t va
     char *last_underscore;
     int len;
 
-    if (vap_name == NULL) {
+    /* ---------- start fix 3: vap_name is a 64-byte field that need not be NUL terminated; strrchr read past it and vap_type[len] could write one byte past vap_type. */
+    if (vap_name == NULL || strnlen(vap_name, sizeof(wifi_vap_name_t)) >= sizeof(wifi_vap_name_t)) {
         return -1;
     }
+    /* ---------- end fix 3 */
 
     last_underscore = strrchr(vap_name, '_');
     if (last_underscore == NULL) {
@@ -196,6 +198,12 @@ void wifi_hal_wps_init(wifi_radio_info_t *radio, wifi_vap_info_t *vap,
     wifi_radio_info_t *radio_iter;
     wifi_interface_info_t *interface_iter;
 
+    /* ---------- start fix 1: conf was written without a NULL check. */
+    if (conf == NULL) {
+        return;
+    }
+    /* ---------- end fix 1 */
+
     conf->wps_state = 0;
     conf->wps_rf_bands = 0;
 
@@ -233,6 +241,11 @@ void wifi_hal_wps_init(wifi_radio_info_t *radio, wifi_vap_info_t *vap,
         }
     }
 
+    /* ---------- start fix 2: conf->config_methods is only allocated by init_radius_config; a NULL buffer was passed to strncpy. */
+    if (conf->config_methods == NULL) {
+        /* nothing to fill */
+    } else
+    /* ---------- end fix 2 */
     if (vap->u.bss_info.wps.methods ==
         (WIFI_ONBOARDINGMETHODS_PUSHBUTTON | WIFI_ONBOARDINGMETHODS_PIN)) {
         strncpy(conf->config_methods, "label display push_button keypad", WPS_METHODS_SIZE - 1);
@@ -246,7 +259,9 @@ void wifi_hal_wps_init(wifi_radio_info_t *radio, wifi_vap_info_t *vap,
     wifi_hal_info_print("%s:%d Wi-Fi WPS config methods: %d\n", __func__, __LINE__,
         vap->u.bss_info.wps.methods);
 
-    if (strlen(vap->u.bss_info.wps.pin) != 0) {
+    /* ---------- start fix 2 (continued): same for conf->ap_pin. */
+    if (conf->ap_pin != NULL && strlen(vap->u.bss_info.wps.pin) != 0) {
+    /* ---------- end fix 2 (continued) */
         strncpy(conf->ap_pin, vap->u.bss_info.wps.pin, WPS_PIN_SIZE - 1);
     }
 
