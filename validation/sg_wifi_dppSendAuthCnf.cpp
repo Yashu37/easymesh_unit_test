@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppSendAuthCnf (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:3040-3142 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It builds the DPP Authentication Confirm public action
+ * Function copied (verbatim apart from fixes 1-5: start fix n / end fix n markers, fix 5 = EC_KEY_free marked inline; the unfixed copy is the reproducer) from rdk-wifi-hal: src/wifi_hal_dpp.c:3040-3142 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-5.  It builds the DPP Authentication Confirm public action
  * frame (status TLV, [initiator boot hash,] responder boot hash = SHA-256 of the DER of the configured rPubKey / iPubKey, wrapped data = AES-SIV (key instance->ke, AAD = frame body + the attributes in front)
  * of the initiator auth tag instance->iauth), sends it with wifi_sendActionFrame(ap_index, sta_mac, session channel, frame, len), sets data->state = STATE_DPP_AUTHENTICATED and returns RETURN_OK;
  * the failure paths set activation_status = ActStatus_Failed and return RETURN_ERR.
@@ -173,8 +173,14 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
     wifi_dppPublicActionFrame_t    *public_action_frame;
     wifi_dpp_session_data_t *data = NULL;
 	wifi_dpp_instance_t	*instance;
-    EC_KEY *responder_boot_key, *initiator_boot_key;
+    EC_KEY *responder_boot_key = NULL, *initiator_boot_key = NULL;   /* fix 5: initialised so that the early returns can free them */
     wifi_tlv_t *tlv;
+
+    /* ---------- start fix 1: a NULL context was dereferenced at once. */
+    if (ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
 
     printf("%s:%d: Enter\n", __func__, __LINE__);
     printf("%s:%d: credentials.keyManagement:%u \n", __func__, __LINE__, ctx->config.credentials.keyManagement);
@@ -182,6 +188,13 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
 
     data = &ctx->session_data;
 	instance = (wifi_dpp_instance_t *)data->instance;
+
+    /* ---------- start fix 2: a NULL session instance was dereferenced (instance->mutual, set_auth_frame_wrapped_data). */
+    if (instance == NULL) {
+        ctx->activation_status = ActStatus_Failed;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
 
     memset(keyasn1, 0, sizeof(keyasn1));
     if ((asn1len = EVP_DecodeBlock(keyasn1, data->u.config_data.rPubKey, strlen(data->u.config_data.rPubKey))) < 0) {
@@ -192,16 +205,40 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
 
     key = keyasn1;
     responder_boot_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    /* ---------- start fix 3: d2i_EC_PUBKEY returns NULL for a text that is not a public key; the NULL key was hashed (hash of nothing) and the frame sent. */
+    if (responder_boot_key == NULL) {
+        ctx->activation_status = ActStatus_Failed;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 3 */
+    /* ---------- start fix 4: the boot key hash is over the DER of the COMPRESSED key (the form wifi_dppProcessAuthResponse hashes). */
+    EC_KEY_set_conv_form(responder_boot_key, POINT_CONVERSION_COMPRESSED);
+    EC_KEY_set_asn1_flag(responder_boot_key, OPENSSL_EC_NAMED_CURVE);
+    /* ---------- end fix 4 */
 
     memset(keyasn1, 0, sizeof(keyasn1));
     if ((asn1len = EVP_DecodeBlock(keyasn1, data->u.config_data.iPubKey, strlen(data->u.config_data.iPubKey))) < 0) {
         ctx->activation_status = ActStatus_Failed;
         printf("%s:%d Failed to decode base 64 initiator public key\n", __func__, __LINE__);
+        EC_KEY_free(responder_boot_key);   /* fix 5 */
         return RETURN_ERR;
     }
 
     key = keyasn1;
     initiator_boot_key = d2i_EC_PUBKEY(NULL, &key, asn1len);
+    /* ---------- start fix 3: the initiator key is only needed (hashed) for mutual authentication. */
+    if ((initiator_boot_key == NULL) && (instance->mutual == true)) {
+        ctx->activation_status = ActStatus_Failed;
+        EC_KEY_free(responder_boot_key);   /* fix 5 */
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 3 */
+    /* ---------- start fix 4 */
+    if (initiator_boot_key != NULL) {
+        EC_KEY_set_conv_form(initiator_boot_key, POINT_CONVERSION_COMPRESSED);
+        EC_KEY_set_asn1_flag(initiator_boot_key, OPENSSL_EC_NAMED_CURVE);
+    }
+    /* ---------- end fix 4 */
 
     public_action_frame = (wifi_dppPublicActionFrame_t *)buff;
 
@@ -228,6 +265,7 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
         if (compute_key_hash(initiator_boot_key, keyhash) < 1) {
             printf("%s:%d unable to get x, y of the curve\n", __func__, __LINE__);
         	ctx->activation_status = ActStatus_Failed;
+            EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 5 */
             return RETURN_ERR;
         }
 
@@ -239,6 +277,7 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
     if (compute_key_hash(responder_boot_key, keyhash) < 1) {
         printf("%s:%d unable to get x, y of the curve\n", __func__, __LINE__);
         ctx->activation_status = ActStatus_Failed;
+        EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 5 */
         return RETURN_ERR;
     }
 
@@ -250,6 +289,7 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
     if (wrapped_len == UINT_MAX) {
         printf("%s:%d: Failed to set wrapped data\n", __func__, __LINE__);
         ctx->activation_status = ActStatus_Failed;
+        EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 5 */
         return RETURN_ERR;
     }
     tlv_len += (wrapped_len + 4);
@@ -262,6 +302,7 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
     printf("%s:%d Send Auth Confirmation success\n", __func__, __LINE__);
     printf("%s:%d: credentials.keyManagement:%u \n", __func__, __LINE__, ctx->config.credentials.keyManagement);
 
+    EC_KEY_free(responder_boot_key); EC_KEY_free(initiator_boot_key);   /* fix 5 */
     return RETURN_OK;
 }
 }
