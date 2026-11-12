@@ -400,6 +400,10 @@ int main() {
 //	run_all_tests_cmd_channelselect();
 
 	// cmd_setssid (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp).
-	run_all_tests_cmd_setssid();
+//	run_all_tests_cmd_setssid();
+
+	// cmd_beaconmetricsquery (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The last 4 cases are
+	// expected to abort and run in forked children, so the ASan report is visible and the run continues.
+	run_all_tests_cmd_beaconmetricsquery();
 	return 0;
 }
