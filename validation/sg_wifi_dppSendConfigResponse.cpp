@@ -1,7 +1,7 @@
 /*
  * HANDLER: wifi_dppSendConfigResponse (src/wifi_hal_dpp.c)
  *
- * Function copied VERBATIM from rdk-wifi-hal: src/wifi_hal_dpp.c:2865-2929 (~/Desktop/G/rdk-wifi-hal).  This file holds the ORIGINAL code (no fixes).  It builds the DPP Configuration Response GAS frame
+ * Function copied (verbatim apart from fixes 1-6: start fix n / end fix n markers; the unfixed copy is the reproducer; fixes 3-6 sit in the support copies dpp_build_config / dpp_build_connector) from rdk-wifi-hal: src/wifi_hal_dpp.c:2865-2929 (~/Desktop/G/rdk-wifi-hal).  This file holds the code WITH fixes 1-6.  It builds the DPP Configuration Response GAS frame
  * for the enrollee (status TLV + wrapped data = AES-SIV (key instance->ke, AAD = the status TLV) of the enrollee nonce and the configuration object JSON built by dpp_build_config), sends it with
  * wifi_sendActionFrame(ap_index, sta_mac, channel, frame, len) and returns RETURN_OK; RETURN_ERR (activation_status = ActStatus_Failed) when the wrapped data cannot be built.
  *
@@ -253,6 +253,11 @@ int dpp_build_connector(wifi_device_dpp_context_t *dpp_ctx, char* connector, boo
 #endif
 
     if ((ecsig = ECDSA_do_sign_ex(digest, mdlen, NULL, NULL, sign->key)) == NULL) {
+        /* ---------- start fix 6: EVP_MD_CTX and ECDSA_SIG were leaked on the success path (and the context on this failure). */
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+        EVP_MD_CTX_free(ctx);
+#endif
+        /* ---------- end fix 6 */
         return -1;
     }
     ECDSA_SIG_get0(ecsig, (const BIGNUM **)&r, (const BIGNUM **)&s);
@@ -268,6 +273,12 @@ int dpp_build_connector(wifi_device_dpp_context_t *dpp_ctx, char* connector, boo
     conn_len += base64urlencode(connector + conn_len, sig, siglen);
     printf("%s:%d connector:%s\n", __func__, __LINE__, connector);
 
+    /* ---------- start fix 6 */
+    ECDSA_SIG_free(ecsig);
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+    EVP_MD_CTX_free(ctx);
+#endif
+    /* ---------- end fix 6 */
     return conn_len;
 }
 
@@ -308,8 +319,14 @@ void dpp_build_config(wifi_device_dpp_context_t *ctx, char* str)
 
 	/*discovery: ssid*/
 	cJSON_AddItemToObject(root, "discovery", discovery = cJSON_CreateObject());
-	if (obj->discovery[0] != '\0')
-		cJSON_AddStringToObject(discovery, "ssid", obj->discovery);
+	if (obj->discovery[0] != '\0') {
+		/* ---------- start fix 4: discovery is char[32] without a terminator for a 32-character ssid; the string read ran into keyManagement. */
+		char ssid_str[sizeof(obj->discovery) + 1];
+		memcpy(ssid_str, obj->discovery, sizeof(obj->discovery));
+		ssid_str[sizeof(obj->discovery)] = '\0';
+		cJSON_AddStringToObject(discovery, "ssid", ssid_str);
+		/* ---------- end fix 4 */
+	}
 
 	/*cred*/
 	cJSON_AddItemToObject(root, "cred", cred = cJSON_CreateObject());
@@ -330,6 +347,10 @@ void dpp_build_config(wifi_device_dpp_context_t *ctx, char* str)
         	break;
 
 		case WIFI_DPP_KEY_MGMT_PSKSAE:
+			/* ---------- start fix 3: the akm was missing for PSK+SAE (empty cred object). */
+			cJSON_AddStringToObject(cred, "akm", "psk+sae");
+			cJSON_AddStringToObject(cred, "pass", obj->credentials.creds.passPhrase);
+			/* ---------- end fix 3 */
 			break;
 
 		case WIFI_DPP_KEY_MGMT_DPPPSKSAE:
@@ -356,7 +377,10 @@ void dpp_build_config(wifi_device_dpp_context_t *ctx, char* str)
             strcpy(str, out);
             free(out);
         }
-	
+
+	/* ---------- start fix 5: the cJSON tree was never freed (leaked on every call). */
+	cJSON_Delete(root);
+	/* ---------- end fix 5 */
 	return;
 }
 
@@ -418,6 +442,12 @@ INT wifi_dppSendConfigResponse(wifi_device_dpp_context_t *ctx)
     wifi_tlv_t *tlv;
     unsigned int tlv_len = 0, wrapped_len = 0;
 
+    /* ---------- start fix 1: a NULL context was dereferenced at once. */
+    if (ctx == NULL) {
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 1 */
+
     printf("%s:%d: Enter\n", __func__, __LINE__);
     printf("%s:%d: credentials.keyManagement %u\n", __func__, __LINE__, ctx->config.credentials.keyManagement);
    
@@ -425,6 +455,12 @@ INT wifi_dppSendConfigResponse(wifi_device_dpp_context_t *ctx)
     data = &ctx->session_data;
 	instance = (wifi_dpp_instance_t *)data->instance;
 
+    /* ---------- start fix 2: a NULL session instance was dereferenced (instance->digestlen) in set_config_frame_wrapped_data. */
+    if (instance == NULL) {
+        ctx->activation_status = ActStatus_Failed;
+        return RETURN_ERR;
+    }
+    /* ---------- end fix 2 */
 
     config_response_frame = (wifi_dppConfigResponseFrame_t *)buff;
 
