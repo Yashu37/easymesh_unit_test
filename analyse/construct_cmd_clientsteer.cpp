@@ -10,10 +10,10 @@
  * 25 invalid_namespace). Accept cases also check the JSON handed to io_process. Cases marked [spec]
  * are wrong behaviour without an abort (an unknown RequestMode answers out_of_resources, TargetBSSID
  * is not validated and truncated at 32, RequestMode truncated at 24, the JSON key keeps the caller's
- * case, a window of 0 is dropped). The crash_* cases (NULL method_name, method name shorter than
- * the Network prefix, path that stops before the Device / Radio / BSS / STA instance) ABORT on the
- * original handler: they run last and UNFORKED (a plain make stops at the first ASan report);
- * FORK_CRASH=1 runs each in a forked child so all of them show.
+ * case, a window of 0 is dropped). The last 6 cases (NULL method_name, method name shorter than
+ * the Network prefix, path that stops before the Device / Radio / BSS / STA instance) ABORTED on
+ * the original handler; with fixes 1-2 they are rejected (rc 2). A case flagged crash=true would
+ * run last and UNFORKED (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -49,7 +49,7 @@ int num_props = 0;
 #define OK(n, j, ...) {n, P, false, false, {__VA_ARGS__, E0}, 0, j, false}
 #define RJ(n, ...) {n, P, false, false, {__VA_ARGS__, E0}, 2, NULL, false}
 #define RP(n, m, rc) {n, m, false, false, {BASE, E0}, rc, NULL, false}
-#define CR(n, m) {n, m, false, false, {BASE, E0}, 25, NULL, true}
+#define RJC(n, m) {n, m, false, false, {BASE, E0}, 2, NULL, false}
 
 test_case_t suite[] = {
  /* ---- accepted ---- */
@@ -97,13 +97,13 @@ test_case_t suite[] = {
  RJ("rej_mode_25_chars [spec]", TB(T1), R("RequestMode", "S", 25), IM(0), BR(0), TM(10), OC(115), CH(36)),
  OK("ok_mode_canonical_key [spec]", "\"Steering_Mandate\":1", TB(T1), RM("steering_mandate"), IM(0), BR(0), TM(10), OC(115), CH(36)),
  OK("ok_window_0_in_json [spec]", "\"SteeringOpportunityWindow\":0", TB(T1), RM("Steering_Opportunity"), IM(0), BR(0), WN(0), TM(10), OC(115), CH(36)),
- /* ---- CRASH cases (run last, unforked) ---- */
- {"crash_method_null", NULL, false, false, {BASE, E0}, 2, NULL, true},
- CR("crash_method_name_short", "X.ClientSteer()"),
- CR("crash_path_without_device", N "ClientSteer()"),
- CR("crash_path_without_radio", N "Device.1.ClientSteer()"),
- CR("crash_path_without_bss", N "Device.1.Radio.1.ClientSteer()"),
- CR("crash_path_without_sta", N "Device.1.Radio.1.BSS.1.ClientSteer()"),
+ /* ---- were CRASH cases on the original handler (now rejected, rc 2) ---- */
+ {"rej_method_null", NULL, false, false, {BASE, E0}, 2, NULL, false},
+ RJC("rej_method_name_short", "X.ClientSteer()"),
+ RJC("rej_path_without_device", N "ClientSteer()"),
+ RJC("rej_path_without_radio", N "Device.1.ClientSteer()"),
+ RJC("rej_path_without_bss", N "Device.1.Radio.1.ClientSteer()"),
+ RJC("rej_path_without_sta", N "Device.1.Radio.1.BSS.1.ClientSteer()"),
 
  { NULL, NULL, false, false, {E0}, 0, NULL, false }  /* sentinel */
 };
