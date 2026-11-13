@@ -9,9 +9,9 @@
  *   role 1: the opposite bits, MaxDLOFDMA 1
  * The recorded property lines are "name=value" for every role in order (role 0 block, then role 1 block).
  *
- * Expected: always bus_error_success (0). The crash_* cases (num_role 3 / 255, above the 2 stored roles)
- * ABORT on the original handler (roles[i] read past the array): they run last and UNFORKED (a plain make
- * stops at the first ASan report); FORK_CRASH=1 runs each in a forked child so all of them show.
+ * Expected: always bus_error_success (0). The last 2 cases (num_role 3 / 255, above the 2 stored roles)
+ * ABORTED on the original handler (roles[i] read past the array); with fix 1 num_role is capped at 2 (both
+ * stored roles reported) and they pass as clamp_*.
  */
 
 #include <stdio.h>
@@ -67,9 +67,9 @@ test_case_t suite[] = {
  T("ok_mcs_num_12", 1, 12, true, false, 1, "MCSNSS=12abcd\n", NULL),
  T("ok_mcs_num_15", 1, 15, true, false, 1, "MCSNSS=12abcd\n", NULL),
  {"ok_long_root", "LONG", 1, 8, true, false, 1, "HE160=1\n", NULL, false},
- /* ---- CRASH cases (run last, unforked): num_role above the 2 stored roles ---- */
- {"crash_num_role_3", R, 3, 8, true, false, 2, "HE160=0\n", NULL, true},
- {"crash_num_role_255", R, 255, 8, true, false, 2, "HE160=0\n", NULL, true},
+ /* ---- were CRASH cases on the original handler (num_role above the 2 stored roles: now capped to 2) ---- */
+ T("clamp_num_role_3", 3, 8, true, false, 2, "HE160=0\n", NULL),
+ T("clamp_num_role_255", 255, 8, true, false, 2, "HE160=0\n", NULL),
 
  { NULL, NULL, 0, 0, false, false, 0, NULL, NULL, false }  /* sentinel */
 };

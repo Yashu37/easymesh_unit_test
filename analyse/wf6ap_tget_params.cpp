@@ -1,7 +1,7 @@
 /*
  * HANDLER: wf6ap_tget_params
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fix 1 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::wf6ap_tget_params. Local arrays: mcsnss_str[256], temp[32],
  * and the accesses rci->wifi6_cap.roles[i] (MAP_AP_ROLE_MAX = 2, bound is the data-model value num_role),
  * role->sprt_tx_rx_mcs[j] (MAX_MCS = 3).
@@ -66,7 +66,13 @@ bus_error_t dm_easy_mesh_ctrl_t::wf6ap_tget_params(dm_easy_mesh_t *dm, const cha
     }
     em_radio_cap_info_t *rci = radio_cap->get_radio_cap_info();
 
-    for (i = 0; i < rci->wifi6_cap.num_role; i++) {
+/* start fix 1 */
+    unsigned int num_role = rci->wifi6_cap.num_role;
+    if (num_role > MAP_AP_ROLE_MAX) {
+        num_role = MAP_AP_ROLE_MAX;
+    }
+/* end fix 1 */
+    for (i = 0; i < num_role; i++) {
         char mcsnss_str[256] = { 0 };
         memcpy(role, &rci->wifi6_cap.roles[i], sizeof(em_wifi6_role_wire_t));
 
