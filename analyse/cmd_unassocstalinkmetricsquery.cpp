@@ -1,7 +1,7 @@
 /*
  * HANDLER: cmd_unassocstalinkmetricsquery
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fix 2 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), em_ctrl_t::cmd_unassocstalinkmetricsquery, with get_table_instance() (same
  * file), the tr_181_t helpers it calls (tr181_copy_prop_string / get_prop_int / get_prop_bool /
  * parse_object_index / parse_unassoc_ch_obj, tr_181_helper.cpp) and util::split_by_delim.
@@ -300,7 +300,15 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	char *dst = instance;
 	size_t len = 0;
 
+/* start fix 2 */
+    if (src == NULL) {
+        return NULL;
+    }
     src = strstr(src, ".");
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 2 */
     ++src;
 
 	if (*src == '[') {
@@ -310,14 +318,23 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src += 2;
+/* start fix 2 */
+        if (*src != ']' || src[1] != '.') {
+            return NULL;
+        }
+        src += 2;
+/* end fix 2 */
 	} else {
 		*is_num = true;
 		while (*src && *src != '.' && ++len < max_len) {
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src++;
+/* start fix 2 */
+        if (*src) {
+            src++;
+        }
+/* end fix 2 */
 	}
 
 	return src;
@@ -377,6 +394,14 @@ bus_error_t em_ctrl_t::cmd_unassocstalinkmetricsquery(const char *method_name, c
      * that device instance */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        if (output_params) {
+            *output_params = tr_181_t::tr181_set_status_output_prop("Failure");
+        }
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         em_printfout("Device not found");

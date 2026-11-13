@@ -10,13 +10,11 @@
  * expect_rc uses the real bus_error_t values (0 success, 2 invalid_input, 22 invalid_method,
  * 25 invalid_namespace). Accept cases also check the JSON handed to io_process. Cases marked [spec]
  * are inputs a strict handler should reject (STA entries are not validated as MACs, a MAC longer
- * than 17 characters is cut, an absurd channel number is accepted). The crash_* cases (paths with no
- * Device instance after the Network prefix) ABORT on the original handler. Unlike the other cmd_*
- * handlers there is no short-method-name over-read here: the mandatory suffix
- * X_AIRTIES_UnassociatedStaLinkMetricsQuery() is 42 characters, longer than the 34-byte prefix, so
- * name += sizeof(DATAELEMS_NETWORK) always stays inside the string. The crash cases run last and UNFORKED (a plain make stops at the first ASan report);
- * FORK_CRASH=1 runs each in a forked child so all of them show. A NULL method_name is already
- * rejected by the handler.
+ * than 17 characters is cut, an absurd channel number is accepted). The last 2 cases (paths with no
+ * Device instance after the Network prefix) ABORTED on the original handler; with fix 2 they are
+ * rejected (rc 2). A case flagged crash=true would run last and UNFORKED (FORK_CRASH=1 forks it).
+ * There is no short-method-name over-read here: the mandatory suffix is 42 characters, longer than
+ * the 34-byte prefix. A NULL method_name is already rejected by the handler.
  */
 
 #include <stdio.h>
@@ -46,7 +44,7 @@ int num_props = 0;
 #define OK(n, j, ...) {n, P, false, false, {__VA_ARGS__, E0}, 0, j, false}
 #define RJ(n, ...) {n, P, false, false, {__VA_ARGS__, E0}, 2, NULL, false}
 #define RP(n, m, rc) {n, m, false, false, {BASE, E0}, rc, NULL, false}
-#define CR(n, m) {n, m, false, false, {BASE, E0}, 25, NULL, true}
+#define RJC(n, m) {n, m, false, false, {BASE, E0}, 2, NULL, false}
 #define JB "\"UnassocStaQueryList\":[{\"opclass\":115,\"channels\":[{\"channel\":36,\"sta_macs\":[\"" M1 "\"]}]}]"
 
 test_case_t suite[] = {
@@ -97,9 +95,9 @@ test_case_t suite[] = {
  RJ("rej_sta_not_mac [spec]", OC(115), CHN(1, 36), STM(1, 1, "garbage")),
  RJ("rej_sta_mac_20_chars [spec]", OC(115), CHN(1, 36), S("Channel.1.STA.1.MAC", "aa:bb:cc:dd:ee:ff:00:11")),
  RJ("rej_channel_99999 [spec]", OC(115), CHN(1, 99999), STM(1, 1, M1)),
- /* ---- CRASH cases (run last, unforked) ---- */
- CR("crash_dot_prefix_no_instance", "X.X_AIRTIES_UnassociatedStaLinkMetricsQuery()"),
- CR("crash_path_without_device", N "X_AIRTIES_UnassociatedStaLinkMetricsQuery()"),
+ /* ---- were CRASH cases on the original handler (now rejected, rc 2) ---- */
+ RJC("rej_dot_prefix_no_instance", "X.X_AIRTIES_UnassociatedStaLinkMetricsQuery()"),
+ RJC("rej_path_without_device", N "X_AIRTIES_UnassociatedStaLinkMetricsQuery()"),
 
  { NULL, NULL, false, false, {E0}, 0, NULL, false }  /* sentinel */
 };
