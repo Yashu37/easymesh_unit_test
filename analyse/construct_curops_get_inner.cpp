@@ -11,11 +11,11 @@
  * skipped), Radio.2 .1 is [4], Radio.3 .1 is [5].
  *
  * expect_rc: 0 success, 2 invalid_input, 25 invalid_namespace. Cases marked [spec] are wrong
- * behaviour (an instance like "1abc" is read as 1 by atoi). The crash_* cases (method name shorter
+ * behaviour (an instance like "1abc" is read as 1 by atoi). The last 9 cases (method name shorter
  * than the Network prefix, path that stops before the Device / Radio / CurrentOperatingClass
- * instance, Radio instance 0 / 4 / 1000000 / alias) ABORT on the original handler: they run last and
- * UNFORKED (a plain make stops at the first ASan report); FORK_CRASH=1 runs each in a forked child so
- * all of them show.
+ * instance, Radio instance 0 / 4 / 1000000 / alias / -1) ABORTED on the original handler; with
+ * fixes 1-3 they are rejected (rc 2). A case flagged crash=true would run last and UNFORKED
+ * (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -32,7 +32,7 @@ alignas(16) char name_store[COG_LEFT + COG_NAME_SZ + COG_PAD];
 /* {name, event, no_pdata, no_dm, expect_rc, expect_val, crash} */
 #define OKV(n, rad, ci, p, v) {n, EV(rad, ci, p), false, false, 0, v, false}
 #define RJ(n, ev) {n, ev, false, false, 2, NULL, false}
-#define CR(n, ev) {n, ev, false, false, 2, NULL, true}
+#define RJC(n, ev) {n, ev, false, false, 2, NULL, false}
 
 test_case_t suite[] = {
  /* ---- every parameter name ---- */
@@ -65,16 +65,16 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort (atoi reads the leading digits) ---- */
  {"rej_curop_1abc [spec]", EV("1", "1abc", "Class"), false, false, 2, NULL, false},
  {"rej_radio_1abc [spec]", EV("1abc", "1", "Class"), false, false, 2, NULL, false},
- /* ---- CRASH cases (run last, unforked) ---- */
- CR("crash_method_short", "X.Class"),
- CR("crash_path_without_device", N "Class"),
- CR("crash_path_without_radio", N "Device.1.Class"),
- CR("crash_path_without_curop", N "Device.1.Radio.1.Class"),
- CR("crash_radio_0", EV("0", "1", "Class")),
- CR("crash_radio_4", EV("4", "1", "Class")),
- CR("crash_radio_huge", EV("1000000", "1", "Class")),
- CR("crash_radio_alias", EV("[x]", "1", "Class")),
- CR("crash_radio_negative", EV("-1", "1", "Class")),
+ /* ---- were CRASH cases on the original handler (now rejected, rc 2) ---- */
+ RJC("rej_method_short", "X.Class"),
+ RJC("rej_path_without_device", N "Class"),
+ RJC("rej_path_without_radio", N "Device.1.Class"),
+ RJC("rej_path_without_curop", N "Device.1.Radio.1.Class"),
+ RJC("rej_radio_0", EV("0", "1", "Class")),
+ RJC("rej_radio_4", EV("4", "1", "Class")),
+ RJC("rej_radio_huge", EV("1000000", "1", "Class")),
+ RJC("rej_radio_alias", EV("[x]", "1", "Class")),
+ RJC("rej_radio_negative", EV("-1", "1", "Class")),
 
  { NULL, NULL, false, false, 0, NULL, false }  /* sentinel */
 };
