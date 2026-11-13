@@ -1,7 +1,7 @@
 /*
  * HANDLER: radio_tget_params
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-2 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::radio_tget_params, with get_supported_standards_str(),
  * get_ht_caps_str() and get_vht_caps_str() (same file) and dm_easy_mesh_t::get_radio() /
  * get_radio_cap(mac) (src/dm/dm_easy_mesh.cpp). Local arrays: path[512], caps_str[32],
@@ -92,7 +92,9 @@ dm_radio_cap_t *dm_easy_mesh_t::get_radio_cap(mac_address_t mac)
 {
     unsigned int i = 0;
 
-    for (i = 0; i < m_num_radios; i++) {
+/* start fix 2 */
+    for (i = 0; i < m_num_radios && i < EM_MAX_BANDS; i++) {
+/* end fix 2 */
         if (memcmp(m_radio_cap[i].m_radio_cap_info.ruid.mac, mac, sizeof(mac_address_t)) == 0) {
             return &m_radio_cap[i];
         }
@@ -209,7 +211,13 @@ bus_error_t dm_easy_mesh_ctrl_t::radio_tget_params(dm_easy_mesh_t *dm, const cha
         dm_ctrl->property_append_tail(property, root, idx, "ChipsetVendor", ri->chip_vendor);
         dm_ctrl->property_append_tail(property, root, idx, "X_AIRTIES_Temperature", ri->radio_temp);
         unsigned int curop_count = 0;
-        for (unsigned int i = 0; i < dm->get_num_op_class(); i++) {
+/* start fix 1 */
+        unsigned int num_opclass = dm->get_num_op_class();
+        if (num_opclass > EM_MAX_OPCLASS) {
+            num_opclass = EM_MAX_OPCLASS;
+        }
+/* end fix 1 */
+        for (unsigned int i = 0; i < num_opclass; i++) {
             dm_op_class_t *op_class = dm->get_op_class(i);
             if (op_class == NULL) {
                 continue;
@@ -239,7 +247,13 @@ bus_error_t dm_easy_mesh_ctrl_t::radio_tget_params(dm_easy_mesh_t *dm, const cha
         }
 
         unsigned int capop_count = 0;
-        for (unsigned int i = 0; i < dm->get_num_op_class(); i++) {
+/* start fix 1 */
+        num_opclass = dm->get_num_op_class();
+        if (num_opclass > EM_MAX_OPCLASS) {
+            num_opclass = EM_MAX_OPCLASS;
+        }
+/* end fix 1 */
+        for (unsigned int i = 0; i < num_opclass; i++) {
             dm_op_class_t *op_class = dm->get_op_class(i);
             if (op_class == NULL) {
                 continue;

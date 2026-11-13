@@ -9,10 +9,10 @@
  * as given, HT streams 2/2 gi20 ht40 -> "Wg==", VHT mcs 0xfffa streams 2/2 gi80 160mhz su -> "//r/+iZg");
  * backhaul sta 02:00:00:00:00:aa when bh is set.
  *
- * Expected: always bus_error_success (0). Cases marked [spec] are wrong behaviour. The crash_* cases
+ * Expected: always bus_error_success (0). Cases marked [spec] are wrong behaviour. The last 4 cases
  * (m_num_opclass above the 64-entry m_op_class[], m_num_radios above the 3-entry m_radio_cap[] with a radio
- * that has no cap entry) ABORT on the original handler: they run last and UNFORKED (a plain make stops at
- * the first ASan report); FORK_CRASH=1 runs each in a forked child so all of them show.
+ * that has no cap entry) ABORTED on the original handler; with fixes 1-2 the counts are clamped (op classes to 64,
+ * the cap search to 3 radios) and they are answered with rc 0.
  */
 
 #include <stdio.h>
@@ -80,11 +80,11 @@ test_case_t suite[] = {
  {"ok_long_root_truncated", "LONG", 1, -1, {0,0,0}, {0,0,0}, 0, 1, false, 0, 1, NULL, NULL, false},
  /* ---- num_radios above 3 but every radio has a cap entry: found before the loop leaves the array ---- */
  T("ok_numradios_4_all_cap", 3, 0,0,0, 0,0,0, 7, 1, false, MODE_ANAC, 3, NULL, NULL),
- /* ---- CRASH cases (run last, unforked) ---- */
- {"crash_opclass_count_65", R, 1, 65, {64,0,0}, {0,0,0}, 1, 1, false, 0, -1, NULL, NULL, true},
- {"crash_opclass_count_255", R, 1, 255, {64,0,0}, {0,0,0}, 1, 1, false, 0, -1, NULL, NULL, true},
- {"crash_numradios_4_no_cap", R, 4, -1, {0,0,0}, {0,0,0}, 0, 1, false, 0, -1, NULL, NULL, true},
- {"crash_numradios_100_no_cap", R, 100, -1, {0,0,0}, {0,0,0}, 0, 1, false, 0, -1, NULL, NULL, true},
+ /* ---- were CRASH cases on the original handler (counts now clamped, answered rc 0) ---- */
+ {"clamp_opclass_count_65", R, 1, 65, {64,0,0}, {0,0,0}, 1, 1, false, 0, -1, NULL, NULL, false},
+ {"clamp_opclass_count_255", R, 1, 255, {64,0,0}, {0,0,0}, 1, 1, false, 0, -1, NULL, NULL, false},
+ {"clamp_numradios_4_no_cap", R, 4, -1, {0,0,0}, {0,0,0}, 0, 1, false, 0, -1, NULL, NULL, false},
+ {"clamp_numradios_100_no_cap", R, 100, -1, {0,0,0}, {0,0,0}, 0, 1, false, 0, -1, NULL, NULL, false},
 
  { NULL, NULL, 0, 0, {0,0,0}, {0,0,0}, 0, 0, false, 0, 0, NULL, NULL, false }  /* sentinel */
 };
