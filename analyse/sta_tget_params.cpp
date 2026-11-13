@@ -1,7 +1,7 @@
 /*
  * HANDLER: sta_tget_params
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fix 1 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::sta_tget_params. Local arrays: ht_caps_str[32],
  * vht_caps_str[32], wifi6_name[128] (snprintf bounded); the read
  * em_crypto_t::base64_encode(si->frame_body, si->frame_body_len) (frame_body[EM_MAX_FRAME_BODY_LEN = 512],
@@ -110,9 +110,15 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_tget_params(dm_easy_mesh_t *dm, const char 
         dm_ctrl->get_sta_ht_caps_str(si->ht_cap, ht_caps_str, sizeof(ht_caps_str));
         dm_ctrl->get_sta_vht_caps_str(si->vht_cap, vht_caps_str, sizeof(vht_caps_str));
 
+/* start fix 1 */
+        unsigned int frame_body_len = si->frame_body_len;
+        if (frame_body_len > EM_MAX_FRAME_BODY_LEN) {
+            frame_body_len = EM_MAX_FRAME_BODY_LEN;
+        }
+/* end fix 1 */
         std::string client_caps_b64;
-        if (si->frame_body_len > 0) {
-            client_caps_b64 = em_crypto_t::base64_encode(si->frame_body, si->frame_body_len);
+        if (frame_body_len > 0) {
+            client_caps_b64 = em_crypto_t::base64_encode(si->frame_body, frame_body_len);
         }
 
         dm_ctrl->property_append_tail(property, root, idx, "MACAddress", si->id);

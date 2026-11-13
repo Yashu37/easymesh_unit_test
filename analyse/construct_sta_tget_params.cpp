@@ -9,9 +9,9 @@
  * errors 3/4, retrans 5. The recorded lines are "idx:name=value"; idx numbers only the listed STAs
  * (associated, BSSID equal to the BSS), 1-based.
  *
- * Expected: always bus_error_success. The crash_* cases (frame_body_len above the 512-byte frame_body[]) ABORT on
- * the original handler (base64_encode(si->frame_body, si->frame_body_len)): they run last and UNFORKED (a plain
- * make stops at the first ASan report); FORK_CRASH=1 runs each in a forked child so all of them show.
+ * Expected: always bus_error_success. The last 3 cases (frame_body_len above the 512-byte frame_body[]) ABORTED on
+ * the original handler (base64_encode(si->frame_body, si->frame_body_len)); with fix 1 the length is clamped to
+ * EM_MAX_FRAME_BODY_LEN and they pass as clamp_*.
  */
 
 #include <stdio.h>
@@ -29,7 +29,7 @@ alignas(16) char root_store[STP_ROOT_LEFT + STP_ROOT_SZ + 64];
 #define ONE {S(true, 1, 3, "htcap", "vhtcap"), E0, E0, E0}
 #define T1(n, has) {n, R, ONE, 1, has, NULL, false}
 #define FB(n, len) {n, R, {S(true, 1, len, "htcap", "vhtcap"), E0, E0, E0}, 1, NULL, NULL, false}
-#define CRFB(n, len) {n, R, {S(true, 1, len, "htcap", "vhtcap"), E0, E0, E0}, 1, "1:MACAddress=02:00:00:01:00:01\n", NULL, true}
+#define CLFB(n, len) {n, R, {S(true, 1, len, "htcap", "vhtcap"), E0, E0, E0}, 1, "1:ClientCapabilities=AAECAwQFBgcI", NULL, false}
 
 test_case_t suite[] = {
  /* ---- one associated STA: every property ---- */
@@ -60,10 +60,10 @@ test_case_t suite[] = {
  {"ok_numbering_skips_other_bss", R, {S(true, 1, 3, "h", "v"), S(true, 2, 3, "h", "v"), S(true, 1, 3, "h", "v"), E0}, 2, "2:MACAddress=02:00:00:01:00:03\n", NULL, false},
  {"ok_four_sta", R, {S(true, 1, 3, "h", "v"), S(true, 1, 3, "h", "v"), S(true, 1, 3, "h", "v"), S(true, 1, 3, "h", "v")}, 4, "4:MACAddress=02:00:00:01:00:04\n", NULL, false},
  {"ok_long_root", "LONG", ONE, 1, "1:MACAddress=02:00:00:01:00:01\n", NULL, false},
- /* ---- CRASH cases (run last, unforked): frame_body_len above the 512-byte frame_body[] ---- */
- CRFB("crash_frame_body_len_513", 513),
- CRFB("crash_frame_body_len_600", 600),
- CRFB("crash_frame_body_len_65534", 65534),
+ /* ---- were CRASH cases on the original handler: frame_body_len above the 512-byte frame_body[] (now clamped to 512) ---- */
+ CLFB("clamp_frame_body_len_513", 513),
+ CLFB("clamp_frame_body_len_600", 600),
+ CLFB("clamp_frame_body_len_65534", 65534),
 
  { NULL, NULL, {E0, E0, E0, E0}, 0, NULL, NULL, false }  /* sentinel */
 };
