@@ -8,6 +8,7 @@
 
 void run_all_tests_device_tget_inner(void);   /* declared here, not in common.h: keeps make incremental */
 void run_all_tests_wf6ap_get_inner(void);
+void run_all_tests_cmd_channelscan(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -414,6 +415,10 @@ int main() {
 
 	// wf6ap_get_inner (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
-	run_all_tests_wf6ap_get_inner();
+//	run_all_tests_wf6ap_get_inner();
+
+	// cmd_channelscan (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_cmd_channelscan();
 	return 0;
 }
