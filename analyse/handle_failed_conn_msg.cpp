@@ -1,7 +1,7 @@
 /*
  * HANDLER: handle_failed_conn_msg
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/em_ctrl.cpp (develop @ 1ba9529),
+ * Function copied (fix 1 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/em_ctrl.cpp (develop @ 1ba9529),
  * em_ctrl_t::handle_failed_conn_msg. It parses the TLVs of a Failed Connection message after
  * em_msg_t(...).validate(); em_msg_t::validate() and em_msg_t::failed_conn() (src/em/em_msg.cpp) are
  * copied verbatim too (the real validation decides which malformed messages reach the loop; it only
@@ -183,14 +183,32 @@ void em_ctrl_t::handle_failed_conn_msg(unsigned char *data, unsigned int len)
 
         switch (tlv->type) {
             case em_tlv_type_bssid:
+/* start fix 1 */
+                if (tlv_len < sizeof(mac_address_t)) {
+                    em_printfout("Failed Connection message malformed BSSID TLV (len=%u)", static_cast<unsigned int>(tlv_len));
+                    break;
+                }
+/* end fix 1 */
                 memcpy(bssid, tlv->value, sizeof(mac_address_t));
                 has_bssid = true;
                 break;
             case em_tlv_type_sta_mac_addr:
+/* start fix 1 */
+                if (tlv_len < sizeof(mac_address_t)) {
+                    em_printfout("Failed Connection message malformed STA MAC TLV (len=%u)", static_cast<unsigned int>(tlv_len));
+                    break;
+                }
+/* end fix 1 */
                 memcpy(sta_mac, tlv->value, sizeof(mac_address_t));
                 has_sta = true;
                 break;
             case em_tlv_type_status_code: {
+/* start fix 1 */
+                if (tlv_len < sizeof(em_status_code_t)) {
+                    em_printfout("Failed Connection message malformed Status Code TLV (len=%u)", static_cast<unsigned int>(tlv_len));
+                    break;
+                }
+/* end fix 1 */
                 em_status_code_t *sc = reinterpret_cast<em_status_code_t *>(tlv->value);
                 status_code = ntohs(sc->status_code);
                 has_status = true;

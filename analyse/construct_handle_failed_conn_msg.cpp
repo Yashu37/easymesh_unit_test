@@ -10,12 +10,11 @@
  *
  * em_msg_t::validate() only checks the FIRST TLV of each type, so a later duplicate TLV with a short length
  * field reaches the parsing loop: memcpy(bssid / sta_mac, tlv->value, 6) and sc->status_code then read bytes
- * that are not part of that TLV. Cases marked [spec] are wrong behaviour (a later short duplicate
- * overrides the good value with the bytes that follow it, inside the buffer: no abort). The crash_* cases
- * (a short duplicate BSSID / STA TLV directly in front of the EOM TLV) read past the end of the buffer
- * and ABORT on the original handler: they run last and UNFORKED (a plain make stops at the first ASan
- * report); FORK_CRASH=1 runs each in a forked child so all of them show. The expected result for the
- * [spec] and crash cases is the correct one (the short duplicate is ignored, first values kept).
+ * that are not part of that TLV. Cases marked [spec] were wrong behaviour (a later short duplicate
+ * overrides the good value with the bytes that follow it, inside the buffer: no abort). The rej_dup_*_before_eom
+ * cases (a short duplicate BSSID / STA TLV directly in front of the EOM TLV) read past the end of the buffer
+ * and ABORTED on the original handler. With fix 1 a TLV shorter than its value is ignored (first values
+ * kept) and all of the rej_dup_* cases pass.
  */
 
 #include <stdio.h>
@@ -80,14 +79,14 @@ test_case_t suite[] = {
  {"rej_message_truncated_eom_cut", {TB, TS, TC, TE, TX}, 3, 0, false, false, 0, NULL, NULL, false},
  {"rej_message_truncated_mid_tlv", {TB, TS, TC, TE, TX}, 6, 0, false, false, 0, NULL, NULL, false},
  /* ---- [spec]: wrong behaviour, no abort (a later short duplicate overrides the good value) ---- */
- {"spec_dup_status_len0_overrides", {TB, TS, TC, {0xc9, 0, NULL, 0}, TE, TX}, 0, 0, false, false, 1, "\"StatusCode\":16", NULL, false},
- {"spec_dup_bssid_len0_mid_overrides", {TB, TS, TC, {0xb8, 0, NULL, 0}, TR, TE, TX}, 0, 0, false, false, 1, BS, NULL, false},
- {"spec_dup_sta_len0_mid_overrides", {TB, TS, TC, {0x95, 0, NULL, 0}, TR, TE, TX}, 0, 0, false, false, 1, MC, NULL, false},
- /* ---- CRASH cases (run last, unforked): a short duplicate TLV in front of the EOM reads past the buffer ---- */
- {"crash_dup_bssid_len0_before_eom", {TB, TS, TC, {0xb8, 0, NULL, 0}, TE, TX}, 0, 0, false, false, 1, BS, NULL, true},
- {"crash_dup_bssid_len1_before_eom", {TB, TS, TC, {0xb8, 1, BSSID, 1}, TE, TX}, 0, 0, false, false, 1, BS, NULL, true},
- {"crash_dup_bssid_len2_before_eom", {TB, TS, TC, {0xb8, 2, BSSID, 2}, TE, TX}, 0, 0, false, false, 1, BS, NULL, true},
- {"crash_dup_sta_len0_before_eom", {TB, TS, TC, {0x95, 0, NULL, 0}, TE, TX}, 0, 0, false, false, 1, MC, NULL, true},
+ {"rej_dup_status_len0_overrides", {TB, TS, TC, {0xc9, 0, NULL, 0}, TE, TX}, 0, 0, false, false, 1, "\"StatusCode\":16", NULL, false},
+ {"rej_dup_bssid_len0_mid_overrides", {TB, TS, TC, {0xb8, 0, NULL, 0}, TR, TE, TX}, 0, 0, false, false, 1, BS, NULL, false},
+ {"rej_dup_sta_len0_mid_overrides", {TB, TS, TC, {0x95, 0, NULL, 0}, TR, TE, TX}, 0, 0, false, false, 1, MC, NULL, false},
+ /* ---- were CRASH cases on the original handler: a short duplicate TLV in front of the EOM (now ignored) ---- */
+ {"rej_dup_bssid_len0_before_eom", {TB, TS, TC, {0xb8, 0, NULL, 0}, TE, TX}, 0, 0, false, false, 1, BS, NULL, false},
+ {"rej_dup_bssid_len1_before_eom", {TB, TS, TC, {0xb8, 1, BSSID, 1}, TE, TX}, 0, 0, false, false, 1, BS, NULL, false},
+ {"rej_dup_bssid_len2_before_eom", {TB, TS, TC, {0xb8, 2, BSSID, 2}, TE, TX}, 0, 0, false, false, 1, BS, NULL, false},
+ {"rej_dup_sta_len0_before_eom", {TB, TS, TC, {0x95, 0, NULL, 0}, TE, TX}, 0, 0, false, false, 1, MC, NULL, false},
 
  { NULL, {TX}, 0, 0, false, false, 0, NULL, NULL, false }  /* sentinel */
 };
