@@ -9,9 +9,8 @@
  * expect_rc: 0 success, 2 invalid_input, 25 invalid_namespace, 100 destination_not_found (stand-in value).
  * Cases marked [spec] are wrong behaviour (no abort): Device.1abc read as 1 by atoi; with num_affiliated_bsta
  * above 14 the string holds the first 14 MACs followed by a stray ',' (maclist_to_string() gets the uncapped
- * count). The crash_* cases (method name shorter than the Network prefix, path without a Device instance)
- * ABORT on the original handler: they run last and UNFORKED (a plain make stops at the first ASan report);
- * FORK_CRASH=1 runs each in a forked child so all of them show.
+ * count). The last 2 cases (method name shorter than the Network prefix, path without a Device instance)
+ * ABORTED on the original handler; with fixes 1-2 they are rejected (rc 2). The [spec] cases stay failing.
  */
 
 #include <stdio.h>
@@ -52,9 +51,9 @@ test_case_t suite[] = {
  {"spec_list_15_trailing_comma [spec]", "Device.WiFi.DataElements.Network.Device.1.AffiliatedbSTAList", false, false, false, true, true, 15, 0, "02:00:00:00:01:00,02:00:00:00:01:01,02:00:00:00:01:02,02:00:00:00:01:03,02:00:00:00:01:04,02:00:00:00:01:05,02:00:00:00:01:06,02:00:00:00:01:07,02:00:00:00:01:08,02:00:00:00:01:09,02:00:00:00:01:0a,02:00:00:00:01:0b,02:00:00:00:01:0c,02:00:00:00:01:0d", false},
  {"spec_list_64_trailing_comma [spec]", "Device.WiFi.DataElements.Network.Device.1.AffiliatedbSTAList", false, false, false, true, true, 64, 0, "02:00:00:00:01:00,02:00:00:00:01:01,02:00:00:00:01:02,02:00:00:00:01:03,02:00:00:00:01:04,02:00:00:00:01:05,02:00:00:00:01:06,02:00:00:00:01:07,02:00:00:00:01:08,02:00:00:00:01:09,02:00:00:00:01:0a,02:00:00:00:01:0b,02:00:00:00:01:0c,02:00:00:00:01:0d", false},
  {"spec_list_255_trailing_comma [spec]", "Device.WiFi.DataElements.Network.Device.1.AffiliatedbSTAList", false, false, false, true, true, 255, 0, "02:00:00:00:01:00,02:00:00:00:01:01,02:00:00:00:01:02,02:00:00:00:01:03,02:00:00:00:01:04,02:00:00:00:01:05,02:00:00:00:01:06,02:00:00:00:01:07,02:00:00:00:01:08,02:00:00:00:01:09,02:00:00:00:01:0a,02:00:00:00:01:0b,02:00:00:00:01:0c,02:00:00:00:01:0d", false},
- /* ---- CRASH cases (run last, unforked) ---- */
- {"crash_method_short", "X.MLDMACAddress", false, false, false, true, true, 0, 2, NULL, true},
- {"crash_path_without_device", "Device.WiFi.DataElements.Network.MLDMACAddress", false, false, false, true, true, 0, 2, NULL, true},
+ /* ---- were CRASH cases on the original handler (now rejected, rc 2) ---- */
+ {"rej_method_short", "X.MLDMACAddress", false, false, false, true, true, 0, 2, NULL, false},
+ {"rej_path_without_device", "Device.WiFi.DataElements.Network.MLDMACAddress", false, false, false, true, true, 0, 2, NULL, false},
 
  { NULL, NULL, false, false, false, false, false, 0, 0, NULL, false }  /* sentinel */
 };

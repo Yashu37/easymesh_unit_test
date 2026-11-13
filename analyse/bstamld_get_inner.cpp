@@ -1,7 +1,7 @@
 /*
  * HANDLER: bstamld_get_inner
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-2 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::bstamld_get_inner, with get_table_instance() (same file) and
  * dm_easy_mesh_t::maclist_to_string() (src/dm/dm_easy_mesh.cpp). Local arrays: instance[32],
  * maclist_str[256], maclist[14] (the copy loop is capped at MAX_MACLIST_ITEMS; maclist_to_string() gets the
@@ -72,7 +72,15 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	char *dst = instance;
 	size_t len = 0;
 
+/* start fix 2 */
+    if (src == NULL) {
+        return NULL;
+    }
     src = strstr(src, ".");
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 2 */
     ++src;
 
 	if (*src == '[') {
@@ -82,14 +90,23 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src += 2;
+/* start fix 2 */
+        if (*src != ']' || src[1] != '.') {
+            return NULL;
+        }
+        src += 2;
+/* end fix 2 */
 	} else {
 		*is_num = true;
 		while (*src && *src != '.' && ++len < max_len) {
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src++;
+/* start fix 2 */
+        if (*src) {
+            src++;
+        }
+/* end fix 2 */
 	}
 
 	return src;
@@ -118,8 +135,18 @@ bus_error_t dm_easy_mesh_ctrl_t::bstamld_get_inner(char *event_name, raw_data_t 
 
     /* Extract device instance (numeric or alias) and find the dm object for
      * that device instance */
+/* start fix 1 */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         em_printfout("Device not found");
