@@ -10,6 +10,7 @@ void run_all_tests_device_tget_inner(void);   /* declared here, not in common.h:
 void run_all_tests_wf6ap_get_inner(void);
 void run_all_tests_cmd_channelscan(void);
 void run_all_tests_cmd_clientassocctrlrequest(void);
+void run_all_tests_cmd_clientsteer(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -424,6 +425,10 @@ int main() {
 
 	// cmd_clientassocctrlrequest (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
-	run_all_tests_cmd_clientassocctrlrequest();
+//	run_all_tests_cmd_clientassocctrlrequest();
+
+	// cmd_clientsteer (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_cmd_clientsteer();
 	return 0;
 }
