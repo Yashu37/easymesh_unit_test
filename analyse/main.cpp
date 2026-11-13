@@ -20,6 +20,7 @@ void run_all_tests_radio_tget_params(void);
 void run_all_tests_wf6ap_tget_params(void);
 void run_all_tests_handle_failed_conn_msg(void);
 void run_all_tests_analyze_unassoc_sta_metrics_query(void);
+void run_all_tests_bss_tget_params(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -474,6 +475,10 @@ int main() {
 
 	// analyze_unassoc_sta_metrics_query (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp): wrong-behaviour
 	// cases only (the handler already caps every count), the failing [spec] cases are left failing.
-	run_all_tests_analyze_unassoc_sta_metrics_query();
+//	run_all_tests_analyze_unassoc_sta_metrics_query();
+
+	// bss_tget_params (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_bss_tget_params();
 	return 0;
 }
