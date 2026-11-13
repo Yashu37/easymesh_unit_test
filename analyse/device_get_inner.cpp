@@ -1,7 +1,7 @@
 /*
  * HANDLER: device_get_inner
  *
- * Function copied VERBATIM from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-4 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::device_get_inner, with get_table_instance() and
  * fill_comma_sep() (same file). Local arrays: instance[32], val_str[MAX_EM_BUFF_SZ=1024] and the
  * reads di->backhaul_down_mac[i] (16 entries) / pi->m_policy.sta_mac[index] (16 entries) whose
@@ -69,7 +69,15 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	char *dst = instance;
 	size_t len = 0;
 
+/* start fix 2 */
+    if (src == NULL) {
+        return NULL;
+    }
     src = strstr(src, ".");
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 2 */
     ++src;
 
 	if (*src == '[') {
@@ -79,14 +87,23 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src += 2;
+/* start fix 2 */
+        if (*src != ']' || src[1] != '.') {
+            return NULL;
+        }
+        src += 2;
+/* end fix 2 */
 	} else {
 		*is_num = true;
 		while (*src && *src != '.' && ++len < max_len) {
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src++;
+/* start fix 2 */
+        if (*src) {
+            src++;
+        }
+/* end fix 2 */
 	}
 
 	return src;
@@ -140,8 +157,18 @@ bus_error_t dm_easy_mesh_ctrl_t::device_get_inner(char *event_name, raw_data_t *
 
     /* Extract device instance (numeric or alias) and find the dm object for
      * that device instance */
+/* start fix 1 */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         printf("device not found\n");
@@ -193,7 +220,12 @@ bus_error_t dm_easy_mesh_ctrl_t::device_get_inner(char *event_name, raw_data_t *
              pi != NULL;
              pi = static_cast<dm_policy_t *>(hash_map_get_next(dm->m_policy_map, pi))) {
             if(pi->m_policy.id.type == em_policy_id_type_steering_btm) {
-                const size_t n = static_cast<size_t>(pi->m_policy.num_sta);
+/* start fix 3 */
+                size_t n = static_cast<size_t>(pi->m_policy.num_sta);
+                if (n > EM_MAX_STA_PER_STEER_POLICY) {
+                    n = EM_MAX_STA_PER_STEER_POLICY;
+                }
+/* end fix 3 */
                 std::vector<em_short_string_t> BTMSteeringDisallowed(n);
                 for (size_t index = 0; index < n; index++) {
 			const std::string mac = util::mac_to_string(pi->m_policy.sta_mac[index]);
@@ -241,7 +273,12 @@ bus_error_t dm_easy_mesh_ctrl_t::device_get_inner(char *event_name, raw_data_t *
             rc = dm_ctrl->raw_data_set(p_data, di->backhaul_mac.mac);
         }
     } else if (strcmp(param, "BackhaulDownMACAddress") == 0) {
-        const size_t n = static_cast<size_t>(di->num_backhaul_down_mac);
+/* start fix 4 */
+        size_t n = static_cast<size_t>(di->num_backhaul_down_mac);
+        if (n > EM_BACKHAUL_DOWNMAC_ADDR) {
+            n = EM_BACKHAUL_DOWNMAC_ADDR;
+        }
+/* end fix 4 */
         std::vector<em_short_string_t> tmp(n);
 
         for (size_t i = 0; i < n; i++) {

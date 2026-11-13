@@ -35,9 +35,9 @@ alignas(16) char name_store[DGI_LEFT + DGI_NAME_SZ + DGI_PAD];
 #define OKP(n, p, ns, v) {n, P(p), false, false, false, false, false, false, false, 0, 0, 1, ns, 0, 0, v, false}
 #define OKE(n, p, e, v) {n, P(p), false, false, false, false, false, false, false, 0, 0, 0, 0, e, 0, v, false}
 #define RJ(n, ev) {n, ev, false, false, false, false, false, false, false, 0, 0, 0, 0, 0, 2, NULL, false}
-#define CRD(n, nd, nf) {n, P("BackhaulDownMACAddress"), false, false, false, false, false, false, false, nd, nf, 0, 0, 0, 2, NULL, true}
-#define CRP(n, ns) {n, P("BTMSteeringDisallowedSTAList"), false, false, false, false, false, false, false, 0, 0, 1, ns, 0, 2, NULL, true}
-#define CR(n, ev) {n, ev, false, false, false, false, false, false, false, 0, 0, 0, 0, 0, 2, NULL, true}
+#define RJD(n, nd, nf) {n, P("BackhaulDownMACAddress"), false, false, false, false, false, false, false, nd, nf, 0, 0, 0, 0, NULL, false}
+#define RJP(n, ns) {n, P("BTMSteeringDisallowedSTAList"), false, false, false, false, false, false, false, 0, 0, 1, ns, 0, 0, NULL, false}
+#define RJC(n, ev) {n, ev, false, false, false, false, false, false, false, 0, 0, 0, 0, 0, 2, NULL, false}
 
 test_case_t suite[] = {
  /* ---- plain parameters ---- */
@@ -88,13 +88,13 @@ test_case_t suite[] = {
  {"rej_no_sec_cap", P("Manufacturer"), false, false, false, false, true, false, false, 0, 0, 0, 0, 0, 2, NULL, false},
  /* ---- [spec]: wrong behaviour, no abort ---- */
  RJ("rej_device_1abc [spec]", N "Device.1abc.Manufacturer"),
- /* ---- CRASH cases (run last, unforked) ---- */
- CR("crash_method_short", "X.ID"),
- CR("crash_path_without_device", N "ID"),
- CRD("crash_down_17", 17, 16),
- CRD("crash_down_255", 255, 16),
- CRP("crash_btm_17", 17),
- CRP("crash_btm_255", 255),
+ /* ---- were CRASH cases on the original handler (now rejected rc 2, or the count is clamped to 16 and answered rc 0) ---- */
+ RJC("rej_method_short", "X.ID"),
+ RJC("rej_path_without_device", N "ID"),
+ RJD("clamp_down_17", 17, 16),
+ RJD("clamp_down_255", 255, 16),
+ RJP("clamp_btm_17", 17),
+ RJP("clamp_btm_255", 255),
 
  { NULL, NULL, false, false, false, false, false, false, false, 0, 0, 0, 0, 0, 0, NULL, false }  /* sentinel */
 };
