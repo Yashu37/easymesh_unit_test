@@ -13,6 +13,7 @@ void run_all_tests_cmd_clientassocctrlrequest(void);
 void run_all_tests_cmd_clientsteer(void);
 void run_all_tests_cmd_steerwifibh(void);
 void run_all_tests_cmd_unassocstalinkmetricsquery(void);
+void run_all_tests_cmd_disassociate(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -439,6 +440,10 @@ int main() {
 
 	// cmd_unassocstalinkmetricsquery (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
-	run_all_tests_cmd_unassocstalinkmetricsquery();
+//	run_all_tests_cmd_unassocstalinkmetricsquery();
+
+	// cmd_disassociate (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_cmd_disassociate();
 	return 0;
 }
