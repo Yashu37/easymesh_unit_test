@@ -10,10 +10,10 @@
  * request is answered "Success" but never dispatched: the accept cases check rc + status only and
  * the case whose json_has is "DISPATCH" ([spec]) expects exactly one dispatch. Other [spec] cases:
  * TargetBSS is not validated as a MAC, a 33-character TargetBSS is truncated at 32, a negative
- * Channel is silently dropped. The crash_* cases (NULL method_name, method name shorter than the
- * Network prefix, path that stops before the Device instance) ABORT on the original handler: they
- * run last and UNFORKED (a plain make stops at the first ASan report); FORK_CRASH=1 runs each in a
- * forked child so all of them show.
+ * Channel is silently dropped. The last 3 cases (NULL method_name, method name shorter than the
+ * Network prefix, path that stops before the Device instance) ABORTED on the original handler; with
+ * fixes 1-2 they are rejected (rc 2). A case flagged crash=true would run last and UNFORKED
+ * (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -42,7 +42,7 @@ int num_props = 0;
 #define OK(n, ...) {n, P, false, false, {__VA_ARGS__, E0}, 0, NULL, false}
 #define RJ(n, ...) {n, P, false, false, {__VA_ARGS__, E0}, 2, NULL, false}
 #define RP(n, m, rc) {n, m, false, false, {BASE, E0}, rc, NULL, false}
-#define CR(n, m) {n, m, false, false, {BASE, E0}, 25, NULL, true}
+#define RJC(n, m) {n, m, false, false, {BASE, E0}, 2, NULL, false}
 
 test_case_t suite[] = {
  /* ---- accepted (rc 0 + "Success"; the dispatch is commented out in the source, see [spec] below) ---- */
@@ -75,10 +75,10 @@ test_case_t suite[] = {
  RJ("rej_target_not_mac [spec]", TB("garbage"), CH(36), TO(10)),
  RJ("rej_target_33_chars [spec]", R("TargetBSS", "T", 33), CH(36), TO(10)),
  RJ("rej_channel_negative [spec]", TB(T1), CH(-5), TO(10)),
- /* ---- CRASH cases (run last, unforked) ---- */
- {"crash_method_null", NULL, false, false, {BASE, E0}, 2, NULL, true},
- CR("crash_method_name_short", "X.SteerWiFiBackhaul()"),
- CR("crash_path_without_device", N "SteerWiFiBackhaul()"),
+ /* ---- were CRASH cases on the original handler (now rejected, rc 2) ---- */
+ {"rej_method_null", NULL, false, false, {BASE, E0}, 2, NULL, false},
+ RJC("rej_method_name_short", "X.SteerWiFiBackhaul()"),
+ RJC("rej_path_without_device", N "SteerWiFiBackhaul()"),
 
  { NULL, NULL, false, false, {E0}, 0, NULL, false }  /* sentinel */
 };
