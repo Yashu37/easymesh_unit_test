@@ -9,10 +9,10 @@
  * expect_rc uses the real bus_error_t values (0 success, 2 invalid_input, 22 invalid_method,
  * 25 invalid_namespace). Accept cases also check the JSON handed to io_process. Cases marked [spec]
  * are inputs a strict handler should reject (a ReasonCode above 65535 does not fit the 16-bit
- * 802.11 reason code field). The crash_* cases (NULL method_name, method name shorter than the
- * Network prefix, path that stops before the Device / Radio / BSS / STA instance) ABORT on the
- * original handler: they run last and UNFORKED (a plain make stops at the first ASan report);
- * FORK_CRASH=1 runs each in a forked child so all of them show.
+ * 802.11 reason code field). The last 6 cases (NULL method_name, method name shorter than the
+ * Network prefix, path that stops before the Device / Radio / BSS / STA instance) ABORTED on the
+ * original handler; with fixes 1-2 they are rejected (rc 2). A case flagged crash=true would run
+ * last and UNFORKED (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -41,7 +41,7 @@ int num_props = 0;
 #define OK(n, j, ...) {n, P, false, false, {__VA_ARGS__, E0}, 0, j, false}
 #define RJ(n, ...) {n, P, false, false, {__VA_ARGS__, E0}, 2, NULL, false}
 #define RP(n, m, rc) {n, m, false, false, {BASE, E0}, rc, NULL, false}
-#define CR(n, m) {n, m, false, false, {BASE, E0}, 25, NULL, true}
+#define RJC(n, m) {n, m, false, false, {BASE, E0}, 2, NULL, false}
 
 test_case_t suite[] = {
  /* ---- accepted ---- */
@@ -75,13 +75,13 @@ test_case_t suite[] = {
  /* ---- [spec]: should be rejected but are accepted ---- */
  RJ("rej_reason_70000 [spec]", TM(10), RC(70000)),
  RJ("rej_reason_huge [spec]", TM(10), RC(2147483647)),
- /* ---- CRASH cases (run last, unforked) ---- */
- {"crash_method_null", NULL, false, false, {BASE, E0}, 2, NULL, true},
- CR("crash_method_name_short", "X.Disassociate()"),
- CR("crash_path_without_device", N "Disassociate()"),
- CR("crash_path_without_radio", N "Device.1.Disassociate()"),
- CR("crash_path_without_bss", N "Device.1.Radio.1.Disassociate()"),
- CR("crash_path_without_sta", N "Device.1.Radio.1.BSS.1.Disassociate()"),
+ /* ---- were CRASH cases on the original handler (now rejected, rc 2) ---- */
+ {"rej_method_null", NULL, false, false, {BASE, E0}, 2, NULL, false},
+ RJC("rej_method_name_short", "X.Disassociate()"),
+ RJC("rej_path_without_device", N "Disassociate()"),
+ RJC("rej_path_without_radio", N "Device.1.Disassociate()"),
+ RJC("rej_path_without_bss", N "Device.1.Radio.1.Disassociate()"),
+ RJC("rej_path_without_sta", N "Device.1.Radio.1.BSS.1.Disassociate()"),
 
  { NULL, NULL, false, false, {E0}, 0, NULL, false }  /* sentinel */
 };
