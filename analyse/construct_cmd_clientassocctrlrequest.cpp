@@ -9,9 +9,9 @@
  * expect_rc uses the real bus_error_t values (0 success, 2 invalid_input, 22 invalid_method,
  * 25 invalid_namespace). Accept cases also check the JSON handed to io_process. Cases marked [spec]
  * are inputs a strict handler should reject (StationsList entries are not validated as MACs). The
- * crash_* cases (method name shorter than the Network prefix, path that stops before the Device /
- * Radio / BSS instance) ABORT on the original handler: they run last and UNFORKED (a plain make
- * stops at the first ASan report); FORK_CRASH=1 runs each in a forked child so all of them show.
+ * last 4 cases (method name shorter than the Network prefix, path that stops before the Device /
+ * Radio / BSS instance) ABORTED on the original handler; with fixes 1-2 they are rejected (rc 2).
+ * A case flagged crash=true would run last and UNFORKED (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ int num_props = 0;
 #define OK(n, j, ...) {n, P, false, false, {__VA_ARGS__, E0}, 0, j, false}
 #define RJ(n, ...) {n, P, false, false, {__VA_ARGS__, E0}, 2, NULL, false}
 #define RP(n, m, rc) {n, m, false, false, {SL(A1), BL(1), PD(30), E0}, rc, NULL, false}
-#define CR(n, m) {n, m, false, false, {SL(A1), BL(1), PD(30), E0}, 25, NULL, true}
+#define RJC(n, m) {n, m, false, false, {SL(A1), BL(1), PD(30), E0}, 2, NULL, false}
 
 test_case_t suite[] = {
  /* ---- accepted ---- */
@@ -79,11 +79,11 @@ test_case_t suite[] = {
  /* ---- [spec]: should be rejected but are accepted ---- */
  RJ("rej_sta_not_mac [spec]", SL("garbage"), BL(1), PD(30)),
  RJ("rej_sta_empty_item [spec]", SL(A1 ",,aa:bb:cc:dd:ee:ff"), BL(1), PD(30)),
- /* ---- CRASH cases (run last, unforked) ---- */
- CR("crash_method_name_short", "X.X_AIRTIES_ClientAssocControl()"),
- CR("crash_path_without_device", N "X_AIRTIES_ClientAssocControl()"),
- CR("crash_path_without_radio", N "Device.1.X_AIRTIES_ClientAssocControl()"),
- CR("crash_path_without_bss", N "Device.1.Radio.1.X_AIRTIES_ClientAssocControl()"),
+ /* ---- were CRASH cases on the original handler (now rejected, rc 2) ---- */
+ RJC("rej_method_name_short", "X.X_AIRTIES_ClientAssocControl()"),
+ RJC("rej_path_without_device", N "X_AIRTIES_ClientAssocControl()"),
+ RJC("rej_path_without_radio", N "Device.1.X_AIRTIES_ClientAssocControl()"),
+ RJC("rej_path_without_bss", N "Device.1.Radio.1.X_AIRTIES_ClientAssocControl()"),
 
  { NULL, NULL, false, false, {E0}, 0, NULL, false }  /* sentinel */
 };
