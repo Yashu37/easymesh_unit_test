@@ -8,10 +8,10 @@
  * expect_rc uses the real bus_error_t values (0 success, 2 invalid_input, 22 invalid_method,
  * 25 invalid_namespace). Accept cases also check the JSON handed to io_process. Cases marked [spec]
  * are inputs a strict handler should reject (a channel list with OpClass 0 is silently dropped, a
- * 129-character list is silently truncated). The crash_* cases (NULL method_name, method name shorter than the
- * Network prefix, path that stops before the Device / Radio instance) ABORT on the original
- * handler: they run last and UNFORKED (a plain make stops at the first ASan report); FORK_CRASH=1
- * runs each in a forked child so all of them show.
+ * 129-character list is silently truncated). The last 4 cases (NULL method_name, method name shorter than the
+ * Network prefix, path that stops before the Device / Radio instance) ABORTED on the original
+ * handler; with fixes 1-2 they are rejected (rc 2). A case flagged crash=true would run last and
+ * UNFORKED (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -37,7 +37,7 @@ int num_props = 0;
 #define OK(n, j, ...) {n, P, false, false, {__VA_ARGS__, E0}, 0, j, false}
 #define RJ(n, ...) {n, P, false, false, {__VA_ARGS__, E0}, 2, NULL, false}
 #define RP(n, m, rc) {n, m, false, false, {OC(115), CL("36"), E0}, rc, NULL, false}
-#define CR(n, m) {n, m, false, false, {OC(115), CL("36"), E0}, 25, NULL, true}
+#define RJC(n, m) {n, m, false, false, {OC(115), CL("36"), E0}, 2, NULL, false}
 
 test_case_t suite[] = {
  /* ---- accepted ---- */
@@ -70,11 +70,11 @@ test_case_t suite[] = {
  /* ---- [spec]: should be rejected but are accepted ---- */
  RJ("rej_list_with_class_0 [spec]", OC(0), CL("36")),
  RJ("rej_list_129_chars [spec]", OC(115), R("ChannelList", "1", 129)),
- /* ---- CRASH cases (run last, unforked) ---- */
- CR("crash_method_name_short", "X.ChannelScanRequest()"),
- CR("crash_path_without_radio", N "Device.1.ChannelScanRequest()"),
- CR("crash_path_without_device", N "ChannelScanRequest()"),
- {"crash_method_null", NULL, false, false, {OC(115), CL("36"), E0}, 2, NULL, true},
+ /* ---- were CRASH cases on the original handler (now rejected, rc 2) ---- */
+ RJC("rej_method_name_short", "X.ChannelScanRequest()"),
+ RJC("rej_path_without_radio", N "Device.1.ChannelScanRequest()"),
+ RJC("rej_path_without_device", N "ChannelScanRequest()"),
+ {"rej_method_null", NULL, false, false, {OC(115), CL("36"), E0}, 2, NULL, false},
 
  { NULL, NULL, false, false, {E0}, 0, NULL, false }  /* sentinel */
 };
