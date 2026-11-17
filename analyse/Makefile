@@ -56,6 +56,14 @@ gtest_em_metrics: $(GTEST_METRICS_SRC)
 	$(CXX) -Igtest_shim $(GTEST_METRICS_SRC) -o $(GTEST_METRICS_OUT) -fsanitize=address -g -O0 -Wall -fpermissive -lgtest -lgtest_main -pthread -ljansson
 	./$(GTEST_METRICS_OUT)
 
+# get_radio_cap() count-above-EM_MAX_BANDS gtest cases (PR #895, RDKBDEV-3653), for upstream tests/test_l1_dm_easy_mesh.cpp
+GTEST_DME_OUT = gtest_dm_easy_mesh
+
+gtest_dm_easy_mesh: test_l1_dm_easy_mesh.cpp radio_tget_params.cpp
+
+	$(CXX) test_l1_dm_easy_mesh.cpp radio_tget_params.cpp -o $(GTEST_DME_OUT) -I. -fsanitize=address -g -O0 -Wall -fpermissive -w -lgtest -lgtest_main -pthread
+	ASAN_OPTIONS=detect_leaks=0 ./$(GTEST_DME_OUT)
+
 clean:
 
-	rm -f $(OUT) $(OBJ) $(GTEST_OUT) $(GTEST_MSG_OUT) $(GTEST_METRICS_OUT) a.out
+	rm -f $(OUT) $(OBJ) $(GTEST_OUT) $(GTEST_MSG_OUT) $(GTEST_METRICS_OUT) $(GTEST_DME_OUT) a.out
