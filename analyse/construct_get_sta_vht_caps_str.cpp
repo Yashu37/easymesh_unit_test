@@ -15,8 +15,9 @@
  *
  * Cases marked [spec] are wrong behaviour (no abort): characters that are not hex digits are accepted
  * (unhex() does not validate), so the output is built from garbage instead of being rejected. The case
- * crash_* ABORTS on the original function: a vht_cap of 128 non-NUL bytes (strlen() reads past the
- * array). It runs last and UNFORKED so a plain make stops with the ASan report (FORK_CRASH=1 forks it).
+ * rej_vht_cap_128_no_nul ABORTED on the original function (a vht_cap of 128 non-NUL bytes: strlen() reads
+ * past the array); with fix 1 (bounded strnlen) it is rejected (""). A case flagged crash=true would run
+ * last and UNFORKED (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -73,8 +74,8 @@ test_case_t suite[] = {
  H("rej_non_hex_letters [spec]", "zzzzzzzzzzzzzzzzzzzzzzzz", ""),
  H("rej_spaces [spec]", "                        ", ""),
  H("rej_hex_prefix [spec]", "0x0000000000000000000000", ""),
- /* ---- CRASH case on the original function (rejected, rc "" after the fix) ---- */
- {"crash_vht_cap_128_no_nul", 3, NULL, 0, 0, 0, 0, false, B, "", true},
+ /* ---- was the CRASH case on the original function (rejected after the fix) ---- */
+ {"rej_vht_cap_128_no_nul", 3, NULL, 0, 0, 0, 0, false, B, "", false},
 
  { NULL, 0, NULL, 0, 0, 0, 0, false, 0, NULL, false }  /* sentinel */
 };
