@@ -12,8 +12,7 @@
  * AdvertisementEnabled, MFPConfig, MobilityDomain, HaulType, AuthType, VLANID), a path not ending in '.'
  * is invalid_operation (6), the num_* counts are clamped to the arrays.
  *
- * Cases crash_* ABORT on the original function (they run last and UNFORKED so a plain make stops with the
- * ASan report; FORK_CRASH=1 forks each one): empty event_name (event_name[-1]), NULL event_name (strlen),
+ * Cases rej_* / clamp_* below ABORTED on the original function (now rejected or clamped by fixes 1-3): empty event_name (event_name[-1]), NULL event_name (strlen),
  * no data model (dm NULL dereferenced), p_data NULL (raw_data_set), m_num_net_ssids above 5 (loop runs past
  * m_network_ssid[]).
  */
@@ -63,13 +62,13 @@ test_case_t suite[] = {
  {"rej_trailing_space", P " ", false, false, 1, 0, 6, 0, NULL, NULL, false},
  {"rej_single_char", "a", false, false, 1, 0, 6, 0, NULL, NULL, false},
  {"rej_param_path", P "1.SSID", false, false, 1, 0, 6, 0, NULL, NULL, false},
- /* ---- CRASH cases on the original function (rejected after the fix) ---- */
- {"crash_empty_event_name", "", false, false, 1, 0, 6, 0, NULL, NULL, true},
- {"crash_null_event_name", NULL, false, false, 1, 0, 2, 0, NULL, NULL, true},
- {"crash_null_pdata", P, true, false, 1, 0, 2, 0, NULL, NULL, true},
- {"crash_no_data_model", P, false, true, 1, 0, 2, 0, NULL, NULL, true},
- {"crash_num_ssids_6", P, false, false, 6, 0, 0, -1, NULL, NULL, true},
- {"crash_num_ssids_100", P, false, false, 100, 0, 0, -1, NULL, NULL, true},
+ /* ---- were CRASH cases on the original function (fixed) ---- */
+ {"rej_empty_event_name", "", false, false, 1, 0, 6, 0, NULL, NULL, false},
+ {"rej_null_event_name", NULL, false, false, 1, 0, 2, 0, NULL, NULL, false},
+ {"rej_null_pdata", P, true, false, 1, 0, 2, 0, NULL, NULL, false},
+ {"rej_no_data_model", P, false, true, 1, 0, 2, 0, NULL, NULL, false},
+ {"clamp_num_ssids_6", P, false, false, 6, 0, 0, 5, "5:SSID=net4\n", "6:SSID", false},
+ {"clamp_num_ssids_100", P, false, false, 100, 0, 0, 5, NULL, "6:SSID", false},
 
  { NULL, NULL, false, false, 0, 0, 0, 0, NULL, NULL, false }  /* sentinel */
 };

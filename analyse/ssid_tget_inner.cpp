@@ -1,7 +1,7 @@
 /*
  * HANDLER: ssid_tget_inner
  *
- * Function copied verbatim (no fix applied yet) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-3 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::ssid_tget_inner, with fill_comma_sep() and fill_haul_type()
  * (same file). Local array: val_str[MAX_EM_BUFF_SZ = 1024] (cleared before each list); the loop runs to
  * dm->get_num_network_ssid() (m_num_net_ssids, unclamped) over m_network_ssid[EM_MAX_NET_SSIDS = 5]; the
@@ -101,6 +101,14 @@ bus_error_t dm_easy_mesh_ctrl_t::ssid_tget_inner(char *event_name, raw_data_t *p
     char val_str[MAX_EM_BUFF_SZ] = { 0 };
     bus_data_prop_t *property = NULL;
 
+/* start fix 1 */
+    if (!event_name || !p_data) {
+        return bus_error_invalid_input;
+    }
+    if (*event_name == '\0') {
+        return bus_error_invalid_operation;
+    }
+/* end fix 1 */
     if (*(event_name + (strlen(event_name) - 1)) != '.') {
         /* Only partial paths are valid */
         return bus_error_invalid_operation;
@@ -108,11 +116,16 @@ bus_error_t dm_easy_mesh_ctrl_t::ssid_tget_inner(char *event_name, raw_data_t *p
 
     dm_easy_mesh_ctrl_t *dm_ctrl = em_ctrl_t::get_em_ctrl_instance()->get_dm_ctrl();
     dm_easy_mesh_t *dm = dm_ctrl->get_first_dm();
+/* start fix 2 */
     if (dm == NULL) {
-        dm = dm_ctrl->get_next_dm(dm);
+        return bus_error_invalid_input;
     }
+/* end fix 2 */
 
-    for (unsigned int idx = 1; idx <= dm->get_num_network_ssid(); idx++) {
+/* start fix 3 */
+    unsigned int num_ssids = std::min(dm->get_num_network_ssid(), static_cast<unsigned int>(EM_MAX_NET_SSIDS));
+    for (unsigned int idx = 1; idx <= num_ssids; idx++) {
+/* end fix 3 */
         dm_network_ssid_t *ssid = dm->get_network_ssid(idx - 1);
         if (ssid == NULL) {
             em_printfout("SSID is NULL");
