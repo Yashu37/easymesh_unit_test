@@ -13,8 +13,8 @@
  * there is none), then affsta_tget_params is called with "<root><idx>.AffiliatedSTA.".
  *
  * Cases marked [spec] are wrong behaviour (no abort): the handler picks the STA with memcmp(...) != 0, so it
- * takes the first associated STA whose id DIFFERS from the STA MLD's MAC. Cases crash_* ABORT on the original
- * function (run last and UNFORKED, FORK_CRASH=1 forks each): m_num_assoc_sta_mld above 64 (loop runs past
+ * takes the first associated STA whose id DIFFERS from the STA MLD's MAC. Cases clamp_* / rej_* ABORTED on the original
+ * function (now fixed by fixes 1-2): m_num_assoc_sta_mld above 64 (loop runs past
  * m_assoc_sta_mld[]) and NULL dm / ami / property (never checked; the current callers always pass them, so
  * these are defensive).
  */
@@ -66,12 +66,12 @@ test_case_t suite[] = {
  T("spec_sta_matched_by_id [spec]", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, {{true,0x22,222,2},{true,0x11,111,1},{false,0,0,0},{false,0,0,0}}, 1, "1:BytesSent=111\n", NULL),
  T("spec_only_matching_sta [spec]", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, {{true,0x11,111,1},{false,0,0,0},{false,0,0,0},{false,0,0,0}}, 1, "1:BytesSent=111\n", NULL),
  T("spec_other_sta_not_counted [spec]", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, {{true,0x22,222,2},{false,0,0,0},{false,0,0,0},{false,0,0,0}}, 1, "1:BytesSent=0\n", "1:BytesSent=222"),
- /* ---- CRASH cases on the original function (rejected / clamped after the fix) ---- */
- {"crash_num_mlds_65", "R.", 65, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 64, "64:MLDMACAddress=", "65:MLDMACAddress", false, false, false, 0, true},
- {"crash_num_mlds_1000", "R.", 1000, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 64, NULL, "65:MLDMACAddress", false, false, false, 0, true},
- {"crash_null_dm", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 0, NULL, NULL, true, false, false, 2, true},
- {"crash_null_ami", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 0, NULL, NULL, false, true, false, 2, true},
- {"crash_null_property", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 0, NULL, NULL, false, false, true, 2, true},
+ /* ---- were CRASH cases on the original function (fixed) ---- */
+ {"clamp_num_mlds_65", "R.", 65, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 64, "64:MLDMACAddress=", "65:MLDMACAddress", false, false, false, 0, false},
+ {"clamp_num_mlds_1000", "R.", 1000, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 64, NULL, "65:MLDMACAddress", false, false, false, 0, false},
+ {"rej_null_dm", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 0, NULL, NULL, true, false, false, 2, false},
+ {"rej_null_ami", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 0, NULL, NULL, false, true, false, 2, false},
+ {"rej_null_property", "R.", 1, {{1,0x11,0},{0,0,0},{0,0,0}}, NOSTA, 0, NULL, NULL, false, false, true, 2, false},
 
  { NULL, NULL, 0, NOMLD, NOSTA, 0, NULL, NULL, false, false, false, 0, false }  /* sentinel */
 };

@@ -1,7 +1,7 @@
 /*
  * HANDLER: stamld_tget_params
  *
- * Function copied verbatim (no fix applied yet) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-2 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::stamld_tget_params. Local array: path[512] (snprintf bounded by
  * sizeof(path) - 1). The loop runs to dm->get_num_assoc_sta_mld() (m_num_assoc_sta_mld, unclamped) over
  * dm->m_assoc_sta_mld[EM_MAX_ASSOC_STA_MLD = 64]; dm, ami and property are never checked.
@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <string>
+#include <algorithm>
 #include <type_traits>
 #include "stamld_tget_params.h"
 
@@ -51,8 +52,17 @@ bus_error_t dm_easy_mesh_ctrl_t::stamld_tget_params(dm_easy_mesh_t *dm, const ch
     bus_error_t rc = bus_error_success;
     dm_easy_mesh_ctrl_t *dm_ctrl = em_ctrl_t::get_em_ctrl_instance()->get_dm_ctrl();
 
+/* start fix 1 */
+    if (!dm || !ami || !property) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
+
     unsigned int idx = 0;
-    for (unsigned int cnt = 0; cnt < dm->get_num_assoc_sta_mld(); cnt++) {
+/* start fix 2 */
+    unsigned int num_sta_mld = std::min(dm->get_num_assoc_sta_mld(), static_cast<unsigned int>(EM_MAX_ASSOC_STA_MLD));
+    for (unsigned int cnt = 0; cnt < num_sta_mld; cnt++) {
+/* end fix 2 */
         /* First find assoc_sta_mld for this ap_mld */
         dm_assoc_sta_mld_t *sta_mld = &dm->m_assoc_sta_mld[cnt]; /* no getter? */
         em_assoc_sta_mld_info_t *smi = sta_mld->get_assoc_sta_mld_info();

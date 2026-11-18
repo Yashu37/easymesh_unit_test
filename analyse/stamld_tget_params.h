@@ -16,6 +16,9 @@ namespace smt {
 #define SMT_MAXSTA 4
 #define SMT_GUARD 256
 #define SMT_MAXMLD 64        /* EM_MAX_ASSOC_STA_MLD */
+#ifndef EM_MAX_ASSOC_STA_MLD
+#define EM_MAX_ASSOC_STA_MLD 64
+#endif
 using ccs::bus_error_t; using ccs::bus_error_success; using ccs::bus_error_invalid_input;
 using ccs::bus_data_prop_t;
 typedef unsigned char mac_address_t[6];
