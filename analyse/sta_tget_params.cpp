@@ -3,12 +3,13 @@
  *
  * Function copied (fix 1 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::sta_tget_params. Local arrays: ht_caps_str[32],
- * vht_caps_str[32], wifi6_name[128] (snprintf bounded); the read
- * em_crypto_t::base64_encode(si->frame_body, si->frame_body_len) (frame_body[EM_MAX_FRAME_BODY_LEN = 512],
- * the length is a data-model value that the frame-parsing code stores unclamped).
+ * vht_caps_str[32], wifi6_name[128] (snprintf bounded); the reads
+ * of frame_body up to si->frame_body_len (decode_sta_capability, find_sta_he_caps, base64_encode;
+ * frame_body[EM_MAX_FRAME_BODY_LEN = 512], the length is a data-model value that the frame-parsing code stores
+ * unclamped). Fix 1 clamps the stored length once, before the first reader.
  * Scaffolding: one data model whose STA map holds the STAs of stp::sta_spec_t. Separate functions are stubs:
- * dm_sta_t::decode_sta_capability (no-op; in the live flow it walks the same frame_body up to
- * frame_body_len), get_sta_ht_caps_str / get_sta_vht_caps_str (copy the text), sta_wifi6_cap_value (true for
+ * dm_sta_t::decode_sta_capability (stand-in that reads frame_body[0 .. frame_body_len) like the live
+ * decoder and find_sta_he_caps do), get_sta_ht_caps_str / get_sta_vht_caps_str (copy the text), sta_wifi6_cap_value (true for
  * every even member), base64_encode (standard base64); property_append_tail records "idx:name=value".
  */
 
@@ -102,6 +103,11 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_tget_params(dm_easy_mesh_t *dm, const char 
         }
         ++idx;
 
+/* start fix 1 */
+        if (si->frame_body_len > EM_MAX_FRAME_BODY_LEN) {
+            si->frame_body_len = EM_MAX_FRAME_BODY_LEN;
+        }
+/* end fix 1 */
         /* Derived capability fields; decode before reading (see sta_get_inner). */
         dm_sta_t::decode_sta_capability(sta);
 
@@ -110,15 +116,9 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_tget_params(dm_easy_mesh_t *dm, const char 
         dm_ctrl->get_sta_ht_caps_str(si->ht_cap, ht_caps_str, sizeof(ht_caps_str));
         dm_ctrl->get_sta_vht_caps_str(si->vht_cap, vht_caps_str, sizeof(vht_caps_str));
 
-/* start fix 1 */
-        unsigned int frame_body_len = si->frame_body_len;
-        if (frame_body_len > EM_MAX_FRAME_BODY_LEN) {
-            frame_body_len = EM_MAX_FRAME_BODY_LEN;
-        }
-/* end fix 1 */
         std::string client_caps_b64;
-        if (frame_body_len > 0) {
-            client_caps_b64 = em_crypto_t::base64_encode(si->frame_body, frame_body_len);
+        if (si->frame_body_len > 0) {
+            client_caps_b64 = em_crypto_t::base64_encode(si->frame_body, si->frame_body_len);
         }
 
         dm_ctrl->property_append_tail(property, root, idx, "MACAddress", si->id);

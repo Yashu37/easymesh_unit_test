@@ -31,7 +31,9 @@ typedef struct {
     int rcpi;
     unsigned int last_conn_time, bytes_tx, bytes_rx, pkts_tx, pkts_rx, errors_tx, errors_rx, retrans_count;
 } em_sta_info_t;
-class dm_sta_t { public: em_sta_info_t info; em_sta_info_t *get_sta_info() { return &info; } static void decode_sta_capability(dm_sta_t *sta) { (void)sta; } };
+class dm_sta_t { public: em_sta_info_t info; em_sta_info_t *get_sta_info() { return &info; } /* stand-in for the real walk over frame_body[0 .. frame_body_len) (dm_sta.cpp decode_sta_capability / find_sta_he_caps) */
+    static void decode_sta_capability(dm_sta_t *sta)
+    { volatile unsigned char s = 0; for (unsigned int i = 0; i < sta->info.frame_body_len; i++) s = (unsigned char)(s + sta->info.frame_body[i]); (void)s; } };
 typedef struct { dm_sta_t *p[STP_MAXSTA]; int n; } sta_map_t;
 class dm_easy_mesh_t { public: sta_map_t *m_sta_map; };
 void *hash_map_get_first(sta_map_t *m);
