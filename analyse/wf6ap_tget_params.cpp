@@ -22,8 +22,8 @@ namespace wtp {
 char g_rec[16384];
 int g_roles = 0;
 dm_easy_mesh_t *g_dm = NULL;
-static bus_data_prop_t g_dummy_prop;
-static void rec(const char *name, const char *val)
+bus_data_prop_t g_dummy_prop;
+void rec(const char *name, const char *val)
 {
     size_t l = strlen(g_rec);
     if (l + 256 > sizeof(g_rec)) return;
@@ -31,22 +31,6 @@ static void rec(const char *name, const char *val)
     if (!strcmp(name, "HE160")) g_roles++;
 }
 
-class dm_easy_mesh_ctrl_t {
-public:
-    void property_append_tail(bus_data_prop_t **prop, const char *root, const char *name, const char *v)
-    { (void)root; if (!*prop) *prop = &g_dummy_prop; rec(name, v); }
-    template <typename T>
-    typename std::enable_if<std::is_arithmetic<T>::value>::type
-    property_append_tail(bus_data_prop_t **prop, const char *root, const char *name, T v)
-    { char s[32]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%lld", (long long)v); rec(name, s); }
-    bus_error_t wf6ap_tget_params(dm_easy_mesh_t *dm, const char *root, em_radio_info_t *ri, bus_data_prop_t **property, unsigned int idx);
-};
-class em_ctrl_t {
-public:
-    dm_easy_mesh_ctrl_t m_data_model;
-    static em_ctrl_t *get_em_ctrl_instance();
-    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
-};
 static em_ctrl_t g_ctrl;
 em_ctrl_t *em_ctrl_t::get_em_ctrl_instance() { return &g_ctrl; }
 
@@ -71,8 +55,8 @@ bus_error_t dm_easy_mesh_ctrl_t::wf6ap_tget_params(dm_easy_mesh_t *dm, const cha
     if (num_role > MAP_AP_ROLE_MAX) {
         num_role = MAP_AP_ROLE_MAX;
     }
-/* end fix 1 */
     for (i = 0; i < num_role; i++) {
+/* end fix 1 */
         char mcsnss_str[256] = { 0 };
         memcpy(role, &rci->wifi6_cap.roles[i], sizeof(em_wifi6_role_wire_t));
 

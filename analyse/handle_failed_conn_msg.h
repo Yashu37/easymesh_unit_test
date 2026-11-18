@@ -23,6 +23,41 @@ typedef struct {
     int (*bus_event_publish_fn)(void *hdl, const char *name, raw_data_t *data);
 } wifi_bus_desc_t;
 
+extern bool g_no_desc, g_pub_fail;
+extern wifi_bus_desc_t g_desc;
+
+/* stand-ins for the data-model / message / controller classes (member bodies copied verbatim stay in handle_failed_conn_msg.cpp) */
+class dm_easy_mesh_t {
+public:
+    static void macbytes_to_string(unsigned char *mac, char *string)
+    { snprintf(string, 18, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); }
+};
+class em_data_model_t { public: void *get_bus_hdl() { return NULL; } };
+
+class em_msg_t {
+    em_msg_type_t m_type;
+    em_profile_type_t m_profile;
+    unsigned int m_num_tlv;
+    em_tlv_member_t m_tlv_member[EM_MAX_TLV_MEMBERS];
+    unsigned int m_num_errors;
+    em_short_string_t m_errors[EM_MAX_TLV_MEMBERS];
+    unsigned char *m_buff;
+    unsigned int m_len;
+public:
+    em_msg_t(em_msg_type_t type, em_profile_type_t profile, unsigned char *tlvs, unsigned int len)
+    {   m_type = type; m_profile = profile; m_num_tlv = 0; m_buff = tlvs; m_len = len; m_num_errors = 0;
+        if (type == em_msg_type_failed_conn) failed_conn(); }
+    unsigned int validate(char *errors[]);
+    void failed_conn();
+};
+class em_ctrl_t {
+public:
+    em_data_model_t m_data_model;
+    wifi_bus_desc_t *get_bus_descriptor() { return g_no_desc ? NULL : &g_desc; }
+    void handle_failed_conn_msg(unsigned char *data, unsigned int len);
+};
+
+
 typedef struct {
     unsigned char type;
     unsigned short len;              /* the length FIELD of the TLV (host order) */

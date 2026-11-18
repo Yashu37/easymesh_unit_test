@@ -26,7 +26,7 @@ namespace hfc {
 int g_npub = 0;
 char g_pub[2048];
 bool g_no_desc = false, g_pub_fail = false;
-static wifi_bus_desc_t g_desc;
+wifi_bus_desc_t g_desc;
 
 static int pub_fn(void *hdl, const char *name, raw_data_t *data)
 {
@@ -39,30 +39,7 @@ static int pub_fn(void *hdl, const char *name, raw_data_t *data)
     return g_pub_fail ? 1 : 0;
 }
 
-class dm_easy_mesh_t {
-public:
-    static void macbytes_to_string(unsigned char *mac, char *string)
-    { snprintf(string, 18, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); }
-};
-class em_data_model_t { public: void *get_bus_hdl() { return NULL; } };
-
 /* --- copied verbatim from src/em/em_msg.cpp (class cut down to the members these use) --- */
-class em_msg_t {
-    em_msg_type_t m_type;
-    em_profile_type_t m_profile;
-    unsigned int m_num_tlv;
-    em_tlv_member_t m_tlv_member[EM_MAX_TLV_MEMBERS];
-    unsigned int m_num_errors;
-    em_short_string_t m_errors[EM_MAX_TLV_MEMBERS];
-    unsigned char *m_buff;
-    unsigned int m_len;
-public:
-    em_msg_t(em_msg_type_t type, em_profile_type_t profile, unsigned char *tlvs, unsigned int len)
-    {   m_type = type; m_profile = profile; m_num_tlv = 0; m_buff = tlvs; m_len = len; m_num_errors = 0;
-        if (type == em_msg_type_failed_conn) failed_conn(); }
-    unsigned int validate(char *errors[]);
-    void failed_conn();
-};
 unsigned int em_msg_t::validate(char *errors[])
 {
     em_tlv_t *tlv;
@@ -139,12 +116,6 @@ void em_msg_t::failed_conn()
     m_tlv_member[m_num_tlv++] = em_tlv_member_t(em_tlv_type_reason_code, optional, "17.2.64 of Wi-Fi Easy Mesh 5.0", 5);
 }
 
-class em_ctrl_t {
-public:
-    em_data_model_t m_data_model;
-    wifi_bus_desc_t *get_bus_descriptor() { return g_no_desc ? NULL : &g_desc; }
-    void handle_failed_conn_msg(unsigned char *data, unsigned int len);
-};
 static em_ctrl_t g_ctrl;
 
 /* --- copied verbatim from src/ctrl/em_ctrl.cpp --- */

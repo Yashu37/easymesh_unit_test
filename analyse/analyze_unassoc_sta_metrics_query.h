@@ -55,6 +55,52 @@ extern char g_sum[4096];
 void construct_input(const test_case_t *tc);
 int invoke(void);
 void teardown(void);
+
+/* ---- scaffolding classes, usings, macros moved from analyze_unassoc_sta_metrics_query.cpp ---- */
+extern int g_num;
+extern char g_sum[4096];
+static int g_cmds = 0;
+
+class em_cmd_t {
+public:
+    virtual ~em_cmd_t() {}
+    virtual em_cmd_t *clone_for_next() { return NULL; }    /* src/cmd/em_cmd.cpp returns NULL */
+};
+class dm_easy_mesh_t {
+public:
+    static void string_to_macbytes(char *key, mac_address_t bmac);
+};
+static void summarise(em_cmd_params_t *p, em_unassoc_query_list_t *q)
+{
+    char *s = g_sum; size_t n = sizeof(g_sum);
+    unsigned char *a = p->u.unassoc_sta_query_params.al_mac;
+    int w = snprintf(s, n, "al=%02x:%02x:%02x:%02x:%02x:%02x nop=%d", a[0], a[1], a[2], a[3], a[4], a[5], q->num_opclass);
+    s += w; n -= w;
+    for (int i = 0; i < q->num_opclass && i < 3; i++) {
+        em_unassoc_query_opclass_t *o = &q->opclass_list[i];
+        w = snprintf(s, n, " oc%d=%d/%d", i, o->op_class, o->num_channels); s += w; n -= w;
+        for (int j = 0; j < o->num_channels && j < 3; j++) {
+            em_unassoc_query_channel_t *c = &o->channel_list[j];
+            w = snprintf(s, n, " c%d.%d=%d/%d", i, j, c->channel, c->num_sta); s += w; n -= w;
+            for (int k = 0; k < c->num_sta && k < 3; k++) {
+                unsigned char *m = c->sta_list[k];
+                w = snprintf(s, n, " s%d.%d.%d=%02x:%02x:%02x:%02x:%02x:%02x", i, j, k, m[0], m[1], m[2], m[3], m[4], m[5]); s += w; n -= w;
+            }
+        }
+    }
+}
+class em_cmd_unassoc_sta_query_t : public em_cmd_t {
+public:
+    em_cmd_unassoc_sta_query_t(em_cmd_params_t param, dm_easy_mesh_t &dm, em_unassoc_query_list_t *query)
+    { (void)dm; g_cmds++; summarise(&param, query); }
+};
+class dm_easy_mesh_ctrl_t {
+public:
+    operator dm_easy_mesh_t() { return dm_easy_mesh_t(); }
+    int analyze_unassoc_sta_metrics_query(em_bus_event_t *evt, em_cmd_t *pcmd[]);
+};
+static dm_easy_mesh_ctrl_t g_ctrl;
+
 }
 void run_all_tests_analyze_unassoc_sta_metrics_query(void);
 #endif

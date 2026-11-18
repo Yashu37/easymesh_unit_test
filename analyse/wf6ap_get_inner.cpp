@@ -25,24 +25,6 @@ int g_nset = 0;
 dm_easy_mesh_t *g_dm[W6G_MAXDM + 1];
 int g_ndm = 0;
 
-class dm_easy_mesh_ctrl_t {
-public:
-    const char* get_table_instance(const char *src, char *instance, size_t max_len, bool *is_num);
-    dm_easy_mesh_t *get_first_dm() { return g_ndm ? g_dm[0] : NULL; }
-    dm_easy_mesh_t *get_next_dm(dm_easy_mesh_t *dm)
-    { for (int i = 0; i < g_ndm; i++) if (g_dm[i] == dm) return (i + 1 < g_ndm) ? g_dm[i + 1] : NULL; return NULL; }
-    bus_error_t raw_data_set(raw_data_t *p, const char *v) { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%s", v); return bus_error_success; }
-    template <typename T>
-    typename std::enable_if<std::is_arithmetic<T>::value, bus_error_t>::type
-    raw_data_set(raw_data_t *p, T v) { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%lld", (long long)v); return bus_error_success; }
-    bus_error_t wf6ap_get_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data);
-};
-class em_ctrl_t {
-public:
-    dm_easy_mesh_ctrl_t m_data_model;
-    static em_ctrl_t *get_em_ctrl_instance();
-    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
-};
 static em_ctrl_t g_ctrl;
 em_ctrl_t *em_ctrl_t::get_em_ctrl_instance() { return &g_ctrl; }
 
@@ -173,8 +155,8 @@ bus_error_t dm_easy_mesh_ctrl_t::wf6ap_get_inner(char *event_name, raw_data_t *p
     if (num_role > MAP_AP_ROLE_MAX) {
         num_role = MAP_AP_ROLE_MAX;
     }
-/* end fix 4 */
     for (i = 0; i < num_role; i++) {
+/* end fix 4 */
         char mcsnss_str[256] = { 0 };
         memcpy(&role_temp, &rci->wifi6_cap.roles[i], sizeof(em_wifi6_role_wire_t));
 

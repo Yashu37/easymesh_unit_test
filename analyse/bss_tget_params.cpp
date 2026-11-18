@@ -23,8 +23,8 @@ namespace btp {
 char g_rec[65536];
 int g_rows = 0;
 dm_easy_mesh_t *g_dm = NULL;
-static bus_data_prop_t g_dummy_prop;
-static void rec(unsigned int idx, const char *name, const char *val)
+bus_data_prop_t g_dummy_prop;
+void rec(unsigned int idx, const char *name, const char *val)
 {
     size_t l = strlen(g_rec);
     if (l + 512 > sizeof(g_rec)) return;
@@ -32,27 +32,6 @@ static void rec(unsigned int idx, const char *name, const char *val)
     if (!strcmp(name, "BSSID")) g_rows++;
 }
 
-class dm_easy_mesh_ctrl_t {
-public:
-    void fill_bss_akms_allowed(dm_easy_mesh_t *dm, em_bss_info_t *bi, bool backhaul, char *buf, size_t buf_len)
-    { (void)dm; buf[0] = '\0'; if (backhaul == (bi->id.haul_type == em_haul_type_backhaul)) snprintf(buf, buf_len, "psk"); }
-    void sta_tget_params(dm_easy_mesh_t *dm, const char *path, em_bss_info_t *bi, bus_data_prop_t **prop) { (void)dm; (void)bi; (void)prop; rec(0, "sta_path", path); }
-    void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const char *v)
-    { (void)root; if (!*prop) *prop = &g_dummy_prop; rec(idx, name, v ? v : "(null)"); }
-    void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const unsigned char *mac)
-    { char s[18]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); rec(idx, name, s); }
-    template <typename T>
-    typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value>::type
-    property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, T v)
-    { char s[32]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%lld", (long long)v); rec(idx, name, s); }
-    bus_error_t bss_tget_params(dm_easy_mesh_t *dm, const char *root, em_radio_info_t *ri, bus_data_prop_t **property);
-};
-class em_ctrl_t {
-public:
-    dm_easy_mesh_ctrl_t m_data_model;
-    static em_ctrl_t *get_em_ctrl_instance();
-    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
-};
 static em_ctrl_t g_ctrl;
 em_ctrl_t *em_ctrl_t::get_em_ctrl_instance() { return &g_ctrl; }
 
@@ -70,8 +49,8 @@ bus_error_t dm_easy_mesh_ctrl_t::bss_tget_params(dm_easy_mesh_t *dm, const char 
     if (num_bss > EM_MAX_BSSS) {
         num_bss = EM_MAX_BSSS;
     }
-/* end fix 1 */
     for (unsigned int i = 0; i < num_bss; i++) {
+/* end fix 1 */
         dm_bss_t *bss = dm->get_bss(i);
         if (bss == NULL) {
             continue;

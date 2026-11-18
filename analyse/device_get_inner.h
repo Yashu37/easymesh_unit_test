@@ -82,6 +82,35 @@ public:
 extern dm_easy_mesh_t *g_dm;
 extern dm_easy_mesh_t *g_bh;   /* backhaul parent device (for BackhaulALID) */
 
+extern char g_val[2048];
+extern int g_nset;
+extern dm_easy_mesh_t *g_bh;
+
+/* stand-ins for the controller classes (handler body is in device_get_inner.cpp) */
+class dm_easy_mesh_ctrl_t {
+public:
+    const char* get_table_instance(const char *src, char *instance, size_t max_len, bool *is_num);
+    void fill_comma_sep(em_short_string_t str[], size_t max, char *buf);
+    dm_easy_mesh_t *get_dm_easy_mesh(char *instance, bool is_num)
+    {   if (!g_dm) return NULL;
+        if (is_num) return atoi(instance) == 1 ? g_dm : NULL;
+        return strcmp(instance, "02:00:00:00:00:01") == 0 ? g_dm : NULL; }
+    dm_device_t *get_dm_dev(unsigned char *dev_mac, unsigned char *bmac)
+    {   (void)dev_mac; if (g_bh && !memcmp(g_bh->dev.info.intf.mac, bmac, 6)) return &g_bh->dev; return NULL; }
+    bus_error_t raw_data_set(raw_data_t *p, const char *v) { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%s", v); return bus_error_success; }
+    bus_error_t raw_data_set(raw_data_t *p, const unsigned char *mac)
+    { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); return bus_error_success; }
+    template <typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value, bus_error_t>::type
+    raw_data_set(raw_data_t *p, T v) { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%lld", (long long)v); return bus_error_success; }
+    bus_error_t device_get_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data);
+};
+class em_ctrl_t {
+public:
+    dm_easy_mesh_ctrl_t m_data_model;
+    static em_ctrl_t *get_em_ctrl_instance();
+    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
+};
 typedef struct {
     const char *test_name;
     const char *event;     /* NULL passes a NULL event_name */

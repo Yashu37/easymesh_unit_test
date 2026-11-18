@@ -26,8 +26,8 @@ namespace stp {
 char g_rec[262144];
 int g_rows = 0;
 dm_easy_mesh_t *g_dm = NULL;
-static bus_data_prop_t g_dummy_prop;
-static void rec(unsigned int idx, const char *name, const char *val)
+bus_data_prop_t g_dummy_prop;
+void rec(unsigned int idx, const char *name, const char *val)
 {
     size_t l = strlen(g_rec);
     if (l + 700 > sizeof(g_rec)) return;
@@ -39,50 +39,6 @@ void *hash_map_get_first(sta_map_t *m) { return (m && m->n) ? m->p[0] : NULL; }
 void *hash_map_get_next(sta_map_t *m, void *cur)
 { for (int i = 0; i < m->n; i++) if (m->p[i] == cur) return i + 1 < m->n ? m->p[i + 1] : NULL; return NULL; }
 
-class em_crypto_t {
-public:
-    static std::string base64_encode(const uint8_t *in, size_t len)
-    {   static const char t[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        std::string o; size_t i = 0;
-        for (; i + 2 < len; i += 3) { uint32_t v = (in[i] << 16) | (in[i+1] << 8) | in[i+2];
-            o += t[v >> 18]; o += t[(v >> 12) & 63]; o += t[(v >> 6) & 63]; o += t[v & 63]; }
-        if (len - i == 1) { uint32_t v = in[i] << 16; o += t[v >> 18]; o += t[(v >> 12) & 63]; o += "=="; }
-        else if (len - i == 2) { uint32_t v = (in[i] << 16) | (in[i+1] << 8); o += t[v >> 18]; o += t[(v >> 12) & 63]; o += t[(v >> 6) & 63]; o += '='; }
-        return o; }
-};
-
-static const char *sta_wifi6_cap_members[] = {
-    "HE160", "HE8080", "MCSNSS", "SUBeamformer", "SUBeamformee",
-    "MUBeamformer", "Beamformee80orLess", "BeamformeeAbove80", "ULMUMIMO",
-    "ULOFDMA", "DLOFDMA", "MaxDLMUMIMO", "MaxULMUMIMO", "MaxDLOFDMA",
-    "MaxULOFDMA", "RTS", "MURTS", "MultiBSSID", "MUEDCA", "TWTRequestor",
-    "TWTResponder", "SpatialReuse", "AnticipatedChannelUsage",
-};
-
-class dm_easy_mesh_ctrl_t {
-public:
-    char *get_sta_ht_caps_str(char *hex, char *buf, size_t n) { snprintf(buf, n, "%s", hex); return buf; }
-    char *get_sta_vht_caps_str(char *hex, char *buf, size_t n) { snprintf(buf, n, "%s", hex); return buf; }
-    bool sta_wifi6_cap_value(em_sta_info_t *si, const char *param, bool *out)
-    { (void)si; for (unsigned i = 0; i < sizeof(sta_wifi6_cap_members) / sizeof(sta_wifi6_cap_members[0]); i++)
-        if (!strcmp(param, sta_wifi6_cap_members[i])) { *out = (i % 2 == 0); return true; }
-      return false; }
-    void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const char *v)
-    { (void)root; if (!*prop) *prop = &g_dummy_prop; rec(idx, name, v ? v : "(null)"); }
-    void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const unsigned char *mac)
-    { char s[18]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); rec(idx, name, s); }
-    template <typename T>
-    typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value>::type
-    property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, T v)
-    { char s[32]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%lld", (long long)v); rec(idx, name, s); }
-    bus_error_t sta_tget_params(dm_easy_mesh_t *dm, const char *root, em_bss_info_t *bi, bus_data_prop_t **property);
-};
-class em_ctrl_t {
-public:
-    dm_easy_mesh_ctrl_t m_data_model;
-    static em_ctrl_t *get_em_ctrl_instance();
-    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
-};
 static em_ctrl_t g_ctrl;
 em_ctrl_t *em_ctrl_t::get_em_ctrl_instance() { return &g_ctrl; }
 

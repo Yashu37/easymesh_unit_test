@@ -98,6 +98,42 @@ typedef struct {
     int n_aff;            /* num_affiliated_bsta */
 } dm_spec_t;
 
+extern bus_data_prop_t g_dummy_prop;
+void rec(unsigned int idx, const char *name, const char *val);
+extern int g_raw_set;
+extern int g_ndm;
+
+/* stand-ins for the controller classes (handler body is in device_tget_inner.cpp) */
+class dm_easy_mesh_ctrl_t {
+public:
+    dm_easy_mesh_t *get_first_dm() { return g_ndm ? g_dm[0] : NULL; }
+    dm_easy_mesh_t *get_next_dm(dm_easy_mesh_t *dm)
+    { for (int i = 0; i < g_ndm; i++) if (g_dm[i] == dm) return (i + 1 < g_ndm) ? g_dm[i + 1] : NULL; return NULL; }
+    dm_device_t *get_dm_dev(unsigned char *dev_mac, unsigned char *bmac)
+    {   (void)dev_mac;
+        for (int i = 0; i < g_ndm; i++) if (g_dm[i]->get_device() && !memcmp(g_dm[i]->dev.info.id.dev_mac, bmac, 6)) return &g_dm[i]->dev;
+        return NULL;
+    }
+    void fill_comma_sep(em_short_string_t str[], size_t max, char *buf);
+    bus_error_t device_tget_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data);
+    void radio_tget_params(dm_easy_mesh_t *dm, const char *path, bus_data_prop_t **prop) { (void)dm; (void)prop; rec(0, "radio_path", path); }
+    void apmld_tget_params(dm_easy_mesh_t *dm, const char *path, bus_data_prop_t **prop) { (void)dm; (void)prop; rec(0, "apmld_path", path); }
+    void raw_data_set(raw_data_t *p, bus_data_prop_t *prop) { (void)p; (void)prop; g_raw_set++; }
+    void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const char *v)
+    { (void)root; if (!*prop) *prop = &g_dummy_prop; rec(idx, name, v ? v : "(null)"); }
+    void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const unsigned char *mac)
+    { char s[18]; (void)root; if (!*prop) *prop = &g_dummy_prop; dm_easy_mesh_t::macbytes_to_string(const_cast<unsigned char *>(mac), s); rec(idx, name, s); }
+    template <typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value>::type
+    property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, T v)
+    { char s[32]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%lld", (long long)v); rec(idx, name, s); }
+};
+class em_ctrl_t {
+public:
+    dm_easy_mesh_ctrl_t m_data_model;
+    static em_ctrl_t *get_em_ctrl_instance();
+    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
+};
 typedef struct {
     const char *test_name;
     const char *event;     /* NULL passes a NULL event_name; "" is the empty string */

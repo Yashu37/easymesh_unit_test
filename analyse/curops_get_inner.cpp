@@ -24,26 +24,6 @@ char g_val[64];
 int g_nset = 0;
 dm_easy_mesh_t *g_dm = NULL;
 
-class dm_easy_mesh_ctrl_t {
-public:
-    const char* get_table_instance(const char *src, char *instance, size_t max_len, bool *is_num);
-    dm_op_class_t *get_dm_curop(dm_easy_mesh_t *dm, dm_radio_t *radio, int instance);
-    dm_easy_mesh_t *get_dm_easy_mesh(char *instance, bool is_num)
-    {   if (!g_dm) return NULL;
-        if (is_num) return atoi(instance) == 1 ? g_dm : NULL;
-        return strcmp(instance, "02:00:00:00:00:01") == 0 ? g_dm : NULL; }
-    bus_error_t raw_data_set(raw_data_t *p, const char *v) { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%s", v); return bus_error_success; }
-    template <typename T>
-    typename std::enable_if<std::is_arithmetic<T>::value, bus_error_t>::type
-    raw_data_set(raw_data_t *p, T v) { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%lld", (long long)v); return bus_error_success; }
-    bus_error_t curops_get_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data);
-};
-class em_ctrl_t {
-public:
-    dm_easy_mesh_ctrl_t m_data_model;
-    static em_ctrl_t *get_em_ctrl_instance();
-    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
-};
 static em_ctrl_t g_ctrl;
 em_ctrl_t *em_ctrl_t::get_em_ctrl_instance() { return &g_ctrl; }
 

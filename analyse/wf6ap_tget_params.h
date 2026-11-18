@@ -75,6 +75,26 @@ public:
 };
 extern dm_easy_mesh_t *g_dm;
 
+extern bus_data_prop_t g_dummy_prop;
+void rec(const char *name, const char *val);
+
+/* stand-ins for the controller classes (handler body is in wf6ap_tget_params.cpp) */
+class dm_easy_mesh_ctrl_t {
+public:
+    void property_append_tail(bus_data_prop_t **prop, const char *root, const char *name, const char *v)
+    { (void)root; if (!*prop) *prop = &g_dummy_prop; rec(name, v); }
+    template <typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value>::type
+    property_append_tail(bus_data_prop_t **prop, const char *root, const char *name, T v)
+    { char s[32]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%lld", (long long)v); rec(name, s); }
+    bus_error_t wf6ap_tget_params(dm_easy_mesh_t *dm, const char *root, em_radio_info_t *ri, bus_data_prop_t **property, unsigned int idx);
+};
+class em_ctrl_t {
+public:
+    dm_easy_mesh_ctrl_t m_data_model;
+    static em_ctrl_t *get_em_ctrl_instance();
+    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
+};
 typedef struct {
     const char *test_name;
     const char *root;
