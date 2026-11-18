@@ -15,8 +15,8 @@
  * original handler: method name shorter than the Network prefix, path that stops before the Device
  * / Radio instance (get_table_instance(NULL)), Radio instance 0 / 4 / alias / -1 / 1000000
  * (dm->m_radio[radio_instance - 1]), a chip_vendor without NUL (strlen runs past the 128 bytes) and
- * m_num_opclass 100 (loop runs past m_op_class[64]). They run last and UNFORKED so a plain make
- * stops with the ASan report (FORK_CRASH=1 forks each one).
+ * m_num_opclass 100 (loop runs past m_op_class[64]). A case flagged crash=true would run last and
+ * UNFORKED (FORK_CRASH=1 forks it).
  */
 
 #include <stdio.h>
@@ -33,7 +33,7 @@ alignas(16) char name_store[RGI_LEFT + RGI_NAME_SZ + RGI_PAD];
 /* {name, event, no_pdata, no_dm, expect_rc, expect_val, variant, crash} */
 #define OKV(n, rad, p, v) {n, EV(rad, p), false, false, 0, v, 0, false}
 #define RJ(n, ev) {n, ev, false, false, 2, NULL, 0, false}
-#define CR(n, ev) {n, ev, false, false, 2, NULL, 0, true}
+#define CR(n, ev) {n, ev, false, false, 2, NULL, 0, false}
 
 test_case_t suite[] = {
  /* ---- every parameter name ---- */
@@ -74,16 +74,16 @@ test_case_t suite[] = {
  {"rej_radio_1abc [spec]", EV("1abc", "ID"), false, false, 2, NULL, 0, false},
  {"rej_radio_2x [spec]", EV("2x", "ID"), false, false, 2, NULL, 0, false},
  /* ---- CRASH cases on the original handler (rejected, rc 2, after the fix) ---- */
- CR("crash_method_short", "X.ID"),
- CR("crash_path_without_device", N "ID"),
- CR("crash_path_without_radio", N "Device.1.ID"),
- CR("crash_radio_0", EV("0", "ID")),
- CR("crash_radio_4", EV("4", "ID")),
- CR("crash_radio_alias", EV("[x]", "ID")),
- CR("crash_radio_negative", EV("-1", "ID")),
- CR("crash_radio_huge", EV("1000000", "ID")),
- {"crash_chip_vendor_no_nul", EV("1", "ChipsetVendor"), false, false, 0, NULL, 1, true},
- {"crash_num_opclass_over_max", EV("1", "CurrentOperatingClassProfileNumberOfEntries"), false, false, 0, "2", 2, true},
+ CR("rej_method_short", "X.ID"),
+ CR("rej_path_without_device", N "ID"),
+ CR("rej_path_without_radio", N "Device.1.ID"),
+ CR("rej_radio_0", EV("0", "ID")),
+ CR("rej_radio_4", EV("4", "ID")),
+ CR("rej_radio_alias", EV("[x]", "ID")),
+ CR("rej_radio_negative", EV("-1", "ID")),
+ CR("rej_radio_huge", EV("1000000", "ID")),
+ {"clamp_chip_vendor_no_nul", EV("1", "ChipsetVendor"), false, false, 0, NULL, 1, false},
+ {"clamp_num_opclass_over_max", EV("1", "CurrentOperatingClassProfileNumberOfEntries"), false, false, 0, "2", 2, false},
 
  { NULL, NULL, false, false, 0, NULL, 0, false }  /* sentinel */
 };
