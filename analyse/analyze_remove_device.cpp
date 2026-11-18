@@ -1,7 +1,7 @@
 /*
  * HANDLER: analyze_remove_device
  *
- * Function copied verbatim (no fix applied yet) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-4 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::analyze_remove_device. Local arrays: dev_mac_to_keep[32]
  * (one entry per DeviceList item, unbounded), devices_to_delete[32] (one entry per device of the data
  * model that is not kept, unbounded) and the caller's pcmd[EM_MAX_CMD = 16] (one command per device
@@ -105,9 +105,23 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
         return 0;
 	}
 
+/* start fix 1 */
+	if (cJSON_GetArraySize(dev_list_obj) > 32) {
+        printf("%s:%d: DeviceList has more than 32 devices\n", __func__, __LINE__);
+    	cJSON_Delete(obj);
+        return 0;
+	}
+/* end fix 1 */
 	for (i = 0; i < cJSON_GetArraySize(dev_list_obj); i++) {
 		id_obj = cJSON_GetObjectItem(cJSON_GetArrayItem(dev_list_obj, i), "ID");
 		tmp = cJSON_GetStringValue(id_obj);
+/* start fix 2 */
+		if (tmp == NULL) {
+            printf("%s:%d: DeviceList entry %d has no ID string\n", __func__, __LINE__, i);
+    		cJSON_Delete(obj);
+            return 0;
+		}
+/* end fix 2 */
 		dm_easy_mesh_t::string_to_macbytes(tmp, dev_mac_to_keep[i]);
 	}
 
@@ -127,6 +141,11 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
 		if (keep == true) {
 			keep = false;
 		} else {
+/* start fix 3 */
+			if (num_devs_to_delete >= 32) {
+                break;
+			}
+/* end fix 3 */
 			devices_to_delete[num_devs_to_delete] = device;
 			num_devs_to_delete++;
 		}
@@ -139,11 +158,18 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
 		printf("%s:%d: Device: %s should be deleted\n", __func__, __LINE__, mac_str);	
 		dm = m_data_model_list.get_data_model(device->m_device_info.id.net_id, device->m_device_info.intf.mac);
 		if (dm != NULL) {
+/* start fix 4 */
+            if (num >= EM_MAX_CMD - 1) {
+                break;
+            }
+/* end fix 4 */
     		pcmd[num] = new em_cmd_remove_device_t(evt->params, *dm);
     		tmp_cmd = pcmd[num];
     		num++;
 
-    		while ((pcmd[num] = tmp_cmd->clone_for_next()) != NULL) {
+/* start fix 4 */
+    		while ((num < EM_MAX_CMD) && ((pcmd[num] = tmp_cmd->clone_for_next()) != NULL)) {
+/* end fix 4 */
         		tmp_cmd = pcmd[num];
         		num++;
     		}

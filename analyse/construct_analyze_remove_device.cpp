@@ -10,13 +10,12 @@
  *
  * expect_num: number of commands built (0 = rejected / nothing to remove). Cases marked [spec] are wrong
  * behaviour (no abort): DeviceList that is a number or string (not an array) removes EVERY device (the array size is 0 so the
- * keep list is empty), an ID with trailing text is accepted. Cases named crash_* ABORT on the original
- * handler: more than 32 DeviceList entries (dev_mac_to_keep[32] overflow), an entry without a string ID
+ * keep list is empty), an ID with trailing text is accepted. The last 12 cases (rej_* / clamp_*) ABORTED on the original handler (rejected, or capped at 15 commands, with fixes 1-4): more than 32 DeviceList entries (dev_mac_to_keep[32] overflow), an entry without a string ID
  * (string_to_macbytes(NULL) does strlen(NULL); a DeviceList that is an object has the same effect because
  * cJSON_GetArraySize() counts its members and GetArrayItem returns a member that has no "ID"), more than 32 devices to delete (devices_to_delete[32]
  * overflow) and 16 or more devices to delete (pcmd[16] overflow in the caller's array: the loop that
- * chains clone_for_next() writes pcmd[num] after the last command, so only 15 commands fit). They run last and
- * UNFORKED so a plain make stops with the ASan report (FORK_CRASH=1 forks each one).
+ * chains clone_for_next() writes pcmd[num] after the last command, so only 15 commands fit). A case flagged crash=true would run last and
+ * UNFORKED (FORK_CRASH=1 forks it).
  * Not tested (uninitialised stack data, not deterministic): ID strings that are not hex MACs.
  */
 
@@ -72,18 +71,18 @@ test_case_t suite[] = {
  {"rej_devicelist_not_array [spec]", W "5" T, 0, 3, 0, NULL, NULL, false},
  {"rej_id_trailing_text [spec]", W "[" D(MAC1 ":99") "]" T, 0, 2, 0, NULL, NULL, false},
  /* ---- CRASH cases on the original handler (rejected / bounded after the fix) ---- */
- {"crash_devicelist_33_ids", NULL, 1, 3, 0, NULL, NULL, true},
- {"crash_devicelist_40_ids", NULL, 3, 3, 0, NULL, NULL, true},
- {"crash_devicelist_object", W "{\"ID\":\"" MAC1 "\"}" T, 0, 3, 0, NULL, NULL, true},
- {"crash_id_missing", W "[{}]" T, 0, 3, 0, NULL, NULL, true},
- {"crash_id_number", W "[{\"ID\":5}]" T, 0, 3, 0, NULL, NULL, true},
- {"crash_id_null", W "[{\"ID\":null}]" T, 0, 3, 0, NULL, NULL, true},
- {"crash_id_missing_second", W "[" D(MAC1) ",{\"name\":\"x\"}]" T, 0, 3, 0, NULL, NULL, true},
- {"crash_16_devices_to_delete", W "[]" T, 0, 16, 15, NULL, NULL, true},
- {"crash_17_devices_to_delete", W "[]" T, 0, 17, 15, NULL, NULL, true},
- {"crash_32_devices_to_delete", W "[]" T, 0, 32, 15, NULL, NULL, true},
- {"crash_33_devices_to_delete", W "[]" T, 0, 33, 15, NULL, NULL, true},
- {"crash_40_devices_to_delete", W "[]" T, 0, 40, 15, NULL, NULL, true},
+ {"rej_devicelist_33_ids", NULL, 1, 3, 0, NULL, NULL, false},
+ {"rej_devicelist_40_ids", NULL, 3, 3, 0, NULL, NULL, false},
+ {"rej_devicelist_object", W "{\"ID\":\"" MAC1 "\"}" T, 0, 3, 0, NULL, NULL, false},
+ {"rej_id_missing", W "[{}]" T, 0, 3, 0, NULL, NULL, false},
+ {"rej_id_number", W "[{\"ID\":5}]" T, 0, 3, 0, NULL, NULL, false},
+ {"rej_id_null", W "[{\"ID\":null}]" T, 0, 3, 0, NULL, NULL, false},
+ {"rej_id_missing_second", W "[" D(MAC1) ",{\"name\":\"x\"}]" T, 0, 3, 0, NULL, NULL, false},
+ {"clamp_16_devices_to_delete", W "[]" T, 0, 16, 15, NULL, NULL, false},
+ {"clamp_17_devices_to_delete", W "[]" T, 0, 17, 15, NULL, NULL, false},
+ {"clamp_32_devices_to_delete", W "[]" T, 0, 32, 15, NULL, NULL, false},
+ {"clamp_33_devices_to_delete", W "[]" T, 0, 33, 15, NULL, NULL, false},
+ {"clamp_40_devices_to_delete", W "[]" T, 0, 40, 15, NULL, NULL, false},
 
  { NULL, NULL, 0, 0, 0, NULL, NULL, false }  /* sentinel */
 };
