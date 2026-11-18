@@ -48,6 +48,27 @@ public:
 };
 extern dm_easy_mesh_t *g_dm;
 
+extern int g_nset;
+extern char g_val[512];
+/* stand-ins for the controller classes the handler is a member of (the handler body is in bstamld_get_inner.cpp) */
+class dm_easy_mesh_ctrl_t {
+public:
+    const char* get_table_instance(const char *src, char *instance, size_t max_len, bool *is_num);
+    dm_easy_mesh_t *get_dm_easy_mesh(char *instance, bool is_num)
+    {   if (!g_dm) return NULL;
+        if (is_num) return atoi(instance) == 1 ? g_dm : NULL;
+        return strcmp(instance, "02:00:00:00:00:01") == 0 ? g_dm : NULL; }
+    bus_error_t raw_data_set(raw_data_t *p, const char *v) { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%s", v); return bus_error_success; }
+    bus_error_t raw_data_set(raw_data_t *p, const unsigned char *mac)
+    { (void)p; g_nset++; snprintf(g_val, sizeof(g_val), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); return bus_error_success; }
+    bus_error_t bstamld_get_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data);
+};
+class em_ctrl_t {
+public:
+    dm_easy_mesh_ctrl_t m_data_model;
+    static em_ctrl_t *get_em_ctrl_instance();
+    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &m_data_model; }
+};
 typedef struct {
     const char *test_name;
     const char *event;     /* NULL passes a NULL event_name */
@@ -64,8 +85,6 @@ typedef struct {
 extern test_case_t suite[];
 extern char name_store[BML_LEFT + BML_NAME_SZ + BML_PAD];
 extern int g_rc;
-extern int g_nset;
-extern char g_val[512];
 void construct_input(const test_case_t *tc);
 int invoke(const char *event, bool no_pdata);
 void teardown(void);
