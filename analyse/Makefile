@@ -64,6 +64,22 @@ gtest_dm_easy_mesh: test_l1_dm_easy_mesh.cpp radio_tget_params.cpp
 	$(CXX) test_l1_dm_easy_mesh.cpp radio_tget_params.cpp -o $(GTEST_DME_OUT) -I. -fsanitize=address -g -O0 -Wall -fpermissive -w -lgtest -lgtest_main -pthread
 	ASAN_OPTIONS=detect_leaks=0 ./$(GTEST_DME_OUT)
 
+# handle_failed_conn_msg() short-duplicate-TLV gtest cases (PR #897, RDKBDEV-3655), for upstream tests/test_l1_em_ctrl.cpp
+GTEST_EMCTRL_OUT = gtest_em_ctrl
+
+gtest_em_ctrl: test_l1_em_ctrl.cpp handle_failed_conn_msg.cpp construct_handle_failed_conn_msg.cpp quick_stubs.cpp
+
+	$(CXX) test_l1_em_ctrl.cpp handle_failed_conn_msg.cpp construct_handle_failed_conn_msg.cpp quick_stubs.cpp -o $(GTEST_EMCTRL_OUT) -I. -fsanitize=address -g -O0 -Wall -fpermissive -w -lgtest -lgtest_main -pthread -ljansson -lcjson
+	ASAN_OPTIONS=detect_leaks=0 ./$(GTEST_EMCTRL_OUT)
+
+# cmd_channelscan() rejection-path gtest cases (PR #877, RDKBDEV-3645), for upstream tests/test_l1_em_ctrl.cpp
+GTEST_CCN_OUT = gtest_em_ctrl_channelscan
+
+gtest_em_ctrl_channelscan: test_l1_em_ctrl_channelscan.cpp cmd_channelscan.cpp construct_cmd_channelscan.cpp quick_stubs.cpp
+
+	$(CXX) test_l1_em_ctrl_channelscan.cpp cmd_channelscan.cpp construct_cmd_channelscan.cpp quick_stubs.cpp -o $(GTEST_CCN_OUT) -I. -fsanitize=address -g -O0 -Wall -fpermissive -w -lgtest -lgtest_main -pthread -ljansson -lcjson
+	ASAN_OPTIONS=detect_leaks=0 ./$(GTEST_CCN_OUT)
+
 clean:
 
-	rm -f $(OUT) $(OBJ) $(GTEST_OUT) $(GTEST_MSG_OUT) $(GTEST_METRICS_OUT) $(GTEST_DME_OUT) a.out
+	rm -f $(OUT) $(OBJ) $(GTEST_OUT) $(GTEST_MSG_OUT) $(GTEST_METRICS_OUT) $(GTEST_DME_OUT) $(GTEST_EMCTRL_OUT) $(GTEST_CCN_OUT) a.out
