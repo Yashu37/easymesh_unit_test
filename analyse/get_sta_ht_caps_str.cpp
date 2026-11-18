@@ -1,7 +1,7 @@
 /*
  * HANDLER: get_sta_ht_caps_str
  *
- * Function copied verbatim (no fix applied yet) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fix 1 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::get_sta_ht_caps_str, with dm_easy_mesh_t::unhex()
  * (src/dm/dm_easy_mesh.cpp, verbatim). Local array: ie[32]; the input is the caller's
  * em_sta_info_t.ht_cap (em_long_string_t, 128 bytes) and strlen() is run on it; the output is the
@@ -66,7 +66,9 @@ char* dm_easy_mesh_ctrl_t::get_sta_ht_caps_str(char *ht_cap_hex, char *buf, size
     if ((ht_cap_hex == NULL) || (ht_cap_hex[0] == '\0')) {
         return buf;
     }
-    hex_len = static_cast<unsigned int>(strlen(ht_cap_hex));
+/* start fix 1 */
+    hex_len = static_cast<unsigned int>(strnlen(ht_cap_hex, 2 * sizeof(ie) + 1));
+/* end fix 1 */
     if ((hex_len < 32) || (hex_len & 1) || (hex_len > 2 * sizeof(ie)) ||
         (dm_easy_mesh_t::unhex(hex_len, ht_cap_hex, sizeof(ie), ie) == NULL)) {
         return buf;
