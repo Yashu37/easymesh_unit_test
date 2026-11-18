@@ -15,9 +15,9 @@
  *
  * Cases marked [spec] are wrong behaviour (no abort): a Test_type that is not "ssid_change" (e.g. a typo or a
  * number) silently selects the channel slot, and a negative No_of_iteration / out of range Haul_type is
- * stored. The case crash_* ABORTS on the original function: "Test_status" that is not a string
- * (tmp->valuestring is NULL and is passed to strncmp). It runs last and UNFORKED so a plain make stops with
- * the ASan report (FORK_CRASH=1 forks it). Not tested (uninitialised stack data, not deterministic): an
+ * stored. The cases rej_status_* ABORTED on the original function ("Test_status" that is not a string:
+ * tmp->valuestring is NULL and is passed to strncmp); with fix 1 the status is ignored. A case flagged
+ * crash=true would run last and UNFORKED (FORK_CRASH=1 forks it). Not tested (uninitialised stack data, not deterministic): an
  * entry without Test_type (str_type is never initialised).
  */
 
@@ -90,8 +90,10 @@ test_case_t suite[] = {
  OK("rej_test_type_typo [spec]", H "[{\"Test_type\":\"ssid_chnge\",\"No_of_iteration\":3},{\"Test_type\":\"channel_change\"}]" T, ""),
  OK("rej_negative_iterations [spec]", BOTH(",\"No_of_iteration\":-5", ""), ""),
  OK("rej_haul_out_of_range [spec]", BOTH(",\"Haul_type:[Fronthault:0,Backhaul:1,IOT:2,Configurator:3,Hotspot:4]\":9", ""), ""),
- /* ---- CRASH case on the original function (the status is ignored after the fix) ---- */
- {"crash_status_not_string", BOTH(",\"Test_status\":5", ""), "ni=0,0 en=0,0 ip=0,0 done=0,0 st=0,0 haul=0 em=", NULL, true},
+ /* ---- were CRASH cases on the original function (the status is ignored after the fix) ---- */
+ {"rej_status_not_string", BOTH(",\"Test_status\":5", ""), "ni=0,0 en=0,0 ip=0,0 done=0,0 st=0,0 haul=0 em=", NULL, false},
+ {"rej_status_null", BOTH(",\"Test_status\":null", ""), "ni=0,0 en=0,0 ip=0,0 done=0,0 st=0,0 haul=0 em=", NULL, false},
+ {"rej_status_object", BOTH(",\"Test_status\":{}", ""), "ni=0,0 en=0,0 ip=0,0 done=0,0 st=0,0 haul=0 em=", NULL, false},
 
  { NULL, NULL, NULL, 0, false }  /* sentinel */
 };

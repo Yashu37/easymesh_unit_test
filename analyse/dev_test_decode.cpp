@@ -1,7 +1,7 @@
 /*
  * HANDLER: dev_test_decode
  *
- * Function copied verbatim (no fix applied yet) from unified-wifi-mesh src/ctrl/em_dev_test_ctrl.cpp
+ * Function copied (fix 1 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/em_dev_test_ctrl.cpp
  * (develop @ 1ba9529), em_dev_test_t::decode (row "decode" of the Local Array list). Local array: str_type[32]
  * (snprintf bounded); em_dev_test_info arrays are indexed with index = ssid(0) / channel(1) only. Real
  * cJSON. The "Test_status" branch reads tmp->valuestring without checking that the item is a string.
@@ -107,7 +107,9 @@ void em_dev_test_t:: decode(em_subdoc_info_t *subdoc, hash_map_t *m_em_map, cons
 
 		}
 
-		if ((tmp = cJSON_GetObjectItem(obj, "Test_status")) != NULL) {
+/* start fix 1 */
+		if (((tmp = cJSON_GetObjectItem(obj, "Test_status")) != NULL) && (cJSON_IsString(tmp) == true) && (tmp->valuestring != NULL)) {
+/* end fix 1 */
 			if(strncmp(tmp->valuestring, "Inprogress", sizeof("Inprogress")) == 0) {
 				dev_test_info.test_status[index] = em_dev_test_status_inprogess;
 			} else if(strncmp(tmp->valuestring, "Complete", sizeof("Complete")) == 0) {
