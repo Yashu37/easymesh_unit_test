@@ -27,6 +27,7 @@ void run_all_tests_radio_get_inner(void);
 void run_all_tests_analyze_remove_device(void);
 void run_all_tests_get_sta_vht_caps_str(void);
 void run_all_tests_dev_test_decode(void);
+void run_all_tests_get_sta_ht_caps_str(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -509,6 +510,10 @@ int main() {
 
 	// dev_test_decode (unified-wifi-mesh src/ctrl/em_dev_test_ctrl.cpp, em_dev_test_t::decode). The crash_* case runs last and
 	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks it).
-	run_all_tests_dev_test_decode();
+//	run_all_tests_dev_test_decode();
+
+	// get_sta_ht_caps_str (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* case runs last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks it).
+	run_all_tests_get_sta_ht_caps_str();
 	return 0;
 }
