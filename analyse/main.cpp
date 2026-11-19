@@ -41,6 +41,7 @@ void run_all_tests_create_cac_cap_tlv(void);
 void run_all_tests_nodes_listener(void);
 void run_all_tests_set_bp_filter(void);
 void run_all_tests_create_data_model(void);
+void run_all_tests_dm_bss_encode(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -570,6 +571,9 @@ int main() {
 	// run_all_tests_set_bp_filter();
 	// create_data_model (unified-wifi-mesh src/dm/dm_easy_mesh_list.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
-	run_all_tests_create_data_model();
+	// run_all_tests_create_data_model();
+	// dm_bss_t::encode (unified-wifi-mesh src/dm/dm_bss.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_dm_bss_encode();
 	return 0;
 }
