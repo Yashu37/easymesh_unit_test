@@ -14,8 +14,9 @@
  *
  * expect_rc: 0 success, 2 invalid_input, 25 invalid_namespace. variant: 0 normal, 1 m_num_bss = 100 (> 24 entries of
  * m_bss[]), 2 / 3 STA 1 frame_body_len = 513 / 65534 (> 512), 4 = 512, 5 = 0. Cases marked [spec] are wrong behaviour
- * (an instance like "1abc" is read as 1 by atoi). Cases named crash_* ABORT on the original handler: they run last and
- * UNFORKED so a plain `make` stops with the ASan report; FORK_CRASH=1 forks each one.
+ * (an instance like "1abc" is read as 1 by atoi). Cases named rej_* / clamp_* below (NULL event name, short method name, path without
+ * Device / Radio / BSS / STA, Radio instance 0 / 4 / -1 / 1000000 / alias, m_num_bss 100, frame_body_len 513 / 65534) ABORTED on the original
+ * handler (now fixed by fixes 1-6): the first 12 are rejected (rc 2), m_num_bss is clamped to 24 and frame_body_len to 512.
  */
 
 #include <stdio.h>
@@ -33,7 +34,7 @@ alignas(16) char name_store[SGI_LEFT + SGI_NAME_SZ + SGI_PAD];
 #define OKV(n, p, v) {n, EV("1", "1", "1", p), false, 0, v, 0, false}
 #define RJ(n, ev) {n, ev, false, 2, NULL, 0, false}
 #define NS(n, ev) {n, ev, false, 25, NULL, 0, false}
-#define CR(n, ev) {n, ev, false, 2, NULL, 0, true}
+#define CR(n, ev) {n, ev, false, 2, NULL, 0, false}
 
 test_case_t suite[] = {
  /* ---- every parameter name (radio 1, BSS 1, STA 1) ---- */
@@ -76,22 +77,22 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour (atoi accepts trailing text), no abort ---- */
  {"rej_bss_trailing_text [spec]", EV("1", "1x", "1", "MACAddress"), false, 2, NULL, 0, false},
  {"rej_sta_trailing_text [spec]", EV("1", "1", "1x", "MACAddress"), false, 2, NULL, 0, false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- {"crash_event_null", NULL, false, 2, NULL, 0, true},
- CR("crash_method_name_short", "X.MACAddress"),
- CR("crash_path_without_device", N "MACAddress"),
- CR("crash_path_without_radio", N "Device.1.MACAddress"),
- CR("crash_path_without_bss", N "Device.1.Radio.1.MACAddress"),
- CR("crash_path_without_sta", N "Device.1.Radio.1.BSS.1.MACAddress"),
- CR("crash_radio_0", EV("0", "1", "1", "MACAddress")),
- CR("crash_radio_4", EV("4", "1", "1", "MACAddress")),
- CR("crash_radio_negative", EV("-1", "1", "1", "MACAddress")),
- CR("crash_radio_1000000", EV("1000000", "1", "1", "MACAddress")),
- CR("crash_radio_alias", EV("[02:00:00:00:00:01]", "1", "1", "MACAddress")),
- {"crash_num_bss_100", EV("1", "9", "1", "MACAddress"), false, 25, NULL, 1, true},
- {"crash_frame_body_len_513", EV("1", "1", "1", "MACAddress"), false, 0, NULL, 2, true},
- {"crash_frame_body_len_513_client_caps", EV("1", "1", "1", "ClientCapabilities"), false, 0, NULL, 2, true},
- {"crash_frame_body_len_65534", EV("1", "1", "1", "MACAddress"), false, 0, NULL, 3, true},
+ /* ---- were CRASH cases on the original handler (now rejected / clamped) ---- */
+ {"rej_event_null", NULL, false, 2, NULL, 0, false},
+ CR("rej_method_name_short", "X.MACAddress"),
+ CR("rej_path_without_device", N "MACAddress"),
+ CR("rej_path_without_radio", N "Device.1.MACAddress"),
+ CR("rej_path_without_bss", N "Device.1.Radio.1.MACAddress"),
+ CR("rej_path_without_sta", N "Device.1.Radio.1.BSS.1.MACAddress"),
+ CR("rej_radio_0", EV("0", "1", "1", "MACAddress")),
+ CR("rej_radio_4", EV("4", "1", "1", "MACAddress")),
+ CR("rej_radio_negative", EV("-1", "1", "1", "MACAddress")),
+ CR("rej_radio_1000000", EV("1000000", "1", "1", "MACAddress")),
+ CR("rej_radio_alias", EV("[02:00:00:00:00:01]", "1", "1", "MACAddress")),
+ {"clamp_num_bss_100", EV("1", "9", "1", "MACAddress"), false, 25, NULL, 1, false},
+ {"clamp_frame_body_len_513", EV("1", "1", "1", "MACAddress"), false, 0, NULL, 2, false},
+ {"clamp_frame_body_len_513_client_caps", EV("1", "1", "1", "ClientCapabilities"), false, 0, NULL, 2, false},
+ {"clamp_frame_body_len_65534", EV("1", "1", "1", "MACAddress"), false, 0, NULL, 3, false},
  { NULL, NULL, false, 0, NULL, 0, false }  /* sentinel */
 };
 

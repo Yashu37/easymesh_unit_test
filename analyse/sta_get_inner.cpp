@@ -2,7 +2,7 @@
  * HANDLER: sta_get_inner
  *
  * Function copied from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp (develop @ 1ba9529),
- * dm_easy_mesh_ctrl_t::sta_get_inner, with get_table_instance() and get_dm_sta(dm, bi, int) (same file). Local arrays:
+ * dm_easy_mesh_ctrl_t::sta_get_inner (fixes 1-6 applied, start fix n / end fix n markers), with get_table_instance() and get_dm_sta(dm, bi, int) (same file). Local arrays:
  * instance[32], caps_str[32] (two of them); the array accesses dm->m_radio[radio_instance - 1] (EM_MAX_BANDS = 3),
  * dm->get_bss_info(i) for i < dm->m_num_bss (m_bss[EM_MAX_BSSS = 24]), name += sizeof(DATAELEMS_NETWORK) and the reads of
  * si->frame_body up to si->frame_body_len (decode_sta_capability, base64_encode; frame_body[EM_MAX_FRAME_BODY_LEN = 512]).
@@ -38,7 +38,15 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	char *dst = instance;
 	size_t len = 0;
 
+/* start fix 3 */
+    if (src == NULL) {
+        return NULL;
+    }
     src = strstr(src, ".");
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 3 */
     ++src;
 
 	if (*src == '[') {
@@ -99,6 +107,11 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_get_inner(char *event_name, raw_data_t *p_d
     int radio_instance = 0, bss_instance = 0, sta_instance = 0;
     bus_error_t rc;
 
+/* start fix 1 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
     param = strrchr(name, '.');
     if (param == NULL) {
         return bus_error_invalid_input;
@@ -109,8 +122,18 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_get_inner(char *event_name, raw_data_t *p_d
 
     /* Extract device instance (numeric or alias) and find the dm object for
      * that device instance */
+/* start fix 2 */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 3 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 3 */
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         printf("device not found\n");
@@ -118,7 +141,18 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_get_inner(char *event_name, raw_data_t *p_d
     }
 
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 3 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 3 */
     radio_instance = is_num ? atoi(instance) : 0;
+/* start fix 4 */
+    if (radio_instance < 1 || radio_instance > EM_MAX_BANDS) {
+        em_printfout("radio instance %d out of range", radio_instance);
+        return bus_error_invalid_input;
+    }
+/* end fix 4 */
     dm_radio_t *radio = &dm->m_radio[radio_instance - 1];
     if (radio == NULL) {
         em_printfout("radio is NULL\n");
@@ -129,8 +163,16 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_get_inner(char *event_name, raw_data_t *p_d
     mac_addr_str_t  radio_str, bss_str;
 
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 3 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 3 */
     bss_instance = is_num ? atoi(instance) : 0;
-    for(i = 0; i < dm->m_num_bss; i++) {
+/* start fix 5 */
+    unsigned int num_bss = dm->m_num_bss > EM_MAX_BSSS ? EM_MAX_BSSS : dm->m_num_bss;
+    for(i = 0; i < num_bss; i++) {
+/* end fix 5 */
         bi = dm->get_bss_info(i);
         dm_easy_mesh_t::macbytes_to_string(bi->ruid.mac, bss_str);
         dm_easy_mesh_t::macbytes_to_string(ri->id.ruid, radio_str);
@@ -148,6 +190,11 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_get_inner(char *event_name, raw_data_t *p_d
     }
 
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 3 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 3 */
     sta_instance = is_num ? atoi(instance) : 0;
     dm_sta_t *sta = dm_ctrl->get_dm_sta(dm, bi, sta_instance);
     if (sta == NULL) {
@@ -156,8 +203,13 @@ bus_error_t dm_easy_mesh_ctrl_t::sta_get_inner(char *event_name, raw_data_t *p_d
     }
     /* The capability fields are derived from the stored (re)assoc request frame
        body, not persisted with the station record; decode before reading. */
-    dm_sta_t::decode_sta_capability(sta);
     em_sta_info_t *si = sta->get_sta_info();
+/* start fix 6 */
+    if (si->frame_body_len > EM_MAX_FRAME_BODY_LEN) {
+        si->frame_body_len = EM_MAX_FRAME_BODY_LEN;
+    }
+/* end fix 6 */
+    dm_sta_t::decode_sta_capability(sta);
 
     if (strcmp(param, "MACAddress") == 0) {
         rc = dm_ctrl->raw_data_set(p_data, si->id);
