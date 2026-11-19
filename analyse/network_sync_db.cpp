@@ -1,5 +1,6 @@
 /*
- * HANDLER: dm_network_list_t::sync_db
+ * HANDLER: dm_network_list_t::sync_db (fix 1 applied, start fix n / end fix n markers: bounded get_string(ctx, buf, col, size)
+ * overload for the ID and both MAC columns; the stale-buffer failure is left original)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): dm_network_list_t::sync_db (src/dm/dm_network_list.cpp) with the
  * helpers it calls: util::get_date_time_rfc3399 (src/utils/util.cpp) and dm_easy_mesh_t::string_to_macbytes (src/dm/dm_easy_mesh.cpp).
@@ -60,11 +61,17 @@ int dm_network_list_t::sync_db(db_client_t& db_client, void *ctx)
 
     // there is only one row in network
     while (db_client.next_result(ctx)) {
-		db_client.get_string(ctx, info.id, 1);
-		db_client.get_string(ctx, mac, 2);
+/* start fix 1 */
+		db_client.get_string(ctx, info.id, 1, sizeof(info.id));
+/* end fix 1 */
+/* start fix 1 */
+		db_client.get_string(ctx, mac, 2, sizeof(mac));
+/* end fix 1 */
 		dm_easy_mesh_t::string_to_macbytes(mac, info.ctrl_id.mac);
 
-		db_client.get_string(ctx, mac, 3);
+/* start fix 1 */
+		db_client.get_string(ctx, mac, 3, sizeof(mac));
+/* end fix 1 */
 		dm_easy_mesh_t::string_to_macbytes(mac, info.colocated_agent_id.mac);
 
 		info.media = static_cast<em_media_type_t> (db_client.get_number(ctx, 4));
