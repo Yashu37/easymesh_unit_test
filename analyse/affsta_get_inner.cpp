@@ -2,7 +2,7 @@
  * HANDLER: affsta_get_inner
  *
  * Function copied from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp (develop @ 1ba9529),
- * dm_easy_mesh_ctrl_t::affsta_get_inner, with get_table_instance(), get_dm_ap_mld() and get_dm_sta_mld() (same file).
+ * dm_easy_mesh_ctrl_t::affsta_get_inner (fixes 1-3 applied, start fix n / end fix n markers), with get_table_instance(), get_dm_ap_mld() and get_dm_sta_mld() (same file).
  * Local arrays: instance[32]; the array accesses smi->affiliated_sta[idx - 1] (EM_MAX_AP_MLD = 64, while
  * num_affiliated_sta is an unsigned char) and name += sizeof(DATAELEMS_NETWORK). The handler already rejects a NULL
  * event_name / p_data. Scaffolding: one device 1 with 2 AP MLDs, 3 STA MLDs and a STA map; raw_data_set records the value
@@ -38,7 +38,15 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	char *dst = instance;
 	size_t len = 0;
 
+/* start fix 2 */
+    if (src == NULL) {
+        return NULL;
+    }
     src = strstr(src, ".");
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 2 */
     ++src;
 
 	if (*src == '[') {
@@ -146,8 +154,18 @@ bus_error_t dm_easy_mesh_ctrl_t::affsta_get_inner(char *event_name, raw_data_t *
 
     /* Extract device instance (numeric or alias) and find the dm object for
      * that device instance */
+/* start fix 1 */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         em_printfout("Device not found");
@@ -157,6 +175,11 @@ bus_error_t dm_easy_mesh_ctrl_t::affsta_get_inner(char *event_name, raw_data_t *
     /* Extract ap_mld instance (numeric or alias), find the ap_mld dm object
      * for that instance, and finally get info struct for ap_mld dm object */
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     dm_ap_mld_t *ap_mld = dm_ctrl->get_dm_ap_mld(dm, instance, is_num);
     if (ap_mld == NULL) {
         em_printfout("APMLD not found");
@@ -168,6 +191,11 @@ bus_error_t dm_easy_mesh_ctrl_t::affsta_get_inner(char *event_name, raw_data_t *
      * assoc_sta_mld dm object for that instance, and finally get info struct
      * for assoc_sta_mld dm object */
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     dm_assoc_sta_mld_t *sta_mld = dm_ctrl->get_dm_sta_mld(dm, ami, instance, is_num);
     if (sta_mld == NULL) {
         em_printfout("STAMLD not found");
@@ -177,8 +205,16 @@ bus_error_t dm_easy_mesh_ctrl_t::affsta_get_inner(char *event_name, raw_data_t *
 
     /* Extract aff_sta instance and get info struct for that aff_sta */
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     int idx = atoi(instance);
-    if (!is_num || idx <= 0 || idx > smi->num_affiliated_sta) {
+/* start fix 3 */
+    int num_aff = smi->num_affiliated_sta > EM_MAX_AP_MLD ? EM_MAX_AP_MLD : smi->num_affiliated_sta;
+    if (!is_num || idx <= 0 || idx > num_aff) {
+/* end fix 3 */
         em_printfout("AffiliatedSTA not found");
         return bus_error_invalid_namespace;
     }

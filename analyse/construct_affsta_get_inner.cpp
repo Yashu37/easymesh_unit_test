@@ -14,8 +14,9 @@
  *
  * expect_rc: 0 success, 2 invalid_input, 5 destination_not_found, 25 invalid_namespace. variant: 0 normal, 1 STA MLD 1
  * num_affiliated_sta = 100 (> 64 entries of affiliated_sta[]), 2 empty STA map. Cases marked [spec] are wrong behaviour.
- * Cases named crash_* ABORT on the original handler: they run last and UNFORKED so a plain `make` stops with the ASan
- * report; FORK_CRASH=1 forks each one.
+ * Cases named rej_* / clamp_* in the last
+ * block (short method name, path without Device / APMLD / STAMLD / AffiliatedSTA, affiliated STA index 65 / 70 with num_affiliated_sta 100)
+ * ABORTED on the original handler (now fixed by fixes 1-3): the first 5 are rejected (rc 2), the count is clamped to 64 (rc 25).
  */
 
 #include <stdio.h>
@@ -34,7 +35,7 @@ alignas(16) char name_store[AFG_LEFT + AFG_NAME_SZ + AFG_PAD];
 /* {name, event, no_pdata, expect_rc, expect_val, variant, crash} */
 #define OKV(n, aff, p, v) {n, EV("1", M1, aff, p), false, 0, v, 0, false}
 #define RJ(n, ev, rc) {n, ev, false, rc, NULL, 0, false}
-#define CR(n, ev) {n, ev, false, 2, NULL, 0, true}
+#define CR(n, ev) {n, ev, false, 2, NULL, 0, false}
 
 test_case_t suite[] = {
  /* ---- address parameters ---- */
@@ -72,14 +73,14 @@ test_case_t suite[] = {
  {"spec_packets_received_of_matching_sta [spec]", EV("1", M1, "1", "PacketsReceived"), false, 0, "1004", 0, false},
  {"spec_signal_of_matching_sta [spec]", EV("1", M1, "1", "SignalStrength"), false, 0, "10", 0, false},
  {"spec_est_ul_of_matching_sta [spec]", EV("1", M1, "2", "EstMACDataRateUplink"), false, 0, "2007", 0, false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- CR("crash_method_name_short", "X.MACAddress"),
- CR("crash_path_without_device", N "MACAddress"),
- CR("crash_path_without_apmld", N "Device.1.MACAddress"),
- CR("crash_path_without_stamld", N "Device.1.APMLD.1.MACAddress"),
- CR("crash_path_without_affsta", N "Device.1.APMLD.1.STAMLD." M1 ".MACAddress"),
- {"crash_num_affiliated_sta_100_aff_65", EV("1", M1, "65", "MACAddress"), false, 0, NULL, 1, true},
- {"crash_num_affiliated_sta_100_aff_70", EV("1", M1, "70", "BSSID"), false, 0, NULL, 1, true},
+ /* ---- were CRASH cases on the original handler (now rejected / clamped) ---- */
+ CR("rej_method_name_short", "X.MACAddress"),
+ CR("rej_path_without_device", N "MACAddress"),
+ CR("rej_path_without_apmld", N "Device.1.MACAddress"),
+ CR("rej_path_without_stamld", N "Device.1.APMLD.1.MACAddress"),
+ CR("rej_path_without_affsta", N "Device.1.APMLD.1.STAMLD." M1 ".MACAddress"),
+ {"clamp_num_affiliated_sta_100_aff_65", EV("1", M1, "65", "MACAddress"), false, 25, NULL, 1, false},
+ {"clamp_num_affiliated_sta_100_aff_70", EV("1", M1, "70", "BSSID"), false, 25, NULL, 1, false},
  { NULL, NULL, false, 0, NULL, 0, false }  /* sentinel */
 };
 
