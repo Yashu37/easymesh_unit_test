@@ -5,8 +5,8 @@
  * num_channels from the case, channels[i] = 36 + 4i (fill 0), 100 + i (fill 1) or channels[0] = 12345678 (fill 2), channel_pref[i] = i + 1.
  * The row functions are stand-ins that record the id, the channel list and the preference list update_db hands them. PASS = return
  * value, number of row calls, channel entry count, first / last channel and preference string match. Cases that ABORTED on the original
- * code are named clamp_* / rej_*: num_channels above 64 reads past channels[64] / channel_pref[64], a NULL data pointer dereferences
- * info->id. They run last and UNFORKED; FORK_CRASH=1 forks each one. [spec] cases: wrong behaviour, no abort.
+ * code are named clamp_* / rej_*: num_channels above 64 read past channels[64] / channel_pref[64] (fix 1 clamps it), a NULL data pointer
+ * dereferenced info->id (fix 2 returns -1). [spec] cases: wrong behaviour, no abort.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,13 +30,13 @@ test_case_t suite[] = {
  {"spec_64_three_digit_channels_last_entry_cut [spec]", 1, 1, 64, 1, false, 0, 1, 64, "100", "163", "", false},
  {"spec_eight_digit_channel_cut_by_tmp [spec]",         1, 1, 1, 2, false, 0, 1, 1, "12345678", "12345678", "", false},
  /* ---- were CRASH cases on the original code ---- */
- {"clamp_num_channels_65",             1, 1, 65, 0, false, 0, 1, 64, "36", "288", "", true},
- {"clamp_num_channels_65_pref_type",   1, 6, 65, 0, false, 0, 1, 64, "36", "288", NULL, true},
- {"clamp_num_channels_100_update",     2, 1, 100, 0, false, 0, 1, 64, "36", "288", "", true},
- {"clamp_num_channels_1000000",        1, 1, 1000000, 0, false, 0, 1, 64, "36", "288", "", true},
- {"clamp_num_channels_ffffffff",       1, 1, 0xffffffffu, 0, false, 0, 1, 64, "36", "288", "", true},
- {"rej_null_data_insert",              1, 1, 0, 0, true, -1, 0, -1, NULL, NULL, NULL, true},
- {"rej_null_data_delete",              3, 1, 0, 0, true, -1, 0, -1, NULL, NULL, NULL, true},
+ {"clamp_num_channels_65",             1, 1, 65, 0, false, 0, 1, 64, "36", "288", "", false},
+ {"clamp_num_channels_65_pref_type",   1, 6, 65, 0, false, 0, 1, 64, "36", "288", NULL, false},
+ {"clamp_num_channels_100_update",     2, 1, 100, 0, false, 0, 1, 64, "36", "288", "", false},
+ {"clamp_num_channels_1000000",        1, 1, 1000000, 0, false, 0, 1, 64, "36", "288", "", false},
+ {"clamp_num_channels_ffffffff",       1, 1, 0xffffffffu, 0, false, 0, 1, 64, "36", "288", "", false},
+ {"rej_null_data_insert",              1, 1, 0, 0, true, -1, 0, -1, NULL, NULL, NULL, false},
+ {"rej_null_data_delete",              3, 1, 0, 0, true, -1, 0, -1, NULL, NULL, NULL, false},
  {NULL, 0, 0, 0, 0, false, 0, 0, 0, NULL, NULL, NULL, false}
 };
 
