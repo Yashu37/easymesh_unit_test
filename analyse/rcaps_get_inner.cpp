@@ -1,7 +1,7 @@
 /*
  * HANDLER: rcaps_get_inner
  *
- * Function copied verbatim (no fix applied yet) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-4 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::rcaps_get_inner, with get_table_instance(), get_ht_caps_str(),
  * get_vht_caps_str() and get_supported_standards_str() (same file, all verbatim).
  * Local arrays: caps_str[MAX_CAPS_STR_LEN = 32], instance[MAX_INSTANCE_LEN = 32], supported_standards[MAX_STDLEN = 64];
@@ -34,7 +34,15 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	char *dst = instance;
 	size_t len = 0;
 
+/* start fix 2 */
+    if (src == NULL) {
+        return NULL;
+    }
     src = strstr(src, ".");
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 2 */
     ++src;
 
 	if (*src == '[') {
@@ -44,14 +52,23 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src += 2;
+/* start fix 2 */
+        if (*src != ']' || src[1] != '.') {
+            return NULL;
+        }
+        src += 2;
+/* end fix 2 */
 	} else {
 		*is_num = true;
 		while (*src && *src != '.' && ++len < max_len) {
 			*dst++ = *src++;
 		}
 		*dst++ = 0;
-		src++;
+/* start fix 2 */
+        if (*src) {
+            src++;
+        }
+/* end fix 2 */
 	}
 
 	return src;
@@ -163,8 +180,18 @@ bus_error_t dm_easy_mesh_ctrl_t::rcaps_get_inner(char *event_name, raw_data_t *p
 
     /* Extract device instance (numeric or alias) and find the dm object for
      * that device instance */
+/* start fix 1 */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         printf("device not found\n");
@@ -172,7 +199,18 @@ bus_error_t dm_easy_mesh_ctrl_t::rcaps_get_inner(char *event_name, raw_data_t *p
     }
 
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     radio_instance = is_num ? atoi(instance) : 0;
+/* start fix 3 */
+    if (radio_instance < 1 || radio_instance > EM_MAX_BANDS) {
+        em_printfout("radio instance %d out of range", radio_instance);
+        return bus_error_invalid_input;
+    }
+/* end fix 3 */
     dm_radio_t *radio = &dm->m_radio[radio_instance - 1];
     if (radio == NULL) {
         em_printfout("radio is NULL\n");
@@ -184,7 +222,13 @@ bus_error_t dm_easy_mesh_ctrl_t::rcaps_get_inner(char *event_name, raw_data_t *p
 
     if (strcmp(param, "CapableOperatingClassProfileNumberOfEntries") == 0) {
         unsigned int capop_count = 0;
-        for (unsigned int i = 0; i < dm->get_num_op_class(); i++) {
+/* start fix 4 */
+        unsigned int num_oc = dm->get_num_op_class();
+        if (num_oc > EM_MAX_OPCLASS) {
+            num_oc = EM_MAX_OPCLASS;
+        }
+        for (unsigned int i = 0; i < num_oc; i++) {
+/* end fix 4 */
             dm_op_class_t *op_class = dm->get_op_class(i);
             if (op_class == NULL) {
                 continue;

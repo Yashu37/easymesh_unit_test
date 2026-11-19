@@ -13,8 +13,7 @@
  * so CapableOperatingClassProfileNumberOfEntries is 2 / 1 / 1 for radio 1 / 2 / 3.
  *
  * expect_rc: 0 success, 2 invalid_input, 25 invalid_namespace. Cases marked [spec] are wrong behaviour (an
- * instance like "1abc" is read as 1 by atoi). Cases named crash_* ABORT on the original handler (they run
- * last and UNFORKED so a plain make stops with the ASan report; FORK_CRASH=1 forks each one): method name
+ * instance like "1abc" is read as 1 by atoi). Cases named rej_* / clamp_* below ABORTED on the original handler (now fixed by fixes 1-4): method name
  * shorter than the Network prefix, path that stops before the Device / Radio instance (get_table_instance
  * on a name without '.'), Radio instance 0 / 4 / alias / -1 / 1000000 (dm->m_radio[radio_instance - 1]) and
  * m_num_opclass 100 (loop runs past m_op_class[64]).
@@ -34,7 +33,7 @@ alignas(16) char name_store[RCG_LEFT + RCG_NAME_SZ + RCG_PAD];
 /* {name, event, no_pdata, no_dm, expect_rc, expect_val, variant, crash} */
 #define OKV(n, rad, p, v) {n, EV(rad, p), false, false, 0, v, 0, false}
 #define RJ(n, ev) {n, ev, false, false, 2, NULL, 0, false}
-#define CR(n, ev) {n, ev, false, false, 2, NULL, 0, true}
+#define CR(n, ev) {n, ev, false, false, 2, NULL, 0, false}
 
 test_case_t suite[] = {
  /* ---- every parameter name ---- */
@@ -66,16 +65,16 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort (atoi reads the leading digits) ---- */
  {"rej_radio_1abc [spec]", EV("1abc", "HTCapabilities"), false, false, 2, NULL, 0, false},
  {"rej_radio_2x [spec]", EV("2x", "HTCapabilities"), false, false, 2, NULL, 0, false},
- /* ---- CRASH cases on the original handler (rejected / clamped after the fix) ---- */
- CR("crash_method_short", "X.HTCapabilities"),
- CR("crash_path_without_device", N "HTCapabilities"),
- CR("crash_path_without_radio", N "Device.1.HTCapabilities"),
- CR("crash_radio_0", EV("0", "HTCapabilities")),
- CR("crash_radio_4", EV("4", "HTCapabilities")),
- CR("crash_radio_alias", EV("[x]", "HTCapabilities")),
- CR("crash_radio_negative", EV("-1", "HTCapabilities")),
- CR("crash_radio_huge", EV("1000000", "HTCapabilities")),
- {"crash_num_opclass_over_max", EV("1", "CapableOperatingClassProfileNumberOfEntries"), false, false, 0, "2", 2, true},
+ /* ---- were CRASH cases on the original handler (fixed) ---- */
+ CR("rej_method_short", "X.HTCapabilities"),
+ CR("rej_path_without_device", N "HTCapabilities"),
+ CR("rej_path_without_radio", N "Device.1.HTCapabilities"),
+ CR("rej_radio_0", EV("0", "HTCapabilities")),
+ CR("rej_radio_4", EV("4", "HTCapabilities")),
+ CR("rej_radio_alias", EV("[x]", "HTCapabilities")),
+ CR("rej_radio_negative", EV("-1", "HTCapabilities")),
+ CR("rej_radio_huge", EV("1000000", "HTCapabilities")),
+ {"clamp_num_opclass_over_max", EV("1", "CapableOperatingClassProfileNumberOfEntries"), false, false, 0, "2", 2, false},
 
  { NULL, NULL, false, false, 0, NULL, 0, false }  /* sentinel */
 };
