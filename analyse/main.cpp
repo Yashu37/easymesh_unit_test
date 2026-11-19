@@ -45,6 +45,7 @@ void run_all_tests_dm_bss_encode(void);
 void run_all_tests_policy_sync_db(void);
 void run_all_tests_sta_compare_db(void);
 void run_all_tests_policy_update_db(void);
+void run_all_tests_network_sync_db(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -586,6 +587,9 @@ int main() {
 	// run_all_tests_sta_compare_db();
 	// dm_policy_list_t::update_db (unified-wifi-mesh src/dm/dm_policy_list.cpp). The clamp_* / rej_* cases run last and
 	// UNFORKED: a plain make stops with the ASan report (FORK_CRASH=1 forks each).
-	run_all_tests_policy_update_db();
+	// run_all_tests_policy_update_db();
+	// dm_network_list_t::sync_db (unified-wifi-mesh src/dm/dm_network_list.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_network_sync_db();
 	return 0;
 }
