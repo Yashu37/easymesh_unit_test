@@ -1,5 +1,5 @@
 /*
- * HANDLER: nodes_listener
+ * HANDLER: nodes_listener (fixes 1-2 applied, start fix n / end fix n markers)
  *
  * Functions copied verbatim from unified-wifi-mesh src/em/em_mgr.cpp (develop @ 1ba9529): em_mgr_t::reset_listeners and
  * em_mgr_t::nodes_listener (AL_SAP is not defined, so the raw-socket branch is compiled). Local array in the loop:
@@ -68,7 +68,9 @@ int em_mgr_t::reset_listeners()
 	pthread_mutex_lock(&m_mutex);
     em = static_cast<em_t *>(hash_map_get_first(m_em_map));
     while (em != NULL) {
-        if (em->is_al_interface_em() == true) {
+/* start fix 2 */
+        if (em->is_al_interface_em() == true && em->get_fd() >= 0 && em->get_fd() < FD_SETSIZE) {
+/* end fix 2 */
             FD_SET(em->get_fd(), &m_rset);
             num++;
             highest_fd = (em->get_fd() > highest_fd) ? em->get_fd():highest_fd;
@@ -136,14 +138,18 @@ void em_mgr_t::nodes_listener()
 #else
                 unsigned char buff[MAX_EM_BUFF_SZ*EM_MAX_BANDS];
                 pthread_mutex_lock(&m_mutex);
-                int ret = FD_ISSET(em->get_fd(), &m_rset);
+                /* start fix 2 */
+                int ret = (em->get_fd() >= 0 && em->get_fd() < FD_SETSIZE) ? FD_ISSET(em->get_fd(), &m_rset) : 0;
+/* end fix 2 */
                 pthread_mutex_unlock(&m_mutex);
                 if (ret)
                 {
                     // receive data from this interface
                     memset(buff, 0, MAX_EM_BUFF_SZ*EM_MAX_BANDS);
                     ssize_t len = read(em->get_fd(), buff, MAX_EM_BUFF_SZ*EM_MAX_BANDS);
-                    if (len) {
+/* start fix 1 */
+                    if (len > 0) {
+/* end fix 1 */
                         proto_process(buff, static_cast<unsigned int>(len), em);
                     }
                 }

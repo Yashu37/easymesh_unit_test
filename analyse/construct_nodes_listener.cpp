@@ -5,8 +5,8 @@
  * (the stand-in then returns -1 / EBADF). sel[]: >0 ready, 0 timeout, -2 = -1 with EINTR, 3 = ready but no fd flagged;
  * rd[]: read() results in order (-1 = error, 0 = EOF); ems[]: {fd, is_al}. m_timeout = 1. Checks: number of proto_process()
  * calls, the length of the first one and the nfds of the first select() (highest fd + 1).
- * Cases named crash_* ABORT on the original handler: they run last and UNFORKED so a plain `make` stops with the ASan report;
- * FORK_CRASH=1 forks each one. The [spec] case is wrong behaviour (no abort).
+ * The rej_* cases of the last block ABORTED on the original handler (read() error -> length 0xFFFFFFFF, fd >= FD_SETSIZE in
+ * FD_SET); fixes 1-2 skip them. The [spec] case is wrong behaviour (no abort).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,11 +34,11 @@ test_case_t suite[] = {
  {"ok_fd_1023_last_valid_fd",     {1}, 1,    {7}, 1,          {{1023, true}}, 1, 1, 7, 1024, false},
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_eintr_must_not_end_listener [spec]", {-2, 1}, 2, {50}, 1, {{5, true}}, 1, 1, 50, 6, false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- {"crash_read_error_len_minus_1", {1}, 1,    {-1}, 1,         {{5, true}}, 1, 0, -1, 6, true},
- {"crash_read_error_second_em",   {1}, 1,    {10, -1}, 2,     {{5, true}, {6, true}}, 2, 1, 10, 7, true},
- {"crash_fd_1024_fd_set_overflow", {1}, 1,   {10}, 1,         {{1024, true}}, 1, 0, -1, -1, true},
- {"crash_fd_5000_fd_set_overflow", {1}, 1,   {10}, 1,         {{5000, true}}, 1, 0, -1, -1, true},
+ /* ---- were CRASH cases on the original handler (read() error and fd >= FD_SETSIZE now handled) ---- */
+ {"rej_read_error_not_processed", {1}, 1,    {-1}, 1,         {{5, true}}, 1, 0, -1, 6, false},
+ {"rej_read_error_second_em",   {1}, 1,    {10, -1}, 2,     {{5, true}, {6, true}}, 2, 1, 10, 7, false},
+ {"rej_fd_1024_skipped", {1}, 1,   {10}, 1,         {{1024, true}}, 1, 0, -1, -1, false},
+ {"rej_fd_5000_skipped", {1}, 1,   {10}, 1,         {{5000, true}}, 1, 0, -1, -1, false},
  {NULL, {0}, 0, {0}, 0, {{0, false}}, 0, 0, 0, 0, false}
 };
 
