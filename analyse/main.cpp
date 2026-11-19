@@ -33,6 +33,7 @@ void run_all_tests_stamld_tget_params(void);
 void run_all_tests_apmld_tget_params(void);
 void run_all_tests_rcaps_get_inner(void);
 void run_all_tests_sta_get_inner(void);
+void run_all_tests_bss_get_inner(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -538,6 +539,9 @@ int main() {
 	// run_all_tests_rcaps_get_inner();
 	// sta_get_inner (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
 	// UNFORKED so the plain make aborts with the ASan report; FORK_CRASH=1 forks each one.
-	run_all_tests_sta_get_inner();
+	// run_all_tests_sta_get_inner();
+	// bss_get_inner (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_bss_get_inner();
 	return 0;
 }
