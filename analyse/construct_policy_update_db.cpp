@@ -5,7 +5,7 @@
  * 02:00:00:00:00:02, type 1, sta_mac[i] = 02:00:00:00:00:(i+1) for the first 16 entries, num_sta from the case. The row functions are
  * stand-ins that record the key and the STA list update_db hands them. PASS = return value, number of row calls, number of STA entries
  * in the list and the key match. Cases that ABORTED on the original code are named clamp_* / rej_*: num_sta above 16 reads past
- * sta_mac[16], a NULL data pointer dereferences policy->id. They run last and UNFORKED; FORK_CRASH=1 forks each one.
+ * sta_mac[16] (fix 1 clamps it), a NULL data pointer dereferenced policy->id (fix 2 returns -1).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,12 +27,12 @@ test_case_t suite[] = {
  {"ok_empty_net_id",                  1, 1, false, "", 0, 1, 1, "@02:00:00:00:00:01@02:00:00:00:00:02@1", false},
  {"ok_net_id_127_chars",              1, 1, false, "#127", 0, 1, 1, NULL, false},
  /* ---- were CRASH cases on the original code ---- */
- {"clamp_num_sta_17",                 1, 17, false, "OneWifiMesh", 0, 1, 16, K1, true},
- {"clamp_num_sta_40_update",          2, 40, false, "OneWifiMesh", 0, 1, 16, K1, true},
- {"clamp_num_sta_1000000",            1, 1000000, false, "OneWifiMesh", 0, 1, 16, K1, true},
- {"clamp_num_sta_ffffffff",           1, 0xffffffffu, false, "OneWifiMesh", 0, 1, 16, K1, true},
- {"rej_null_data_insert",             1, 0, true, "OneWifiMesh", -1, 0, -1, NULL, true},
- {"rej_null_data_delete",             3, 0, true, "OneWifiMesh", -1, 0, -1, NULL, true},
+ {"clamp_num_sta_17",                 1, 17, false, "OneWifiMesh", 0, 1, 16, K1, false},
+ {"clamp_num_sta_40_update",          2, 40, false, "OneWifiMesh", 0, 1, 16, K1, false},
+ {"clamp_num_sta_1000000",            1, 1000000, false, "OneWifiMesh", 0, 1, 16, K1, false},
+ {"clamp_num_sta_ffffffff",           1, 0xffffffffu, false, "OneWifiMesh", 0, 1, 16, K1, false},
+ {"rej_null_data_insert",             1, 0, true, "OneWifiMesh", -1, 0, -1, NULL, false},
+ {"rej_null_data_delete",             3, 0, true, "OneWifiMesh", -1, 0, -1, NULL, false},
  {NULL, 0, 0, false, NULL, 0, 0, 0, NULL, false}
 };
 
