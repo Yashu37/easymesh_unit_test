@@ -2,7 +2,7 @@
  * HANDLER: bss_get_inner
  *
  * Function copied from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp (develop @ 1ba9529),
- * dm_easy_mesh_ctrl_t::bss_get_inner, with get_table_instance() (same file). Local arrays: val_str[MAX_EM_BUFF_SZ],
+ * dm_easy_mesh_ctrl_t::bss_get_inner (fixes 1-4 applied, start fix n / end fix n markers), with get_table_instance() (same file). Local arrays: val_str[MAX_EM_BUFF_SZ],
  * instance[32]; the array accesses dm->m_radio[radio_instance - 1] (EM_MAX_BANDS = 3), dm->get_bss_info(i) for
  * i < dm->m_num_bss (m_bss[EM_MAX_BSSS = 24]) and name += sizeof(DATAELEMS_NETWORK). The handler already rejects a NULL
  * event_name / p_data. Scaffolding: one device 1 with 3 radios and a BSS list; fill_bss_akms_allowed is a stub that
@@ -34,7 +34,15 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	char *dst = instance;
 	size_t len = 0;
 
+/* start fix 2 */
+    if (src == NULL) {
+        return NULL;
+    }
     src = strstr(src, ".");
+    if (src == NULL) {
+        return NULL;
+    }
+/* end fix 2 */
     ++src;
 
 	if (*src == '[') {
@@ -84,8 +92,18 @@ bus_error_t dm_easy_mesh_ctrl_t::bss_get_inner(char *event_name, raw_data_t *p_d
 
     /* Extract device instance (numeric or alias) and find the dm object for
      * that device instance */
+/* start fix 1 */
+    if (strlen(name) < sizeof(DATAELEMS_NETWORK)) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
     name += sizeof(DATAELEMS_NETWORK);
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     dm_easy_mesh_t *dm = dm_ctrl->get_dm_easy_mesh(instance, is_num);
     if (dm == NULL) {
         printf("device not found\n");
@@ -93,7 +111,18 @@ bus_error_t dm_easy_mesh_ctrl_t::bss_get_inner(char *event_name, raw_data_t *p_d
     }
 
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     radio_instance = is_num ? atoi(instance) : 0;
+/* start fix 3 */
+    if (radio_instance < 1 || radio_instance > EM_MAX_BANDS) {
+        em_printfout("radio instance %d out of range", radio_instance);
+        return bus_error_invalid_input;
+    }
+/* end fix 3 */
     dm_radio_t *radio = &dm->m_radio[radio_instance - 1];
     if (radio == NULL) {
         em_printfout("radio is NULL\n");
@@ -104,8 +133,16 @@ bus_error_t dm_easy_mesh_ctrl_t::bss_get_inner(char *event_name, raw_data_t *p_d
     mac_addr_str_t  radio_str, bss_str;
 
     name = dm_ctrl->get_table_instance(name, instance, MAX_INSTANCE_LEN, &is_num);
+/* start fix 2 */
+    if (name == NULL) {
+        return bus_error_invalid_input;
+    }
+/* end fix 2 */
     bss_instance = is_num ? atoi(instance) : 0;
-    for(i = 0; i < dm->m_num_bss; i++) {
+/* start fix 4 */
+    unsigned int num_bss = dm->m_num_bss > EM_MAX_BSSS ? EM_MAX_BSSS : dm->m_num_bss;
+    for(i = 0; i < num_bss; i++) {
+/* end fix 4 */
         bi = dm->get_bss_info(i);
         dm_easy_mesh_t::macbytes_to_string(bi->ruid.mac, bss_str);
         dm_easy_mesh_t::macbytes_to_string(ri->id.ruid, radio_str);

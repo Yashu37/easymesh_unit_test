@@ -13,9 +13,9 @@
  * transmitted BSSID 0, STA count 7.
  *
  * expect_rc: 0 success, 2 invalid_input, 25 invalid_namespace. variant: 0 normal, 1 m_num_bss = 100 (> 24 entries of
- * m_bss[]). Cases marked [spec] are wrong behaviour (an instance like "1x" is read as 1 by atoi). Cases named crash_*
- * ABORT on the original handler: they run last and UNFORKED so a plain `make` stops with the ASan report;
- * FORK_CRASH=1 forks each one.
+ * m_bss[]). Cases marked [spec] are wrong behaviour (an instance like "1x" is read as 1 by atoi). Cases named rej_* / clamp_* in
+ * the last block (short method name, path without Device / Radio / BSS, Radio instance 0 / 4 / -1 / 1000000 / alias, m_num_bss 100)
+ * ABORTED on the original handler (now fixed by fixes 1-4): the first 9 are rejected (rc 2), m_num_bss is clamped to 24.
  */
 
 #include <stdio.h>
@@ -33,7 +33,7 @@ alignas(16) char name_store[BGI_LEFT + BGI_NAME_SZ + BGI_PAD];
 #define OKV(n, p, v) {n, EV("1", "1", p), false, 0, v, 0, false}
 #define RJ(n, ev) {n, ev, false, 2, NULL, 0, false}
 #define NS(n, ev) {n, ev, false, 25, NULL, 0, false}
-#define CR(n, ev) {n, ev, false, 2, NULL, 0, true}
+#define CR(n, ev) {n, ev, false, 2, NULL, 0, false}
 
 test_case_t suite[] = {
  /* ---- every parameter name (radio 1, BSS 1) ---- */
@@ -80,17 +80,17 @@ test_case_t suite[] = {
  NS("rej_radio3_bss2_not_present", EV("3", "2", "SSID")),
  /* ---- [spec]: wrong behaviour (atoi accepts trailing text), no abort ---- */
  {"rej_bss_trailing_text [spec]", EV("1", "1x", "SSID"), false, 2, NULL, 0, false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- CR("crash_method_name_short", "X.SSID"),
- CR("crash_path_without_device", N "SSID"),
- CR("crash_path_without_radio", N "Device.1.SSID"),
- CR("crash_path_without_bss", N "Device.1.Radio.1.SSID"),
- CR("crash_radio_0", EV("0", "1", "SSID")),
- CR("crash_radio_4", EV("4", "1", "SSID")),
- CR("crash_radio_negative", EV("-1", "1", "SSID")),
- CR("crash_radio_1000000", EV("1000000", "1", "SSID")),
- CR("crash_radio_alias", EV("[02:00:00:00:00:01]", "1", "SSID")),
- {"crash_num_bss_100", EV("1", "9", "SSID"), false, 25, NULL, 1, true},
+ /* ---- were CRASH cases on the original handler (now rejected / clamped) ---- */
+ CR("rej_method_name_short", "X.SSID"),
+ CR("rej_path_without_device", N "SSID"),
+ CR("rej_path_without_radio", N "Device.1.SSID"),
+ CR("rej_path_without_bss", N "Device.1.Radio.1.SSID"),
+ CR("rej_radio_0", EV("0", "1", "SSID")),
+ CR("rej_radio_4", EV("4", "1", "SSID")),
+ CR("rej_radio_negative", EV("-1", "1", "SSID")),
+ CR("rej_radio_1000000", EV("1000000", "1", "SSID")),
+ CR("rej_radio_alias", EV("[02:00:00:00:00:01]", "1", "SSID")),
+ {"clamp_num_bss_100", EV("1", "9", "SSID"), false, 25, NULL, 1, false},
  { NULL, NULL, false, 0, NULL, 0, false }  /* sentinel */
 };
 
