@@ -1,5 +1,5 @@
 /*
- * HANDLER: create_data_model
+ * HANDLER: create_data_model (fixes 1-2 applied, start fix n / end fix n markers)
  *
  * Function copied from unified-wifi-mesh src/dm/dm_easy_mesh_list.cpp (develop @ 1ba9529),
  * dm_easy_mesh_list_t::create_data_model, with get_network() and get_data_model() (same file). Local arrays: mac_str[18],
@@ -78,6 +78,12 @@ dm_easy_mesh_t *dm_easy_mesh_list_t::create_data_model(const char *net_id, const
 								dm_policy_t(em_policy[6]), dm_policy_t(em_policy[7])
 							};
 
+/* start fix 1 */
+    if (net_id == NULL || al_intf == NULL || strlen(net_id) >= sizeof(em_long_string_t)) {
+        em_printfout("Invalid net_id or al_intf");
+        return NULL;
+    }
+/* end fix 1 */
     dm_easy_mesh_t::macbytes_to_string(const_cast<unsigned char *> (al_intf->mac), mac_str);
     snprintf(key, sizeof(em_short_string_t), "%s@%s", net_id, mac_str);
 
@@ -99,7 +105,11 @@ dm_easy_mesh_t *dm_easy_mesh_list_t::create_data_model(const char *net_id, const
 
             if ((net = get_network(net_id)) != NULL) {
                 ctrl_dm = get_data_model(GLOBAL_NET_ID, net->m_net_info.ctrl_id.mac);
-                assert(ctrl_dm != NULL);
+/* start fix 2 */
+                if (ctrl_dm == NULL) {
+                    em_printfout("Controller data model not found for network: %s, colocated agent not registered in it", net_id);
+                } else {
+/* end fix 2 */
                 pnet = ctrl_dm->get_network();
                 *pnet = *net;
                 //if colocated, set the agent interface mac address in controller's dm
@@ -108,6 +118,9 @@ dm_easy_mesh_t *dm_easy_mesh_list_t::create_data_model(const char *net_id, const
                     util::mac_to_string(ctrl_dm->m_network.get_colocated_agent_interface_mac()).c_str());
                 //also trigger db update of networklist for colocated agent id
                 ctrl_dm->set_db_cfg_param(db_cfg_type_network_list_update, "");
+/* start fix 2 */
+                }
+/* end fix 2 */
             }
         }
     }

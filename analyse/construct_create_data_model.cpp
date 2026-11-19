@@ -40,11 +40,11 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_key_truncated_net_id_60 [spec]",   NULL, 60, false, true, false, 0, 1, 1, 1, 0, 1, false},
  {"spec_key_truncated_net_id_127 [spec]",  NULL, 127, false, true, false, 0, 1, 1, 1, 0, 1, false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- {"crash_net_id_null",                     NULL, 0,   false, true,  false, 0, 0, 0, -1, -1, -1, true},
- {"crash_al_intf_null",                    NET,  0,   true,  true,  false, 0, 0, 0, -1, -1, -1, true},
- {"crash_net_id_300_chars",                NULL, 300, false, true,  false, 0, 0, 0, -1, -1, -1, true},
- {"crash_colocated_agent_controller_dm_missing", NET, 0, false, false, true, 2, 1, 2, 6, 0, 1, true},
+ /* ---- were CRASH cases on the original handler (NULL args / net_id over 127 chars rejected, missing controller dm skipped) ---- */
+ {"rej_net_id_null",                     NULL, 0,   false, true,  false, 0, 0, 0, -1, -1, -1, false},
+ {"rej_al_intf_null",                    NET,  0,   true,  true,  false, 0, 0, 0, -1, -1, -1, false},
+ {"rej_net_id_300_chars",                NULL, 300, false, true,  false, 0, 0, 0, -1, -1, -1, false},
+ {"ok_colocated_agent_controller_dm_missing", NET, 0, false, false, true, 2, 1, 2, 6, 0, 1, false},
  {NULL, NULL, 0, false, false, false, 0, 0, 0, 0, 0, 0, false}
 };
 
