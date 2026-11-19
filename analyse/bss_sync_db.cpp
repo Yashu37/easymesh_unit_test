@@ -1,5 +1,6 @@
 /*
- * HANDLER: dm_bss_list_t::sync_db
+ * HANDLER: dm_bss_list_t::sync_db (fixes 1-2 applied, start fix n / end fix n markers: bounded get_string(ctx, buf, col, size) overload for
+ * every string column, get_strings_by_token ignores entries beyond the slots instead of asserting; the stale-mac failure is left original)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): dm_bss_list_t::sync_db (src/dm/dm_bss_list.cpp) with the helpers it
  * calls: db_easy_mesh_t::get_strings_by_token (src/db/db_easy_mesh.cpp), dm_bss_t::parse_bss_id_from_key (src/dm/dm_bss.cpp) and
@@ -91,7 +92,12 @@ int db_easy_mesh_t::get_strings_by_token(char *parent, int token, unsigned int a
     while (tmp != NULL) {
         if ((tmp = strchr(orig, token)) != NULL) {
             *tmp = 0;
-            assert (num < argc - 1 && "number of extracted values exceeds the limit");
+/* start fix 2 */
+            if (num >= argc - 1) {
+                /* more values than slots: keep the first argc values, ignore the rest instead of asserting */
+                break;
+            }
+/* end fix 2 */
             snprintf(argv[num], sizeof(em_short_string_t), "%.*s", max_len, orig);
             tmp++; num++;
             orig = tmp;
@@ -116,30 +122,50 @@ int dm_bss_list_t::sync_db(db_client_t& db_client, void *ctx)
     while (db_client.next_result(ctx)) {
         memset(&info, 0, sizeof(em_bss_info_t));
 
-        db_client.get_string(ctx, str, 1);
+        /* start fix 1 */
+        db_client.get_string(ctx, str, 1, sizeof(str));
+        /* end fix 1 */
 		dm_bss_t::parse_bss_id_from_key(str, &info.id);
 
-        db_client.get_string(ctx, mac, 2);
+        /* start fix 1 */
+        db_client.get_string(ctx, mac, 2, sizeof(mac));
+        /* end fix 1 */
         dm_easy_mesh_t::string_to_macbytes(mac, info.bssid.mac);
 
-        db_client.get_string(ctx, mac, 3);
+        /* start fix 1 */
+        db_client.get_string(ctx, mac, 3, sizeof(mac));
+        /* end fix 1 */
         dm_easy_mesh_t::string_to_macbytes(mac, info.ruid.mac);
 
-        db_client.get_string(ctx, info.ssid, 4);
+        /* start fix 1 */
+        db_client.get_string(ctx, info.ssid, 4, sizeof(info.ssid));
+        /* end fix 1 */
         info.enabled = db_client.get_number(ctx, 5);
 
-        db_client.get_string(ctx, info.est_svc_params_be, 6);
-        db_client.get_string(ctx, info.est_svc_params_bk, 7);
-        db_client.get_string(ctx, info.est_svc_params_vi, 8);
-        db_client.get_string(ctx, info.est_svc_params_vo, 9);
+        /* start fix 1 */
+        db_client.get_string(ctx, info.est_svc_params_be, 6, sizeof(info.est_svc_params_be));
+        /* end fix 1 */
+        /* start fix 1 */
+        db_client.get_string(ctx, info.est_svc_params_bk, 7, sizeof(info.est_svc_params_bk));
+        /* end fix 1 */
+        /* start fix 1 */
+        db_client.get_string(ctx, info.est_svc_params_vi, 8, sizeof(info.est_svc_params_vi));
+        /* end fix 1 */
+        /* start fix 1 */
+        db_client.get_string(ctx, info.est_svc_params_vo, 9, sizeof(info.est_svc_params_vo));
+        /* end fix 1 */
 
-        db_client.get_string(ctx, str, 10);
+        /* start fix 1 */
+        db_client.get_string(ctx, str, 10, sizeof(str));
+        /* end fix 1 */
         for (i = 0; i < EM_MAX_AKMS; i++) {
             token_parts[i] = info.fronthaul_akm[i];
         }
         info.num_fronthaul_akms = static_cast<unsigned char> (get_strings_by_token(str, ',', EM_MAX_AKMS, token_parts));
 
-        db_client.get_string(ctx, str, 11);
+        /* start fix 1 */
+        db_client.get_string(ctx, str, 11, sizeof(str));
+        /* end fix 1 */
 
         for (i = 0; i < EM_MAX_AKMS; i++) {
             token_parts[i] = info.backhaul_akm[i];

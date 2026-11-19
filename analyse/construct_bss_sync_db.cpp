@@ -5,9 +5,9 @@
  * 10 FronthaulAKMs, 11 BackhaulAKMs, 12-21 numbers. Column shorthand: "=" default, "@N" N list entries, "#N" N characters, NULL = SQL NULL.
  * Row 2 (nrows 2) repeats row 0 (variant 0) or has NULL BSSID / RUID (variant 1). Each string cell lives between poisoned guards (runner).
  * PASS = recorded BSSs, haul type, BSSID, SSID, AKM counts, timestamp untouched and the second-row BSSID.
- * Cases named crash_* ABORT on the original code (assert in get_strings_by_token for 11+ AKMs, stack overflow in get_string for an
- * ID / AKM list longer than str[128] or a MAC longer than mac[18]): they run last and UNFORKED so a plain `make` stops with the report;
- * FORK_CRASH=1 forks each one. A long SSID overwrites the following members of info (timestamp) without an ASan report. [spec] cases:
+ * Cases named clamp_* ABORTED on the original code (assert in get_strings_by_token for 11+ AKMs, stack overflow in get_string for an
+ * ID / AKM list longer than str[128] or a MAC longer than mac[18]): fix 1 bounds the get_string copies, fix 2 ignores surplus AKMs.
+ * A long SSID overwrites the following members of info (timestamp) without an ASan report. [spec] cases:
  * wrong behaviour, no abort.
  */
 #include <stdio.h>
@@ -32,15 +32,15 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_null_mac_columns_must_not_keep_previous_row [spec]", D, D, D, D, D, D, 2, 1, 2, 1, NULL, NULL, 2, 1, 1, 1, false},
  {"clamp_ssid_100_chars_must_not_corrupt_timestamp",         D, D, D, "#100", D, D, 1, 0, 1, 1, NULL, NULL, 2, 1, 1, 0, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_eleven_fronthaul_akms_assert", D, D, D, D, "@11", D, 1, 0, 1, 1, NULL, NULL, 10, 1, 1, 0, true},
- {"crash_eleven_backhaul_akms_assert",  D, D, D, D, D, "@11", 1, 0, 1, 1, NULL, NULL, 2, 10, 1, 0, true},
- {"crash_fronthaul_list_200_chars",     D, D, D, D, "#200", D, 1, 0, 1, 1, NULL, NULL, 1, 1, 1, 0, true},
- {"crash_backhaul_list_200_chars",      D, D, D, D, D, "#200", 1, 0, 1, 1, NULL, NULL, 2, 1, 1, 0, true},
- {"crash_id_200_chars",                 "#200", D, D, D, D, D, 1, 0, 1, 0, NULL, NULL, 2, 1, 1, 0, true},
- {"crash_id_4000_chars",                "#4000", D, D, D, D, D, 1, 0, 1, 0, NULL, NULL, 2, 1, 1, 0, true},
- {"crash_bssid_18_chars",               D, "aa:bb:cc:dd:ee:01x", D, D, D, D, 1, 0, 1, 1, NULL, NULL, 2, 1, 1, 0, true},
- {"crash_ruid_200_chars",               D, D, "#200", D, D, D, 1, 0, 1, 1, NULL, NULL, 2, 1, 1, 0, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"clamp_eleven_fronthaul_akms_assert", D, D, D, D, "@11", D, 1, 0, 1, 1, NULL, NULL, 10, 1, 1, 0, false},
+ {"clamp_eleven_backhaul_akms_assert",  D, D, D, D, D, "@11", 1, 0, 1, 1, NULL, NULL, 2, 10, 1, 0, false},
+ {"clamp_fronthaul_list_200_chars",     D, D, D, D, "#200", D, 1, 0, 1, 1, NULL, NULL, 1, 1, 1, 0, false},
+ {"clamp_backhaul_list_200_chars",      D, D, D, D, D, "#200", 1, 0, 1, 1, NULL, NULL, 2, 1, 1, 0, false},
+ {"clamp_id_200_chars",                 "#200", D, D, D, D, D, 1, 0, 1, 0, NULL, NULL, 2, 1, 1, 0, false},
+ {"clamp_id_4000_chars",                "#4000", D, D, D, D, D, 1, 0, 1, 0, NULL, NULL, 2, 1, 1, 0, false},
+ {"clamp_bssid_18_chars",               D, "aa:bb:cc:dd:ee:01x", D, D, D, D, 1, 0, 1, 1, NULL, NULL, 2, 1, 1, 0, false},
+ {"clamp_ruid_200_chars",               D, D, "#200", D, D, D, 1, 0, 1, 1, NULL, NULL, 2, 1, 1, 0, false},
  {NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, NULL, 0, 0, 0, 0, false}
 };
 
