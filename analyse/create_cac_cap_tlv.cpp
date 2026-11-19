@@ -1,5 +1,5 @@
 /*
- * HANDLER: create_cac_cap_tlv
+ * HANDLER: create_cac_cap_tlv (fixes 1-3 applied, start fix n / end fix n markers)
  *
  * Function copied verbatim from unified-wifi-mesh src/em/em.cpp (develop @ 1ba9529), em_t::create_cac_cap_tlv.
  * Local arrays: sys_cc[3], buf[8] (both used safely). The loops are bounded by cac_radio->cac_methods_num (unsigned char,
@@ -79,10 +79,13 @@ short em_t::create_cac_cap_tlv(unsigned char *buff)
         memcpy(tmp, cac_radio->ruid, sizeof(mac_address_t));
         tmp += sizeof(mac_address_t);
 
+/* start fix 1 */
+        unsigned char methods_num = cac_radio->cac_methods_num > EM_MAX_CAC_METHODS ? EM_MAX_CAC_METHODS : cac_radio->cac_methods_num;
+/* end fix 1 */
         /* Num_Types — 1 octet */
-        *tmp++ = cac_radio->cac_methods_num;
+        *tmp++ = methods_num;
 
-        for (unsigned char m = 0; m < cac_radio->cac_methods_num; m++) {
+        for (unsigned char m = 0; m < methods_num; m++) {
             em_cac_cap_method_t *method = &cac_radio->cac_methods[m];
 
             /* Method — 1 octet */
@@ -94,20 +97,26 @@ short em_t::create_cac_cap_tlv(unsigned char *buff)
             *tmp++ = static_cast<unsigned char>((dur >>  8) & 0xff);
             *tmp++ = static_cast<unsigned char>( dur        & 0xff);
 
+/* start fix 2 */
+            unsigned char op_classes_num = method->op_classes_num > EM_MAX_OP_CLASS ? EM_MAX_OP_CLASS : method->op_classes_num;
+/* end fix 2 */
             /* Num_OpClass — 1 octet */
-            *tmp++ = method->op_classes_num;
+            *tmp++ = op_classes_num;
 
-            for (unsigned char oc = 0; oc < method->op_classes_num; oc++) {
+            for (unsigned char oc = 0; oc < op_classes_num; oc++) {
                 em_cac_op_class_t *op = &method->op_classes[oc];
 
                 /* OpClass — 1 octet */
                 *tmp++ = op->op_class;
 
+/* start fix 3 */
+                unsigned char chans_num = op->num > EM_MAX_CAC_CHANS_PER_CLASS ? EM_MAX_CAC_CHANS_PER_CLASS : op->num;
+/* end fix 3 */
                 /* Num_Chan — 1 octet */
-                *tmp++ = op->num;
+                *tmp++ = chans_num;
 
                 /* Channel × Num_Chan */
-                for (unsigned char ch = 0; ch < op->num; ch++) {
+                for (unsigned char ch = 0; ch < chans_num; ch++) {
                     *tmp++ = op->channels[ch];
                 }
             }

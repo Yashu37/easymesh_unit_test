@@ -13,8 +13,8 @@
  *   5 radio0 cac_methods_num 5       6 radio0 cac_methods_num 255      11 radio1 cac_methods_num 5
  *   7 radio0 4 methods, method3 op_classes_num 49   8 same with 255
  *   9 radio0 4 methods, method3 op_classes_num 48, last op class num 17   10 same with num 255
- * Cases marked crash_* read past the arrays and ABORT on the original handler: they run last and UNFORKED so a plain
- * `make` stops with the ASan report; FORK_CRASH=1 forks each one. expect_hex = first bytes of the output (CC, radio count, ...).
+ * The clamp_* cases read past the arrays and ABORTED on the original handler; fixes 1-3 clamp the three counts (and the
+ * counts written into the TLV) to 4 methods / 48 op classes / 16 channels. expect_hex = first bytes of the output (CC, radio count, ...).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,14 +34,14 @@ test_case_t suite[] = {
  {"ok_country_empty_uses_iw_fallback",  "",   0, 0, 3, NULL, false},
  {"ok_no_device_info_uses_iw_fallback", NULL, 0, 0, 3, NULL, false},
  {"ok_one_letter_country",              "U",  0, 0, 3, "5500", false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- {"crash_cac_methods_num_5",            "US", 1, 5,  3 + 6+1 + 4 * 5,                          NULL, true},
- {"crash_cac_methods_num_255",          "US", 1, 6,  3 + 6+1 + 4 * 5,                          NULL, true},
- {"crash_radio1_cac_methods_num_5",     "US", 2, 11, 3 + 6+1 + 6+1 + 4 * 5,                    NULL, true},
- {"crash_op_classes_num_49",            "US", 1, 7,  3 + 6+1 + 3 * 5 + 5 + 48 * 2,             NULL, true},
- {"crash_op_classes_num_255",           "US", 1, 8,  3 + 6+1 + 3 * 5 + 5 + 48 * 2,             NULL, true},
- {"crash_channels_num_17",              "US", 1, 9,  3 + 6+1 + 3 * 5 + 5 + 47 * 2 + (2+16),    NULL, true},
- {"crash_channels_num_255",             "US", 1, 10, 3 + 6+1 + 3 * 5 + 5 + 47 * 2 + (2+16),    NULL, true},
+ /* ---- were CRASH cases on the original handler (counts now clamped to the array sizes) ---- */
+ {"clamp_cac_methods_num_5",            "US", 1, 5,  3 + 6+1 + 4 * 5,                          NULL, false},
+ {"clamp_cac_methods_num_255",          "US", 1, 6,  3 + 6+1 + 4 * 5,                          NULL, false},
+ {"clamp_radio1_cac_methods_num_5",     "US", 2, 11, 3 + (6+1+5) + (6+1 + 4 * 5),             NULL, false},
+ {"clamp_op_classes_num_49",            "US", 1, 7,  3 + 6+1 + 3 * 5 + 5 + 48 * 2,             NULL, false},
+ {"clamp_op_classes_num_255",           "US", 1, 8,  3 + 6+1 + 3 * 5 + 5 + 48 * 2,             NULL, false},
+ {"clamp_channels_num_17",              "US", 1, 9,  3 + 6+1 + 3 * 5 + 5 + 47 * 2 + (2+16),    NULL, false},
+ {"clamp_channels_num_255",             "US", 1, 10, 3 + 6+1 + 3 * 5 + 5 + 47 * 2 + (2+16),    NULL, false},
  {NULL, NULL, 0, 0, 0, NULL, false}
 };
 
