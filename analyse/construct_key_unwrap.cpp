@@ -5,9 +5,9 @@
  * encrypt (RFC 3394), independently of the handler, and is plain_len + 8 bytes. Every buffer is exactly its length between two
  * poisoned 128 byte guards. out_buf -1 gives the unwrapped buffer the size the header documents (wrapped_len - 8), out_buf -2 the
  * size the real caller allocates (wrapped_len). PASS = return value and, for a valid key, *unwrapped_len == plain_len and the
- * unwrapped bytes equal the plaintext. Cases named crash_* ABORT on the original code (memcpy(unwrapped, wrapped, wrapped_len) writes
- * 8 bytes more than the documented wrapped_len - 8, NULL wrapped / unwrapped / unwrapped_len): they run last and UNFORKED so a plain
- * `make` stops with the report; FORK_CRASH=1 forks each one.
+ * unwrapped bytes equal the plaintext. Cases named clamp_* / rej_* ABORTED on the original code (memcpy(unwrapped, wrapped, wrapped_len)
+ * wrote 8 bytes more than the documented wrapped_len - 8, NULL kek / wrapped / unwrapped / unwrapped_len): fix 2 writes only wrapped_len - 8
+ * bytes, fix 1 returns 0.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,14 +42,14 @@ test_case_t suite[] = {
  {"ok_wrapped_length_16_rejected",      16, 16, 16, -2, false, false, false, false, false, 0, false, false},
  {"ok_wrapped_length_23_rejected",      16, 16, 23, -2, false, false, false, false, false, 0, false, false},
  {"ok_wrapped_length_25_rejected",      16, 16, 25, -2, false, false, false, false, false, 0, false, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_documented_buffer_kek16_key16", 16, 16, 0, -1, false, false, false, false, false, 1, true, true},
- {"crash_documented_buffer_kek32_key64", 32, 64, 0, -1, false, false, false, false, false, 1, true, true},
- {"crash_documented_buffer_tampered_key", 16, 32, 0, -1, true, false, false, false, false, 0, false, true},
- {"crash_null_wrapped",                 16, 16, 0, -2, false, false, true, false, false, 0, false, true},
- {"crash_null_unwrapped_buffer",        16, 16, 0, -2, false, false, false, true, false, 0, false, true},
- {"crash_null_unwrapped_len",           16, 16, 0, -2, false, false, false, false, true, 0, false, true},
- {"crash_null_kek",                     16, 16, 0, -2, false, true, false, false, false, 0, false, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"clamp_documented_buffer_kek16_key16", 16, 16, 0, -1, false, false, false, false, false, 1, true, false},
+ {"clamp_documented_buffer_kek32_key64", 32, 64, 0, -1, false, false, false, false, false, 1, true, false},
+ {"clamp_documented_buffer_tampered_key", 16, 32, 0, -1, true, false, false, false, false, 0, false, false},
+ {"rej_null_wrapped",                 16, 16, 0, -2, false, false, true, false, false, 0, false, false},
+ {"rej_null_unwrapped_buffer",        16, 16, 0, -2, false, false, false, true, false, 0, false, false},
+ {"rej_null_unwrapped_len",           16, 16, 0, -2, false, false, false, false, true, 0, false, false},
+ {"rej_null_kek",                     16, 16, 0, -2, false, true, false, false, false, 0, false, false},
  {NULL, 0, 0, 0, 0, false, false, false, false, false, 0, false, false}
 };
 

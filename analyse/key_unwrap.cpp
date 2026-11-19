@@ -1,5 +1,6 @@
 /*
- * HANDLER: em_crypto_t::aes_key_unwrap
+ * HANDLER: em_crypto_t::aes_key_unwrap (fixes 1-2 applied, start fix n / end fix n markers: reject NULL kek / wrapped / unwrapped /
+ * unwrapped_len, decrypt a private copy and write only wrapped_len - 8 bytes to the output)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): em_crypto_t::aes_key_unwrap and platform_cipher_decrypt (the real
  * OpenSSL AES key wrap decrypt it calls), src/em/crypto/em_crypto.cpp. Local arrays: iv[8] here, buf[AES_BLOCK_SIZE] and err_buf[256]
@@ -8,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 #include "key_unwrap.h"
 
 namespace aku {
@@ -112,6 +114,11 @@ uint8_t em_crypto_t::aes_key_unwrap(uint8_t *kek, size_t kek_len,
     // Default IV for AES Key Wrap (RFC 3394 2.2.3.1)
     uint8_t iv[8] = {0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6};
     
+/* start fix 1 */
+    if (kek == NULL || wrapped == NULL || unwrapped == NULL || unwrapped_len == NULL) {
+        return 0;
+    }
+/* end fix 1 */
     // Select cipher based on KEK length
     switch(kek_len) {
         case 16: cipher = EVP_aes_128_wrap(); break;
@@ -125,13 +132,16 @@ uint8_t em_crypto_t::aes_key_unwrap(uint8_t *kek, size_t kek_len,
         return 0;
     }
     
-    // Copy to output buffer first since platform_cipher_decrypt works in-place
-    memcpy(unwrapped, wrapped, wrapped_len);
+/* start fix 2 */
+    // platform_cipher_decrypt works in-place, so decrypt a private copy and give the caller only wrapped_len - 8 bytes (header contract)
+    std::vector<uint8_t> work(wrapped, wrapped + wrapped_len);
     
     // Use platform_cipher_decrypt with padding DISABLED for wrap mode (true = disable padding)
-    if (platform_cipher_decrypt(cipher, kek, iv, unwrapped, wrapped_len, true) == 0) {
+    if (platform_cipher_decrypt(cipher, kek, iv, work.data(), wrapped_len, true) == 0) {
         return 0;
     }
+    memcpy(unwrapped, work.data(), wrapped_len - 8);
+/* end fix 2 */
     
     // Output length is 8 bytes less than wrapped length
     *unwrapped_len = wrapped_len - 8;
