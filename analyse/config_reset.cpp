@@ -1,5 +1,6 @@
 /*
- * HANDLER: dm_easy_mesh_t::encode_config_reset
+ * HANDLER: dm_easy_mesh_t::encode_config_reset (fixes 1-2 applied, start fix n / end fix n markers: clamp m_num_net_ssids to
+ * EM_MAX_NET_SSIDS, bound the interface name with %.*s; the truncation failure is left original)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): dm_easy_mesh_t::encode_config_reset and macbytes_to_string
  * (src/dm/dm_easy_mesh.cpp). Local arrays: mac_str[18], interface_str[128], preference[8] (string literals). The real cJSON library
@@ -73,7 +74,9 @@ int dm_easy_mesh_t::encode_config_reset(em_subdoc_info_t *subdoc, const char *ke
 		interface_obj = cJSON_CreateObject();
 		cJSON_AddItemToArray(interface_arr_obj, interface_obj);
 		dm_easy_mesh_t::macbytes_to_string(m_interfaces[i].mac, mac_str);
-		snprintf(interface_str, sizeof(em_long_string_t), "%s (%s)", mac_str, m_interfaces[i].name);
+/* start fix 2 */
+		snprintf(interface_str, sizeof(em_long_string_t), "%s (%.*s)", mac_str, static_cast<int>(sizeof(m_interfaces[i].name)), m_interfaces[i].name);
+/* end fix 2 */
 		cJSON_AddStringToObject(interface_obj, preference[i], interface_str);
 	}
 
@@ -90,7 +93,10 @@ int dm_easy_mesh_t::encode_config_reset(em_subdoc_info_t *subdoc, const char *ke
         return -1;
     }
 
-	for (i = 0; i < m_num_net_ssids; i++) {
+/* start fix 1 */
+	unsigned int num_net_ssids = m_num_net_ssids > EM_MAX_NET_SSIDS ? EM_MAX_NET_SSIDS : m_num_net_ssids;
+/* end fix 1 */
+	for (i = 0; i < num_net_ssids; i++) {
 		if ((ssid_obj = cJSON_CreateObject()) == NULL) {	
         	printf("%s:%d: Could not create ssid object\n", __func__, __LINE__);
         	cJSON_Delete(parent_obj);

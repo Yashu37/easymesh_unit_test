@@ -5,9 +5,8 @@
  * (name_mode 1: the first name fills all 32 bytes with 'N', name_mode 2: the whole interface array is filled with 'A'), SSID i is
  * "ssid<i>", the network id is "net1". PASS = return value, number of entries in Interfaces.List and NetworkSSIDList, the first
  * interface string and, when requested, that subdoc->buff holds complete JSON.
- * Cases named crash_* ABORT on the original code (net SSID count above 5 reads past m_network_ssid[5], an interface array without NUL
- * terminators makes snprintf("%s") run on to the guard): they run last and UNFORKED so a plain `make` stops with the report;
- * FORK_CRASH=1 forks each one. [spec] cases: wrong behaviour, no abort.
+ * Cases named clamp_* ABORTED on the original code (net SSID count above 5 read past m_network_ssid[5], an interface array without NUL
+ * terminators made snprintf("%s") run on to the guard): fix 1 clamps the SSID count, fix 2 bounds the name with %.*s. [spec] cases: wrong behaviour, no abort.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,11 +29,11 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_oversized_output_must_not_be_truncated [spec]",     1, 0, 1, "#5000", false, 0, 1, 1, NULL, 1, false},
  {"clamp_interface_name_32_chars_no_nul_must_not_read_on", 1, 1, 0, "dm", false, 0, 1, 0, "02:00:00:00:00:01 (NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN)", 1, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_six_ssids_read_past_array",    0, 0, 6, "dm", false, 0, 0, 5, NULL, 1, true},
- {"crash_hundred_ssids",                0, 0, 100, "dm", false, 0, 0, 5, NULL, 1, true},
- {"crash_million_ssids",                0, 0, 1000000, "dm", false, 0, 0, 5, NULL, 1, true},
- {"crash_interface_array_without_nul",  8, 2, 0, "dm", false, 0, 8, 0, NULL, 1, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"clamp_six_ssids_read_past_array",    0, 0, 6, "dm", false, 0, 0, 5, NULL, 1, false},
+ {"clamp_hundred_ssids",                0, 0, 100, "dm", false, 0, 0, 5, NULL, 1, false},
+ {"clamp_million_ssids",                0, 0, 1000000, "dm", false, 0, 0, 5, NULL, 1, false},
+ {"clamp_interface_array_without_nul",  8, 2, 0, "dm", false, 0, 8, 0, NULL, 1, false},
  {NULL, 0, 0, 0, NULL, false, 0, 0, 0, NULL, 0, false}
 };
 
