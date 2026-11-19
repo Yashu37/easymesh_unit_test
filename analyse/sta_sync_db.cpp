@@ -1,5 +1,6 @@
 /*
- * HANDLER: dm_sta_list_t::sync_db
+ * HANDLER: dm_sta_list_t::sync_db (fixes 1-2 applied, start fix n / end fix n markers: bounded get_string(ctx, buf, col, size) for the MAC
+ * and frame body columns, mac / frame_body initialised; the stale-buffer failures are left original)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): dm_sta_list_t::sync_db (src/dm/dm_sta_list.cpp) with the helpers it
  * calls: dm_easy_mesh_t::unhex and string_to_macbytes (src/dm/dm_easy_mesh.cpp). Local arrays: mac[18] (mac_addr_str_t),
@@ -66,20 +67,28 @@ unsigned char *dm_easy_mesh_t::unhex(unsigned int in_len, char *in, unsigned int
 int dm_sta_list_t::sync_db(db_client_t& db_client, void *ctx)
 {
     em_sta_info_t info;
-    mac_addr_str_t	mac;
+/* start fix 2 */
+    mac_addr_str_t	mac = {0};
     int rc = 0;
-    char frame_body[EM_MAX_FRAME_BODY_LEN*2];
+    char frame_body[EM_MAX_FRAME_BODY_LEN*2] = {0};
+/* end fix 2 */
 
     while (db_client.next_result(ctx)) {
         memset(&info, 0, sizeof(em_sta_info_t));
 
-        db_client.get_string(ctx, mac, 1);
+/* start fix 1 */
+        db_client.get_string(ctx, mac, 1, sizeof(mac));
+/* end fix 1 */
         dm_easy_mesh_t::string_to_macbytes(mac, info.id);
 
-        db_client.get_string(ctx, mac, 2);
+/* start fix 1 */
+        db_client.get_string(ctx, mac, 2, sizeof(mac));
+/* end fix 1 */
         dm_easy_mesh_t::string_to_macbytes(mac, info.bssid);
 
-        db_client.get_string(ctx, mac, 3);
+/* start fix 1 */
+        db_client.get_string(ctx, mac, 3, sizeof(mac));
+/* end fix 1 */
         dm_easy_mesh_t::string_to_macbytes(mac, info.radiomac);
 
         info.associated = db_client.get_number(ctx, 4);
@@ -101,7 +110,9 @@ int dm_sta_list_t::sync_db(db_client_t& db_client, void *ctx)
         info.errors_rx = static_cast<unsigned int> (db_client.get_number(ctx, 20));
         info.frame_body_len = static_cast<unsigned int> (db_client.get_number(ctx, 21));
 
-        db_client.get_string(ctx, frame_body, 22);
+/* start fix 1 */
+        db_client.get_string(ctx, frame_body, 22, sizeof(frame_body));
+/* end fix 1 */
         dm_easy_mesh_t::unhex(static_cast<unsigned int>(strlen(frame_body)), frame_body, EM_MAX_FRAME_BODY_LEN, info.frame_body);
 
         update_list(dm_sta_t(&info), dm_orch_type_db_insert);

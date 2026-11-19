@@ -5,9 +5,8 @@
  * "#N" in a MAC column means N characters 'a', in the frame body column N characters '1'. Row 2 (nrows 2) repeats row 0 (variant 0),
  * has NULL MAC columns (variant 1) or a NULL frame body (variant 2). Each string cell lives between poisoned guards (runner). PASS =
  * recorded stations, station MAC, first frame body byte and, for the second row, MAC / first byte.
- * Cases named crash_* ABORT on the original code: a MAC column of 18+ characters overflows mac[18], a frame body column of 1024+
- * characters overflows frame_body[1024] (get_string has no size). They run last and UNFORKED so a plain `make` stops with the
- * report; FORK_CRASH=1 forks each one. A NULL frame body column on the first row leaves frame_body uninitialised (strlen on stack
+ * Cases named clamp_* ABORTED on the original code: a MAC column of 18+ characters overflowed mac[18], a frame body column of 1024+
+ * characters overflowed frame_body[1024] (get_string had no size); fix 1 bounds the copies. A NULL frame body column on the first row leaves frame_body uninitialised (strlen on stack
  * garbage); ASan's fake stack hands out zeroed frames, so that abort could not be reproduced. [spec] cases: wrong behaviour, no abort.
  */
 #include <stdio.h>
@@ -35,13 +34,13 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_null_mac_columns_must_not_keep_previous_row [spec]", M1, M2, M3, "0102ab", 2, 1, 2, M1, 0x01, 1, -1, false},
  {"spec_null_frame_body_must_not_keep_previous_row [spec]",  M1, M2, M3, "0102ab", 2, 2, 2, M1, 0x01, 0, 0, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_mac_18_chars",                 "aa:bb:cc:dd:ee:01x", M2, M3, "0102ab", 1, 0, 1, NULL, -1, 0, -1, true},
- {"crash_mac_200_chars",                "#200", M2, M3, "0102ab", 1, 0, 1, NULL, -1, 0, -1, true},
- {"crash_bssid_18_chars",               M1, "aa:bb:cc:dd:ee:02x", M3, "0102ab", 1, 0, 1, NULL, -1, 0, -1, true},
- {"crash_radio_mac_18_chars",           M1, M2, "aa:bb:cc:dd:ee:03x", "0102ab", 1, 0, 1, NULL, -1, 0, -1, true},
- {"crash_frame_body_1024_chars",        M1, M2, M3, "#1024", 1, 0, 1, NULL, -1, 0, -1, true},
- {"crash_frame_body_4000_chars",        M1, M2, M3, "#4000", 1, 0, 1, NULL, -1, 0, -1, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"clamp_mac_18_chars",                 "aa:bb:cc:dd:ee:01x", M2, M3, "0102ab", 1, 0, 1, NULL, -1, 0, -1, false},
+ {"clamp_mac_200_chars",                "#200", M2, M3, "0102ab", 1, 0, 1, NULL, -1, 0, -1, false},
+ {"clamp_bssid_18_chars",               M1, "aa:bb:cc:dd:ee:02x", M3, "0102ab", 1, 0, 1, NULL, -1, 0, -1, false},
+ {"clamp_radio_mac_18_chars",           M1, M2, "aa:bb:cc:dd:ee:03x", "0102ab", 1, 0, 1, NULL, -1, 0, -1, false},
+ {"clamp_frame_body_1024_chars",        M1, M2, M3, "#1024", 1, 0, 1, NULL, -1, 0, -1, false},
+ {"clamp_frame_body_4000_chars",        M1, M2, M3, "#4000", 1, 0, 1, NULL, -1, 0, -1, false},
  {NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 0, 0, 0, false}
 };
 
