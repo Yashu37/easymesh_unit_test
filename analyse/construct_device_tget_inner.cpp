@@ -48,7 +48,7 @@ test_case_t suite[] = {
  OK("ok_backhaul_down_3", 1, "1:BackhaulDownMACAddress=02:00:00:00:01:00,02:00:00:00:01:01,02:00:00:00:01:02\n", NULL, DVD(1, 1, 3, 3)),
  OK("ok_backhaul_down_count_entries", 1, "1:BackhaulDownNumberOfEntries=3\n", NULL, DVD(1, 1, 3, 3)),
  OK("ok_backhaul_down_0", 1, "1:BackhaulDownMACAddress=\n", NULL, DVD(1, 1, 0, 0)),
- OK("ok_backhaul_down_16_capped_15", 1, "02:00:00:00:01:0e\n", "02:00:00:00:01:0f", DVD(1, 1, 16, 16)),
+ OK("ok_backhaul_down_16_all_kept", 1, "02:00:00:00:01:0e,02:00:00:00:01:0f\n", NULL, DVD(1, 1, 16, 16)),
  OK("ok_backhaul_zero_mac", 1, "1:BackhaulMACAddress=\n", NULL, DV(1, 1)),
  OK("ok_backhaul_alid_found", 2, "1:BackhaulALID=02:00:00:00:00:02\n", NULL, {1, false, false, 1, 2, 0, 0, false, false, false, false, 0}, DV(2, 2)),
  OK("ok_backhaul_media_type_ac", 1, "1:BackhaulMediaType=32\n", NULL, {1, false, false, 1, 9, 0, 0, false, false, false, false, 0}),

@@ -90,7 +90,7 @@ extern dm_easy_mesh_t *g_bh;
 class dm_easy_mesh_ctrl_t {
 public:
     const char* get_table_instance(const char *src, char *instance, size_t max_len, bool *is_num);
-    void fill_comma_sep(em_short_string_t str[], size_t max, char *buf);
+    void fill_comma_sep(em_short_string_t str[], size_t max, char *buf, size_t buf_sz);
     dm_easy_mesh_t *get_dm_easy_mesh(char *instance, bool is_num)
     {   if (!g_dm) return NULL;
         if (is_num) return atoi(instance) == 1 ? g_dm : NULL;

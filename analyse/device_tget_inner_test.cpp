@@ -75,6 +75,80 @@ static int test_crash_fork(const test_case_t *tc)
 
 
 
+
+/* ---- direct checks of the size-limited helpers (fill_comma_sep / fill_backhaul_down_macs) ----
+ * The destination is a heap buffer of dest_sz + 32 bytes; the 32 bytes past dest_sz are poisoned, so a
+ * write past the capacity aborts with an ASan report. Each check returns 1 on pass. */
+static char *fcs_dest(size_t dest_sz, size_t fill)
+{
+    char *d = static_cast<char *>(malloc(dest_sz + 32));
+    memset(d, 'X', dest_sz + 32);
+    d[0] = '\0';
+    if (fill) { memset(d, 'Q', fill); d[fill] = '\0'; }
+    __asan_poison_memory_region(d + dest_sz, 32);
+    return d;
+}
+static void fcs_free(char *d, size_t dest_sz) { __asan_unpoison_memory_region(d + dest_sz, 32); free(d); }
+
+static int fcs_run(const char *name, size_t dest_sz, size_t pre, em_short_string_t *list, size_t n, const char *expect)
+{
+    dm_easy_mesh_ctrl_t c;
+    char *d = fcs_dest(dest_sz, pre);
+    c.fill_comma_sep(list, n, d, dest_sz);
+    int ok = (strcmp(d, expect) == 0);
+    printf("--- Running Test: %s ---\n    out=\"%.60s\" expect=\"%.60s\"\n", name, d, expect);
+    fcs_free(d, dest_sz);
+    return ok;
+}
+
+static int fcs_all(int *failp)
+{
+    int pass = 0;
+    int fail = 0;
+    #define CHK(x) do { if (x) { pass++; printf("================== direct: \033[32mPASS\033[0m ==============\n"); } else { fail++; printf("===== direct: \033[31mFAIL\033[0m =====\n"); } } while (0)
+    { em_short_string_t l[1] = { "" };                         CHK(fcs_run("fcs_empty_list", 16, 0, l, 1, "")); }
+    { em_short_string_t l[2] = { "a", "b" };                   CHK(fcs_run("fcs_join_two", 16, 0, l, 2, "a,b")); }
+    { em_short_string_t l[3] = { "a", "", "c" };               CHK(fcs_run("fcs_stops_at_empty_entry", 16, 0, l, 3, "a")); }
+    { em_short_string_t l[2] = { "aaaaaaa", "bbbbbbb" };       CHK(fcs_run("fcs_exact_fit_16", 16, 0, l, 2, "aaaaaaa,bbbbbbb")); }
+    { em_short_string_t l[3] = { "aaaaaaa", "bbbbbbb", "ccccccc" }; CHK(fcs_run("fcs_entry_too_long_dropped_15", 15, 0, l, 3, "aaaaaaa")); }
+    { em_short_string_t l[1] = { "a" };                        CHK(fcs_run("fcs_size_1_empty_result", 1, 0, l, 1, "")); }
+    { em_short_string_t l[1] = { "a" };                        CHK(fcs_run("fcs_appends_to_existing", 16, 1, l, 1, "Q,a")); }
+    { em_short_string_t l[1] = { "a" };                        CHK(fcs_run("fcs_existing_content_fills_buffer", 4, 3, l, 1, "QQQ")); }
+    { dm_easy_mesh_ctrl_t c; em_short_string_t l[1] = { "a" }; c.fill_comma_sep(l, 1, NULL, 16); char *z = fcs_dest(4, 0); c.fill_comma_sep(l, 1, z, 0); fcs_free(z, 4);
+      printf("--- Running Test: fcs_null_or_zero_size ---\n"); CHK(1); }
+    /* fill_backhaul_down_macs: count cap and per-device result */
+    {
+        dm_easy_mesh_ctrl_t c; em_device_info_t di; memset(&di, 0, sizeof(di));
+        for (int i = 0; i < EM_BACKHAUL_DOWNMAC_ADDR; i++) snprintf(di.backhaul_down_mac[i], sizeof(di.backhaul_down_mac[i]), "02:00:00:00:00:%02x", i + 1);
+        const unsigned char counts[] = { 0, 1, 15, 16, 17, 255 };
+        for (unsigned ci = 0; ci < sizeof(counts); ci++) {
+            size_t n = counts[ci] > EM_BACKHAUL_DOWNMAC_ADDR ? EM_BACKHAUL_DOWNMAC_ADDR : counts[ci];
+            di.num_backhaul_down_mac = counts[ci];
+            char *d = fcs_dest(1024, 0); memset(d, 'Z', 1024); d[1023] = '\0';
+            c.fill_backhaul_down_macs(&di, d, 1024);
+            size_t want = n ? n * 17 + (n - 1) : 0;
+            printf("--- Running Test: fbd_count_%u ---\n    len=%zu expect=%zu\n", (unsigned)counts[ci], strlen(d), want);
+            CHK(strlen(d) == want && (n == 0 || strncmp(d, "02:00:00:00:00:01", 17) == 0));
+            fcs_free(d, 1024);
+        }
+        /* reused buffer: 15 entries, then 2, then none, then 15 again - each result holds only the current device */
+        char *d = fcs_dest(1024, 0); size_t lens[4]; const unsigned char seq[] = { 15, 2, 0, 15 };
+        for (int k = 0; k < 4; k++) { di.num_backhaul_down_mac = seq[k]; c.fill_backhaul_down_macs(&di, d, 1024); lens[k] = strlen(d); }
+        printf("--- Running Test: fbd_reused_buffer ---\n    lens=%zu,%zu,%zu,%zu\n", lens[0], lens[1], lens[2], lens[3]);
+        CHK(lens[0] == 15 * 17 + 14 && lens[1] == 2 * 17 + 1 && lens[2] == 0 && lens[3] == lens[0]);
+        fcs_free(d, 1024);
+        /* small destination: 40 bytes holds two entries (17 + 1 + 17 = 35), a third needs 53 */
+        di.num_backhaul_down_mac = 16;
+        d = fcs_dest(40, 0); c.fill_backhaul_down_macs(&di, d, 40);
+        printf("--- Running Test: fbd_small_destination ---\n    out=\"%s\"\n", d);
+        CHK(strlen(d) == 35);
+        fcs_free(d, 40);
+    }
+    #undef CHK
+    *failp += fail;
+    return pass;
+}
+
 } /* namespace dti */
 
 void run_all_tests_device_tget_inner(void)
@@ -93,6 +167,7 @@ void run_all_tests_device_tget_inner(void)
         else    { fail++; printf("===== %s: \033[31mFAIL\033[0m =====\n", test->test_name); }
         printf("------------------------------------------------------------------------------------------------------------------------------\n");
     }
+    pass += dti::fcs_all(&fail);
     printf("device_tget_inner: %d pass, %d fail (%d crash cases confirmed)\n", pass, fail, crashes);
 }
 int dti::g_rc = 0;

@@ -2,7 +2,7 @@
  * HANDLER: device_tget_inner
  *
  * Function copied from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
- * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::device_tget_inner (fixes 1-3 applied, start fix n / end fix n markers), with fill_comma_sep()
+ * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::device_tget_inner (fixes 1-3 applied, start fix n / end fix n markers; fill_comma_sep takes the destination size, fill_backhaul_down_macs builds one device's list), with fill_comma_sep()
  * (same file) and dm_easy_mesh_t::maclist_to_string() (src/dm/dm_easy_mesh.cpp), both verbatim.
  * Local arrays: path[512], val_str[MAX_EM_BUFF_SZ=1024], maclist_str[256],
  * maclist[14], tmp (vector of em_short_string_t[64]).
@@ -17,6 +17,7 @@
 #include <cstring>
 #include <stdint.h>
 #include <string>
+#include <algorithm>
 #include <vector>
 #include <type_traits>
 #include "device_tget_inner.h"
@@ -63,29 +64,48 @@ void dm_easy_mesh_t::maclist_to_string(mac_address_t mac_list[], size_t mac_coun
 }
 
 /* --- copied verbatim from src/ctrl/dm_easy_mesh_ctrl.cpp --- */
-void dm_easy_mesh_ctrl_t::fill_comma_sep(em_short_string_t str[], size_t max, char *buf)
+/* start fix 3 */
+void dm_easy_mesh_ctrl_t::fill_comma_sep(em_short_string_t str[], size_t max, char *buf, size_t buf_sz)
 {
-    unsigned int cnt = 0;
-    const char *delim = NULL;
-
-    if (max > 15) {
-        max = 15;
+    if (buf == NULL || buf_sz == 0) {
+        return;
     }
-
-    while (cnt < max) {
-        if (strlen(str[cnt]) > 0) {
-            if (delim) {
-                strcat(buf, delim);
-            } else {
-                delim = ",";
-            }
-            strcat(buf, str[cnt]);
-        } else {
+    size_t len = strnlen(buf, buf_sz - 1);
+    buf[len] = '\0';
+    for (size_t cnt = 0; cnt < max; cnt++) {
+        size_t elen = strnlen(str[cnt], sizeof(em_short_string_t) - 1);
+        if (elen == 0) {
             break;
         }
-        cnt++;
+        size_t need = elen + (len ? 1 : 0);
+        if (len + need + 1 > buf_sz) {
+            break;
+        }
+        if (len) {
+            buf[len++] = ',';
+        }
+        memcpy(buf + len, str[cnt], elen);
+        len += elen;
+        buf[len] = '\0';
     }
 }
+
+void dm_easy_mesh_ctrl_t::fill_backhaul_down_macs(const em_device_info_t *di, char *buf, size_t buf_sz)
+{
+    em_short_string_t tmp[EM_BACKHAUL_DOWNMAC_ADDR];
+    size_t n = std::min(static_cast<size_t>(di->num_backhaul_down_mac), static_cast<size_t>(EM_BACKHAUL_DOWNMAC_ADDR));
+
+    memset(tmp, 0, sizeof(tmp));
+    for (size_t i = 0; i < n; i++) {
+        strncpy(tmp[i], di->backhaul_down_mac[i], sizeof(tmp[i]) - 1);
+    }
+    if (buf == NULL || buf_sz == 0) {
+        return;
+    }
+    buf[0] = '\0';
+    fill_comma_sep(tmp, n, buf, buf_sz);
+}
+/* end fix 3 */
 
 bus_error_t dm_easy_mesh_ctrl_t::device_tget_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data)
 {
@@ -189,21 +209,8 @@ bus_error_t dm_easy_mesh_ctrl_t::device_tget_inner(char *event_name, raw_data_t 
             dm_ctrl->property_append_tail(&property, root, idx, "BackhaulMACAddress", di->backhaul_mac.mac);
         }
 /* start fix 2 */
-        size_t n = static_cast<size_t>(di->num_backhaul_down_mac);
-        if (n > EM_BACKHAUL_DOWNMAC_ADDR) {
-            n = EM_BACKHAUL_DOWNMAC_ADDR;
-        }
+        dm_ctrl->fill_backhaul_down_macs(di, val_str, sizeof(val_str));
 /* end fix 2 */
-        std::vector<em_short_string_t> tmp(n);
-
-        for (size_t i = 0; i < n; i++) {
-            std::strncpy(tmp[i], di->backhaul_down_mac[i], sizeof(tmp[i]) - 1);
-            tmp[i][sizeof(tmp[i]) - 1] = '\0';
-        }
-/* start fix 3 */
-        val_str[0] = '\0';
-/* end fix 3 */
-        dm_ctrl->fill_comma_sep(tmp.data(), n, val_str);
         dm_ctrl->property_append_tail(&property, root, idx, "BackhaulDownMACAddress", val_str);
         if (memcmp(di->backhaul_mac.mac, ZERO_MAC_ADDR, sizeof(ZERO_MAC_ADDR)) == 0) {
             dm_ctrl->property_append_tail(&property, root, idx, "BackhaulALID", "");

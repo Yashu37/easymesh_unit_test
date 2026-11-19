@@ -50,7 +50,7 @@ class dm_easy_mesh_ctrl_t {
 public:
     dm_easy_mesh_t *get_first_dm() { return g_dm; }
     dm_easy_mesh_t *get_next_dm(dm_easy_mesh_t *dm) { (void)dm; return NULL; }   /* hash_map_get_next(NULL) cannot yield an element */
-    void fill_comma_sep(em_short_string_t str[], size_t max, char *buf);
+    void fill_comma_sep(em_short_string_t str[], size_t max, char *buf, size_t buf_sz);
     void fill_haul_type(em_haul_type_t hauls[], size_t max, char *buf);
     void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const char *v)
     { (void)root; if (!*prop) *prop = &g_dummy_prop; rec(idx, name, v ? v : "(null)"); }

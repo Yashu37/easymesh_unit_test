@@ -1,7 +1,7 @@
 /*
  * HANDLER: device_get_inner
  *
- * Function copied (fixes 1-4 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-5 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::device_get_inner, with get_table_instance() and
  * fill_comma_sep() (same file). Local arrays: instance[32], val_str[MAX_EM_BUFF_SZ=1024] and the
  * reads di->backhaul_down_mac[i] (16 entries) / pi->m_policy.sta_mac[index] (16 entries) whose
@@ -85,29 +85,32 @@ const char* dm_easy_mesh_ctrl_t::get_table_instance(const char *src, char *insta
 	return src;
 }
 
-void dm_easy_mesh_ctrl_t::fill_comma_sep(em_short_string_t str[], size_t max, char *buf)
+/* start fix 5 */
+void dm_easy_mesh_ctrl_t::fill_comma_sep(em_short_string_t str[], size_t max, char *buf, size_t buf_sz)
 {
-    unsigned int cnt = 0;
-    const char *delim = NULL;
-
-    if (max > 15) {
-        max = 15;
+    if (buf == NULL || buf_sz == 0) {
+        return;
     }
-
-    while (cnt < max) {
-        if (strlen(str[cnt]) > 0) {
-            if (delim) {
-                strcat(buf, delim);
-            } else {
-                delim = ",";
-            }
-            strcat(buf, str[cnt]);
-        } else {
+    size_t len = strnlen(buf, buf_sz - 1);
+    buf[len] = '\0';
+    for (size_t cnt = 0; cnt < max; cnt++) {
+        size_t elen = strnlen(str[cnt], sizeof(em_short_string_t) - 1);
+        if (elen == 0) {
             break;
         }
-        cnt++;
+        size_t need = elen + (len ? 1 : 0);
+        if (len + need + 1 > buf_sz) {
+            break;
+        }
+        if (len) {
+            buf[len++] = ',';
+        }
+        memcpy(buf + len, str[cnt], elen);
+        len += elen;
+        buf[len] = '\0';
     }
 }
+/* end fix 5 */
 
 bus_error_t dm_easy_mesh_ctrl_t::device_get_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data)
 {
@@ -207,7 +210,9 @@ bus_error_t dm_easy_mesh_ctrl_t::device_get_inner(char *event_name, raw_data_t *
 			const std::string mac = util::mac_to_string(pi->m_policy.sta_mac[index]);
 			std::snprintf(BTMSteeringDisallowed[index], sizeof(em_short_string_t), "%s", mac.c_str());
                 }
-                dm_ctrl->fill_comma_sep(BTMSteeringDisallowed.data(), static_cast<size_t>(n), val_str);
+/* start fix 5 */
+                dm_ctrl->fill_comma_sep(BTMSteeringDisallowed.data(), static_cast<size_t>(n), val_str, sizeof(val_str));
+/* end fix 5 */
                 rc = dm_ctrl->raw_data_set(p_data, val_str);
                 break;
             }
@@ -261,7 +266,9 @@ bus_error_t dm_easy_mesh_ctrl_t::device_get_inner(char *event_name, raw_data_t *
             std::strncpy(tmp[i], di->backhaul_down_mac[i], sizeof(tmp[i]) - 1);
             tmp[i][sizeof(tmp[i]) - 1] = '\0';
         }
-        dm_ctrl->fill_comma_sep(tmp.data(), n, val_str);
+/* start fix 5 */
+        dm_ctrl->fill_comma_sep(tmp.data(), n, val_str, sizeof(val_str));
+/* end fix 5 */
         rc = dm_ctrl->raw_data_set(p_data, val_str);
     } else if (strcmp(param, "BackhaulPHYRate") == 0) {
         rc = dm_ctrl->raw_data_set(p_data, di->backhaul_phyrate);

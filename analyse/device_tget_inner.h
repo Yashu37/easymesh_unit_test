@@ -114,8 +114,9 @@ public:
         for (int i = 0; i < g_ndm; i++) if (g_dm[i]->get_device() && !memcmp(g_dm[i]->dev.info.id.dev_mac, bmac, 6)) return &g_dm[i]->dev;
         return NULL;
     }
-    void fill_comma_sep(em_short_string_t str[], size_t max, char *buf);
-    bus_error_t device_tget_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data);
+    void fill_comma_sep(em_short_string_t str[], size_t max, char *buf, size_t buf_sz);
+    void fill_backhaul_down_macs(const em_device_info_t *di, char *buf, size_t buf_sz);
+    static bus_error_t device_tget_inner(char *event_name, raw_data_t *p_data, bus_user_data_t *user_data);
     void radio_tget_params(dm_easy_mesh_t *dm, const char *path, bus_data_prop_t **prop) { (void)dm; (void)prop; rec(0, "radio_path", path); }
     void apmld_tget_params(dm_easy_mesh_t *dm, const char *path, bus_data_prop_t **prop) { (void)dm; (void)prop; rec(0, "apmld_path", path); }
     void raw_data_set(raw_data_t *p, bus_data_prop_t *prop) { (void)p; (void)prop; g_raw_set++; }

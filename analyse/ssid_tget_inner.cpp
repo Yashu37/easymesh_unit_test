@@ -1,7 +1,7 @@
 /*
  * HANDLER: ssid_tget_inner
  *
- * Function copied (fixes 1-3 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-4 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::ssid_tget_inner, with fill_comma_sep() and fill_haul_type()
  * (same file). Local array: val_str[MAX_EM_BUFF_SZ = 1024] (cleared before each list); the loop runs to
  * dm->get_num_network_ssid() (m_num_net_ssids, unclamped) over m_network_ssid[EM_MAX_NET_SSIDS = 5]; the
@@ -39,29 +39,32 @@ void rec(unsigned int idx, const char *name, const char *val)
 }
 
 /* --- copied verbatim from src/ctrl/dm_easy_mesh_ctrl.cpp --- */
-void dm_easy_mesh_ctrl_t::fill_comma_sep(em_short_string_t str[], size_t max, char *buf)
+/* start fix 4 */
+void dm_easy_mesh_ctrl_t::fill_comma_sep(em_short_string_t str[], size_t max, char *buf, size_t buf_sz)
 {
-    unsigned int cnt = 0;
-    const char *delim = NULL;
-
-    if (max > 15) {
-        max = 15;
+    if (buf == NULL || buf_sz == 0) {
+        return;
     }
-
-    while (cnt < max) {
-        if (strlen(str[cnt]) > 0) {
-            if (delim) {
-                strcat(buf, delim);
-            } else {
-                delim = ",";
-            }
-            strcat(buf, str[cnt]);
-        } else {
+    size_t len = strnlen(buf, buf_sz - 1);
+    buf[len] = '\0';
+    for (size_t cnt = 0; cnt < max; cnt++) {
+        size_t elen = strnlen(str[cnt], sizeof(em_short_string_t) - 1);
+        if (elen == 0) {
             break;
         }
-        cnt++;
+        size_t need = elen + (len ? 1 : 0);
+        if (len + need + 1 > buf_sz) {
+            break;
+        }
+        if (len) {
+            buf[len++] = ',';
+        }
+        memcpy(buf + len, str[cnt], elen);
+        len += elen;
+        buf[len] = '\0';
     }
 }
+/* end fix 4 */
 
 void dm_easy_mesh_ctrl_t::fill_haul_type(em_haul_type_t hauls[], size_t max, char *buf)
 {
@@ -135,11 +138,15 @@ bus_error_t dm_easy_mesh_ctrl_t::ssid_tget_inner(char *event_name, raw_data_t *p
 
         dm_ctrl->property_append_tail(&property, root, idx, "SSID", si->ssid);
         memset(val_str, 0, sizeof(val_str));
-        dm_ctrl->fill_comma_sep(si->band, std::min(static_cast<size_t>(si->num_bands), ARRAY_SIZE(si->band)), val_str);
+/* start fix 4 */
+        dm_ctrl->fill_comma_sep(si->band, std::min(static_cast<size_t>(si->num_bands), ARRAY_SIZE(si->band)), val_str, sizeof(val_str));
+/* end fix 4 */
         dm_ctrl->property_append_tail(&property, root, idx, "Band", val_str);
         dm_ctrl->property_append_tail(&property, root, idx, "Enable", si->enable);
         memset(val_str, 0, sizeof(val_str));
-        dm_ctrl->fill_comma_sep(si->akm, std::min(static_cast<size_t>(si->num_akms), ARRAY_SIZE(si->akm)), val_str);
+/* start fix 4 */
+        dm_ctrl->fill_comma_sep(si->akm, std::min(static_cast<size_t>(si->num_akms), ARRAY_SIZE(si->akm)), val_str, sizeof(val_str));
+/* end fix 4 */
         dm_ctrl->property_append_tail(&property, root, idx, "AKMsAllowed", val_str);
         dm_ctrl->property_append_tail(&property, root, idx, "SuiteSelector", si->suite_select);
         dm_ctrl->property_append_tail(&property, root, idx, "AdvertisementEnabled", si->advertisement);
