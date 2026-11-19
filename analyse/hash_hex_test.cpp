@@ -3,7 +3,7 @@
  *
  * Poisoned around the call: HHX_GUARD bytes in front of and behind the hash buffer (which is exactly len bytes), so a read past the
  * hash is reported; the handler's output[2 * len + 1] stack array is covered by ASan redzones. PASS = the returned string equals an
- * independently built hex string. crash_* cases ABORT on the original code: they run last and UNFORKED so a plain `make` stops
+ * independently built hex string (empty for a NULL hash). crash_* cases ABORT on the original code: they run last and UNFORKED so a plain `make` stops
  * with the report; FORK_CRASH=1 forks each one.
  */
 #include <stdio.h>
@@ -24,7 +24,7 @@ static int test_one(const test_case_t *tc)
 {
     poison(true); std::string s = invoke(tc); poison(false);
     std::string want; static const char *d = "0123456789abcdef";
-    for (size_t i = 0; i < g_len; i++) { want += d[g_hash[i] >> 4]; want += d[g_hash[i] & 15]; }
+    for (size_t i = 0; !tc->null_hash && i < g_len; i++) { want += d[g_hash[i] >> 4]; want += d[g_hash[i] & 15]; }
     int ok = s == want;
     printf("    len=%zu result_len=%zu (expect %zu) first=%.16s\n", g_len, s.size(), want.size(), s.c_str());
     fflush(stdout);

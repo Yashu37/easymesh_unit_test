@@ -3,8 +3,8 @@
  *
  * The hash is a heap buffer of exactly len bytes between two poisoned 128 byte guards (filled by pattern: 0 zeros, 1 (i*7+3)&0xFF,
  * 2 all 0xFF, 3 i&0xFF). PASS = the returned string equals an independently built lower case hex string of the buffer. Cases named
- * crash_* ABORT on the original code (NULL hash with a length, a length whose 2 * len + 1 byte stack array does not fit the 8 MB stack):
- * they run last and UNFORKED so a plain `make` stops with the report; FORK_CRASH=1 forks each one.
+ * rej_* / clamp_* ABORTED on the original code (NULL hash with a length, a length whose 2 * len + 1 byte stack array does not fit the 8 MB
+ * stack): fix 1 returns an empty string for a NULL hash, fix 2 builds the string on the heap.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,12 +29,12 @@ test_case_t suite[] = {
  {"ok_vector_empty",                  0, 0, false, true, false},
  {"ok_vector_32",                     32, 1, false, true, false},
  {"ok_vector_every_byte_value",       256, 3, false, true, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_null_hash_length_1",         1, 0, true,  false, true},
- {"crash_null_hash_length_32",        32, 0, true, false, true},
- {"crash_stack_array_6_million",      6000000, 1, false, false, true},
- {"crash_stack_array_20_million",     20000000, 1, false, false, true},
- {"crash_vector_6_million",           6000000, 1, false, true, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"rej_null_hash_length_1",         1, 0, true,  false, false},
+ {"rej_null_hash_length_32",        32, 0, true, false, false},
+ {"clamp_stack_array_6_million",      6000000, 1, false, false, false},
+ {"clamp_stack_array_20_million",     20000000, 1, false, false, false},
+ {"clamp_vector_6_million",           6000000, 1, false, true, false},
  {NULL, 0, 0, false, false, false}
 };
 
