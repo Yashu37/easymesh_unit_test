@@ -5,9 +5,9 @@
  * 8 Advertisement 1, 9 MFP, 10 MobilityDomain MAC, 11 Haul list, 12 AuthType, 13 VLAN 5. Column shorthand in a case: "=" default,
  * "@N" N entries of a list (b0,b1.. / a0,a1.. / Fronthaul,Fronthaul..), "#N" N characters, NULL = SQL NULL. Each string cell lives
  * between poisoned guards (runner). PASS = recorded networks, num_bands / num_akms / num_hauls and the first two haul types.
- * Cases named crash_* ABORT on the original code (assert in get_strings_by_token for too many list entries, stack overflow in
- * get_string for a value longer than its buffer): they run last and UNFORKED so a plain `make` stops with the report;
- * FORK_CRASH=1 forks each one. [spec] cases: wrong behaviour, no abort.
+ * Cases named clamp_* ABORTED on the original code (assert in get_strings_by_token for too many list entries, stack overflow in
+ * get_string for a value longer than its buffer): fix 1 bounds the get_string copies, fix 2 ignores surplus list entries.
+ * [spec] cases: wrong behaviour, no abort.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,18 +37,18 @@ test_case_t suite[] = {
  {"ok_two_rows",                     D, D, D, D, D, D, D, D, D, D, 2, 2, 2, 2, 2, -1, -1, false},
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_empty_haul_token_must_not_be_fronthaul [spec]", D, D, D, D, D, D, D, D, "Backhaul,", D, 1, 1, 2, 2, 2, H(em_haul_type_backhaul), H(em_haul_type_max), false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_four_bands_assert",         D, D, D, "@4", D, D, D, D, D, D, 1, 1, 3, 2, 2, -1, -1, true},
- {"crash_eleven_akms_assert",        D, D, D, D, "@11", D, D, D, D, D, 1, 1, 2, 10, 2, -1, -1, true},
- {"crash_nine_hauls_assert",         D, D, D, D, D, D, D, D, "@9", D, 1, 1, 2, 2, 8, -1, -1, true},
- {"crash_twenty_short_hauls_assert",        D, D, D, D, D, D, D, D, "a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a", D, 1, 1, 2, 2, 8, -1, -1, true},
- {"crash_band_list_200_chars",       D, D, D, "#200", D, D, D, D, D, D, 1, 1, 1, 2, 2, -1, -1, true},
- {"crash_akm_list_200_chars",        D, D, D, D, "#200", D, D, D, D, D, 1, 1, 2, 1, 2, -1, -1, true},
- {"crash_haul_list_200_chars",       D, D, D, D, D, D, D, D, "#200", D, 1, 1, 2, 2, 1, -1, -1, true},
- {"crash_mobility_mac_18_chars",     D, D, D, D, D, D, D, "aa:bb:cc:dd:ee:01x", D, D, 1, 1, 2, 2, 2, -1, -1, true},
- {"crash_mobility_mac_200_chars",    D, D, D, D, D, D, D, "#200", D, D, 1, 1, 2, 2, 2, -1, -1, true},
- {"crash_auth_type_100_chars",       D, D, D, D, D, D, D, D, D, "#100", 1, 1, 2, 2, 2, -1, -1, true},
- {"crash_id_1500_chars",             "#1500", D, D, D, D, D, D, D, D, D, 1, 1, 2, 2, 2, -1, -1, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"clamp_four_bands_assert",         D, D, D, "@4", D, D, D, D, D, D, 1, 1, 3, 2, 2, -1, -1, false},
+ {"clamp_eleven_akms_assert",        D, D, D, D, "@11", D, D, D, D, D, 1, 1, 2, 10, 2, -1, -1, false},
+ {"clamp_nine_hauls_assert",         D, D, D, D, D, D, D, D, "@9", D, 1, 1, 2, 2, 8, -1, -1, false},
+ {"clamp_twenty_short_hauls_assert",        D, D, D, D, D, D, D, D, "a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a,a", D, 1, 1, 2, 2, 8, -1, -1, false},
+ {"clamp_band_list_200_chars",       D, D, D, "#200", D, D, D, D, D, D, 1, 1, 1, 2, 2, -1, -1, false},
+ {"clamp_akm_list_200_chars",        D, D, D, D, "#200", D, D, D, D, D, 1, 1, 2, 1, 2, -1, -1, false},
+ {"clamp_haul_list_200_chars",       D, D, D, D, D, D, D, D, "#200", D, 1, 1, 2, 2, 1, -1, -1, false},
+ {"clamp_mobility_mac_18_chars",     D, D, D, D, D, D, D, "aa:bb:cc:dd:ee:01x", D, D, 1, 1, 2, 2, 2, -1, -1, false},
+ {"clamp_mobility_mac_200_chars",    D, D, D, D, D, D, D, "#200", D, D, 1, 1, 2, 2, 2, -1, -1, false},
+ {"clamp_auth_type_100_chars",       D, D, D, D, D, D, D, D, D, "#100", 1, 1, 2, 2, 2, -1, -1, false},
+ {"clamp_id_1500_chars",             "#1500", D, D, D, D, D, D, D, D, D, 1, 1, 2, 2, 2, -1, -1, false},
  {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, false}
 };
 
