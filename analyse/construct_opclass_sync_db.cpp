@@ -5,9 +5,9 @@
  * 4 channel list, 5 preference list, 6 PrefValid 1, 7 TxPower 20, 8 MaxTxPower 30, 9-11 CAC values 1/2/3. Column shorthand: "=" default,
  * "@N" N entries (channels 1..N), "#N" N characters, NULL = SQL NULL. Each string cell lives between poisoned guards (runner). PASS =
  * recorded op classes, num_channels, first / last channel, first preference, channel column and second row channel count.
- * Cases named crash_* ABORT on the original code (assert in get_strings_by_token for 65+ list entries, stack overflow in get_string
- * for an ID longer than 127 / a list longer than 255 characters): they run last and UNFORKED so a plain `make` stops with the report;
- * FORK_CRASH=1 forks each one. [spec] cases: wrong behaviour, no abort.
+ * Cases named clamp_* ABORTED on the original code (assert in get_strings_by_token for 65+ list entries, stack overflow in get_string
+ * for an ID longer than 127 / a list longer than 255 characters): fix 1 bounds the get_string copies, fix 2 ignores surplus entries.
+ * [spec] cases: wrong behaviour, no abort.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,13 +34,13 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_channel_70000_must_not_truncate [spec]",            D, "36", D, 1, 70000, 1, 0, 1, 1, -1, 36, 36, 70000, -1, false},
  {"spec_null_channel_list_must_not_keep_previous_row [spec]", D, "36,40,44", D, 1, 36, 2, 1, 2, 3, -1, 36, 44, 36, 0, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_65_channels_assert",            D, "@65", D, 1, 36, 1, 0, 1, 64, -1, 1, 64, 36, -1, true},
- {"crash_65_prefs_assert",               D, "36", "@65", 6, 36, 1, 0, 1, 1, 1, 36, 36, 36, -1, true},
- {"crash_channel_list_300_chars",        D, "#300", D, 1, 36, 1, 0, 1, 1, -1, 0, 0, 36, -1, true},
- {"crash_pref_list_300_chars",           D, "36", "#300", 6, 36, 1, 0, 1, 1, 0, 36, 36, 36, -1, true},
- {"crash_id_200_chars",                  "#200", "36", D, 1, 36, 1, 0, 1, 1, -1, 36, 36, 36, -1, true},
- {"crash_id_4000_chars",                 "#4000", "36", D, 1, 36, 1, 0, 1, 1, -1, 36, 36, 36, -1, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"clamp_65_channels_assert",            D, "@65", D, 1, 36, 1, 0, 1, 64, -1, 1, 64, 36, -1, false},
+ {"clamp_65_prefs_assert",               D, "36", "@65", 6, 36, 1, 0, 1, 1, 1, 36, 36, 36, -1, false},
+ {"clamp_channel_list_300_chars",        D, "#300", D, 1, 36, 1, 0, 1, 1, -1, 0, 0, 36, -1, false},
+ {"clamp_pref_list_300_chars",           D, "36", "#300", 6, 36, 1, 0, 1, 1, 0, 36, 36, 36, -1, false},
+ {"clamp_id_200_chars",                  "#200", "36", D, 1, 36, 1, 0, 1, 1, -1, 36, 36, 36, -1, false},
+ {"clamp_id_4000_chars",                 "#4000", "36", D, 1, 36, 1, 0, 1, 1, -1, 36, 36, 36, -1, false},
  {NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
 

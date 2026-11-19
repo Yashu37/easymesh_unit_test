@@ -1,5 +1,6 @@
 /*
- * HANDLER: dm_op_class_list_t::sync_db
+ * HANDLER: dm_op_class_list_t::sync_db (fixes 1-2 applied, start fix n / end fix n markers: bounded get_string(ctx, buf, col, size)
+ * for the ID and both list columns, get_strings_by_token ignores entries beyond the slots instead of asserting)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): dm_op_class_list_t::sync_db (src/dm/dm_op_class_list.cpp) with the
  * helpers it calls: db_easy_mesh_t::get_strings_by_token (src/db/db_easy_mesh.cpp), dm_op_class_t::parse_op_class_id_from_key
@@ -80,7 +81,12 @@ int db_easy_mesh_t::get_strings_by_token(char *parent, int token, unsigned int a
     while (tmp != NULL) {
         if ((tmp = strchr(orig, token)) != NULL) {
             *tmp = 0;
-            assert (num < argc - 1 && "number of extracted values exceeds the limit");
+/* start fix 2 */
+            if (num >= argc - 1) {
+                /* more values than slots: keep the first argc values, ignore the rest instead of asserting */
+                break;
+            }
+/* end fix 2 */
             snprintf(argv[num], sizeof(em_short_string_t), "%.*s", max_len, orig);
             tmp++; num++;
             orig = tmp;
@@ -106,12 +112,16 @@ int dm_op_class_list_t::sync_db(db_client_t& db_client, void *ctx)
     while (db_client.next_result(ctx)) {
         memset(&info, 0, sizeof(em_op_class_info_t));
 
-        db_client.get_string(ctx, id, 1);
+        /* start fix 1 */
+        db_client.get_string(ctx, id, 1, sizeof(id));
+        /* end fix 1 */
         dm_op_class_t::parse_op_class_id_from_key(id, &info.id);
         info.op_class = static_cast<short unsigned int>(db_client.get_number(ctx, 2));
         info.channel = static_cast<short unsigned int>(db_client.get_number(ctx, 3));
 
-        db_client.get_string(ctx, str, 4);
+        /* start fix 1 */
+        db_client.get_string(ctx, str, 4, sizeof(str));
+        /* end fix 1 */
         for (i = 0; i < EM_MAX_CHANNELS_IN_LIST; i++) {
             token_parts[i] = ch_str[i];
         }
@@ -129,7 +139,9 @@ int dm_op_class_list_t::sync_db(db_client_t& db_client, void *ctx)
         // For other types, set preference as valid but with 0 preference value.
         if (info.id.type == em_op_class_type_preference || info.id.type == em_op_class_type_anticipated)
         {
-            db_client.get_string(ctx, str, 5);
+            /* start fix 1 */
+            db_client.get_string(ctx, str, 5, sizeof(str));
+            /* end fix 1 */
             for (i = 0; i < EM_MAX_CHANNELS_IN_LIST; i++) {
                 token_parts[i] = ch_str[i];
             }
