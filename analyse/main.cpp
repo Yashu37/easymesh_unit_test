@@ -56,6 +56,7 @@ void run_all_tests_config_reset(void);
 void run_all_tests_print_config(void);
 void run_all_tests_radio_cap_update_db(void);
 void run_all_tests_hash_hex(void);
+void run_all_tests_wps_kdf(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -629,6 +630,9 @@ int main() {
 	// run_all_tests_radio_cap_update_db();
 	// em_crypto_t::hash_to_hex_string (unified-wifi-mesh src/em/crypto/em_crypto.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
-	run_all_tests_hash_hex();
+	// run_all_tests_hash_hex();
+	// em_crypto_t::wps_key_derivation_function (unified-wifi-mesh src/em/crypto/em_crypto.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
+	run_all_tests_wps_kdf();
 	return 0;
 }

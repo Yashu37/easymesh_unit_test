@@ -12,7 +12,7 @@ for f in $fn construct_$fn ${fn}_test quick_stubs; do
 done
 printf "void run_all_tests_$fn();\nint main(){run_all_tests_$fn();return 0;}\n" > $out/main.cpp
 g++ $F -c $out/main.cpp -o $out/main.o
-g++ $out/*.o -o $out/run -fsanitize=address -ljansson -lcjson || exit 1
+g++ $out/*.o -o $out/run -fsanitize=address -ljansson -lcjson -lcrypto || exit 1
 if [ "$2" = "crash" ]; then
   FORK_CRASH=1 ASAN_OPTIONS=detect_leaks=0 $out/run 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E "Running Test: crash|ERROR: AddressSanitizer|SUMMARY|^    #[0-4] |CRASH CONFIRMED|pass,"
 else
