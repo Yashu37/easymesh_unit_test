@@ -11,8 +11,8 @@
  *   18 ssid of 32 'S' (no NUL: the string read continues into the 'enabled' member, inside the object, so only the output is wrong)
  * Not modelled as cases because they stay inside the object (no ASan report, no visible effect here): num_backhaul_akms 11..46,
  * vendor_elements_len 2311, timestamp / est_svc_params without NUL, an unknown haul type (haul_type_str unassigned, reads stack garbage).
- * Cases named crash_* ABORT on the original handler: they run last and UNFORKED so a plain `make` stops with the ASan report;
- * FORK_CRASH=1 forks each one. expect_haul / expect_ssid / expect_fh / expect_bh / expect_vendor_len (characters) / expect_mld.
+ * The clamp_* cases ABORTED on the original handler; fixes 1-3 clamp the AKM counts to 10 and vendor_elements_len to 2310 (and
+ * initialise haul_type_str). expect_haul / expect_ssid / expect_fh / expect_bh / expect_vendor_len (characters) / expect_mld.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,11 +37,11 @@ test_case_t suite[] = {
  {"ok_no_akms",                       11, false, NULL, NULL, 0, 0, -1, -1, false},
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_ssid_32_chars_no_nul_must_not_read_on [spec]", 18, false, NULL, "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS", -1, -1, -1, -1, false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- {"crash_num_fronthaul_akms_255",     12, false, NULL, NULL, 10, 1, -1, -1, true},
- {"crash_num_backhaul_akms_255",      14, false, NULL, NULL, 2, 10, -1, -1, true},
- {"crash_vendor_len_3000",            16, false, NULL, NULL, -1, -1, 4620, -1, true},
- {"crash_vendor_len_10000000_stack",  17, false, NULL, NULL, -1, -1, 4620, -1, true},
+ /* ---- were CRASH cases on the original handler (counts now clamped) ---- */
+ {"clamp_num_fronthaul_akms_255",     12, false, NULL, NULL, 10, 1, -1, -1, false},
+ {"clamp_num_backhaul_akms_255",      14, false, NULL, NULL, 2, 10, -1, -1, false},
+ {"clamp_vendor_len_3000",            16, false, NULL, NULL, -1, -1, 4620, -1, false},
+ {"clamp_vendor_len_10000000_stack",  17, false, NULL, NULL, -1, -1, 4620, -1, false},
  {NULL, 0, false, NULL, NULL, 0, 0, 0, 0, false}
 };
 

@@ -1,5 +1,5 @@
 /*
- * HANDLER: dm_bss_t::encode
+ * HANDLER: dm_bss_t::encode (fixes 1-3 applied, start fix n / end fix n markers)
  *
  * Function copied verbatim from unified-wifi-mesh src/dm/dm_bss.cpp (develop @ 1ba9529), dm_bss_t::encode. Local arrays: mac_str[18], haul_type_str[64] (only assigned for the five known haul types), and the
  * variable-length array vendor_ies[2 * vendor_elements_len + 1]. Loops are bounded by the raw num_fronthaul_akms /
@@ -20,7 +20,9 @@ void dm_bss_t::encode(cJSON *obj, bool summary)
 {
     mac_addr_str_t  mac_str;
     unsigned short i;
-	em_short_string_t	haul_type_str;
+/* start fix 3 */
+	em_short_string_t	haul_type_str = {0};
+/* end fix 3 */
 
     dm_easy_mesh_t::macbytes_to_string(m_bss_info.bssid.mac, mac_str);
     cJSON_AddStringToObject(obj, "BSSID", mac_str);
@@ -84,14 +86,18 @@ void dm_bss_t::encode(cJSON *obj, bool summary)
     cJSON_AddBoolToObject(obj, "TransmittedBSSID", m_bss_info.transmitted_bssid);
 
     cJSON *fronthaul_akmsArray = cJSON_CreateArray();
-    for (i = 0; i < m_bss_info.num_fronthaul_akms; i++) {
+/* start fix 1 */
+    unsigned int num_fronthaul_akms = m_bss_info.num_fronthaul_akms > EM_MAX_AKMS ? EM_MAX_AKMS : m_bss_info.num_fronthaul_akms;
+    unsigned int num_backhaul_akms = m_bss_info.num_backhaul_akms > EM_MAX_AKMS ? EM_MAX_AKMS : m_bss_info.num_backhaul_akms;
+/* end fix 1 */
+    for (i = 0; i < num_fronthaul_akms; i++) {
         cJSON_AddItemToArray(fronthaul_akmsArray, cJSON_CreateString(m_bss_info.fronthaul_akm[i]));
     }
     // Add the array to the object
     cJSON_AddItemToObject(obj, "FronthaulAKMsAllowed", fronthaul_akmsArray);
 
     cJSON *backhaul_akmsArray = cJSON_CreateArray();
-    for (i = 0; i < m_bss_info.num_backhaul_akms; i++) {
+    for (i = 0; i < num_backhaul_akms; i++) {
         cJSON_AddItemToArray(backhaul_akmsArray, cJSON_CreateString(m_bss_info.backhaul_akm[i]));
     }
 
@@ -99,10 +105,13 @@ void dm_bss_t::encode(cJSON *obj, bool summary)
     cJSON_AddItemToObject(obj, "BackhaulAKMsAllowed", backhaul_akmsArray);
 
     // Add vendor elements (ExtraVendorIEs) as hex string
-    char vendor_ies[2 * m_bss_info.vendor_elements_len + 1] = {0};
-    if (m_bss_info.vendor_elements_len > 0) {
+/* start fix 2 */
+    size_t vendor_elements_len = m_bss_info.vendor_elements_len > sizeof(m_bss_info.vendor_elements) ? sizeof(m_bss_info.vendor_elements) : m_bss_info.vendor_elements_len;
+/* end fix 2 */
+    char vendor_ies[2 * vendor_elements_len + 1] = {0};
+    if (vendor_elements_len > 0) {
         memset(vendor_ies, 0, sizeof(vendor_ies));
-        for (unsigned int i = 0; i < m_bss_info.vendor_elements_len; i++) {
+        for (unsigned int i = 0; i < vendor_elements_len; i++) {
             unsigned int offset = i * 2;
             snprintf(vendor_ies + offset, sizeof(vendor_ies) - offset, "%02x", m_bss_info.vendor_elements[i]);
         }
