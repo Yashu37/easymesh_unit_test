@@ -47,6 +47,7 @@ void run_all_tests_sta_compare_db(void);
 void run_all_tests_policy_update_db(void);
 void run_all_tests_network_sync_db(void);
 void run_all_tests_network_ssid_sync_db(void);
+void run_all_tests_network_init(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -594,6 +595,8 @@ int main() {
 	// run_all_tests_network_sync_db();
 	// dm_network_ssid_list_t::sync_db (unified-wifi-mesh src/dm/dm_network_ssid_list.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
-	run_all_tests_network_ssid_sync_db();
+	// run_all_tests_network_ssid_sync_db();
+	// dm_network_t::init (unified-wifi-mesh src/dm/dm_network.cpp): no abort found, only wrong-behaviour cases.
+	run_all_tests_network_init();
 	return 0;
 }
