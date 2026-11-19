@@ -52,6 +52,7 @@ void run_all_tests_opclass_sync_db(void);
 void run_all_tests_opclass_update_db(void);
 void run_all_tests_sta_sync_db(void);
 void run_all_tests_bss_sync_db(void);
+void run_all_tests_config_reset(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -613,6 +614,9 @@ int main() {
 	// run_all_tests_sta_sync_db();
 	// dm_bss_list_t::sync_db (unified-wifi-mesh src/dm/dm_bss_list.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
-	run_all_tests_bss_sync_db();
+	// run_all_tests_bss_sync_db();
+	// dm_easy_mesh_t::encode_config_reset (unified-wifi-mesh src/dm/dm_easy_mesh.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
+	run_all_tests_config_reset();
 	return 0;
 }
