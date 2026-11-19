@@ -1,5 +1,6 @@
 /*
- * HANDLER: main (src/network_optimiser/test_tr181.cpp)
+ * HANDLER: main (src/network_optimiser/test_tr181.cpp) (fix 1 applied, start fix 1 / end fix 1 markers: return when the bus descriptor is
+ * NULL; the three wrong-behaviour failures are left original)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): the test_tr enum, print_options, output_cb, topo_cb and main() of the TR-181
  * test tool, main renamed tmo_main with a macro. Local arrays: char service_name[] = "Test_TR181". scanf is redirected to a scripted
@@ -144,6 +145,9 @@ int main()
     bus_init(&m_bus_hdl);
     if((desc = get_bus_descriptor()) == NULL) {
         printf("%s:%d descriptor is null\n", __func__, __LINE__);
+/* start fix 1 */
+        return 1;
+/* end fix 1 */
     }
     if (desc->bus_open_fn(&m_bus_hdl, service_name) != 0) {
         printf("%s:%d bus open failed\n",__func__, __LINE__);

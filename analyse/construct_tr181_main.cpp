@@ -6,8 +6,8 @@
  * get, I invoke, S subscribe). The tool has no exit command: its loop ends when the user presses Ctrl-C, which the stub models by
  * ending the run when the script is used up (mode 0). PASS = the recorded call sequence, a SetSSID object with the five expected
  * properties, the number of tracked heap objects main still owns at the end, and the way main returned. [spec] cases: wrong
- * behaviour, no abort. crash_* cases ABORT on the original code (get_bus_descriptor() returning NULL is only printed about, then
- * dereferenced): they run last and UNFORKED so a plain `make` stops with the report; FORK_CRASH=1 forks each one.
+ * behaviour, no abort. rej_* cases ABORTED on the original code (get_bus_descriptor() returning NULL was only printed about, then
+ * dereferenced): fix 1 returns.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,8 +33,8 @@ test_case_t suite[] = {
  {"spec_bus_open_failure_must_return_nonzero [spec]", 1, {0}, 0, 1, 0, 0, 0, false, "O", 1, -1, false, false},
  {"spec_stdin_closed_must_end_the_loop [spec]",       0, {0}, 1, 0, 0, 0, 0, false, "O", 1, -1, true, false},
  {"spec_set_ssid_must_not_leak [spec]",               1, {2}, 0, 0, 0, 0, 0, false, "OI", -1, 0, false, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_bus_descriptor_null",          1, {0}, 0, 0, 0, 0, 0, true, "", 1, -1, false, true},
+ /* ---- was a CRASH case on the original code ---- */
+ {"rej_bus_descriptor_null",          1, {0}, 0, 0, 0, 0, 0, true, "", 1, -1, false, false},
  {NULL, 0, {0}, 0, 0, 0, 0, 0, false, NULL, 0, 0, false, false}
 };
 
