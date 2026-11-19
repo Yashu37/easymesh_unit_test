@@ -3,9 +3,8 @@
  *
  * kinds 0-2: a freshly generated P-256 / P-384 / P-521 public key as base64 DER (SubjectPublicKeyInfo) - the call must return an
  * equal key; kind 3: n raw bytes (i*7+1) as base64 (valid base64, not DER) - the call must return NULL; kind 4: a literal string.
- * The input string has a 128 byte guard behind its terminator that the runner poisons. Cases named crash_* ABORT on the original
- * code (a base64 string that decodes to more than 1023 bytes overflows key[1024]): they run last and UNFORKED so a plain `make`
- * stops with the report; FORK_CRASH=1 forks each one.
+ * The input string has a 128 byte guard behind its terminator that the runner poisons. Cases named clamp_* ABORTED on the original
+ * code (a base64 string that decodes to more than 1023 bytes overflowed key[1024]): fix 1 returns NULL for it.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,11 +24,11 @@ test_case_t suite[] = {
  {"ok_valid_base64_not_der_rejected",    3, 100, NULL, "", false, false},
  {"ok_raw_1022_bytes_rejected",          3, 1022, NULL, "", false, false},
  {"ok_raw_1023_bytes_fills_key_exactly", 3, 1023, NULL, "", false, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_raw_1024_bytes_decodes_to_1026", 3, 1024, NULL, "", false, true},
- {"crash_raw_1100_bytes",                3, 1100, NULL, "", false, true},
- {"crash_raw_2000_bytes",                3, 2000, NULL, "", false, true},
- {"crash_raw_100000_bytes",              3, 100000, NULL, "", false, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"clamp_raw_1024_bytes_decodes_to_1026", 3, 1024, NULL, "", false, false},
+ {"clamp_raw_1100_bytes",                3, 1100, NULL, "", false, false},
+ {"clamp_raw_2000_bytes",                3, 2000, NULL, "", false, false},
+ {"clamp_raw_100000_bytes",              3, 100000, NULL, "", false, false},
  {NULL, 0, 0, NULL, NULL, false, false}
 };
 
