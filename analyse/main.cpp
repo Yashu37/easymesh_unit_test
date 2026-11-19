@@ -50,6 +50,7 @@ void run_all_tests_network_ssid_sync_db(void);
 void run_all_tests_network_init(void);
 void run_all_tests_opclass_sync_db(void);
 void run_all_tests_opclass_update_db(void);
+void run_all_tests_sta_sync_db(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -605,6 +606,9 @@ int main() {
 	// run_all_tests_opclass_sync_db();
 	// dm_op_class_list_t::update_db (unified-wifi-mesh src/dm/dm_op_class_list.cpp). The clamp_* / rej_* cases run last and
 	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
-	run_all_tests_opclass_update_db();
+	// run_all_tests_opclass_update_db();
+	// dm_sta_list_t::sync_db (unified-wifi-mesh src/dm/dm_sta_list.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_sta_sync_db();
 	return 0;
 }
