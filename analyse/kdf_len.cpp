@@ -2,7 +2,8 @@
  * HANDLER: em_crypto_t::kdf_hash_length
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): em_crypto_t::kdf_hash_length and platform_hmac_hash (the real OpenSSL
- * HMAC it calls), src/em/crypto/em_crypto.cpp. Local arrays: hash[SHA512_DIGEST_LENGTH], addr[4], len[4]. Every input buffer of the
+ * HMAC it calls), src/em/crypto/em_crypto.cpp. Local arrays: hash[SHA512_DIGEST_LENGTH], addr[4], len[4] (fix 1 applied, start fix 1 /
+ * end fix 1 markers: reject a NULL context with a length; the two length wrap failures are left original). Every input buffer of the
  * harness has exactly its length between poisoned guards.
  */
 #include <stdio.h>
@@ -122,6 +123,11 @@ bool em_crypto_t::kdf_hash_length(const EVP_MD *algo,
     if (!algo || !key || key_len == 0 || !label || !output || output_len == 0) {
         return false;
     }
+/* start fix 1 */
+    if (context == NULL && context_len > 0) {
+        return false;
+    }
+/* end fix 1 */
     
     size_t hash_len = static_cast<size_t>(EVP_MD_size(algo));
     if (hash_len == 0 || hash_len > 64) {  // Sanity check on hash size

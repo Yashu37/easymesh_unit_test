@@ -4,8 +4,7 @@
  * key = key_len bytes (i*5+1), context = context_len bytes (i*3+7), label = the case string, output buffer = out_buf bytes; each one
  * is exactly its length between two poisoned 128 byte guards. PASS = return value and, when requested, the output equals an
  * independently computed 802.11 KDF-Hash-Length (HMAC over LE16(i) || label || context || LE16(output_len * 8), OpenSSL one-shot
- * HMAC). Cases named crash_* ABORT on the original code (NULL context with a length): they run last and UNFORKED so a plain `make`
- * stops with the report; FORK_CRASH=1 forks each one. [spec] cases: wrong behaviour, no abort.
+ * HMAC). Cases named rej_* ABORTED on the original code (NULL context with a length): fix 1 returns false. [spec] cases: wrong behaviour, no abort.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,9 +52,9 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_output_8192_length_field_wraps_to_0_must_be_rejected [spec]", 0, 32, "L", 12, false, false, false, 8192, 8192, 0, false, false},
  {"spec_output_len_size_max_must_be_rejected [spec]", 0, 32, "L", 12, false, false, false, (size_t)-1, 1, 0, false, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_null_context_with_length_12", 0, 32, "L", 12, true, false, false, 32, 32, 0, false, true},
- {"crash_null_context_with_length_1",  2, 64, "L", 1, true, false, false, 64, 64, 0, false, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"rej_null_context_with_length_12", 0, 32, "L", 12, true, false, false, 32, 32, 0, false, false},
+ {"rej_null_context_with_length_1",  2, 64, "L", 1, true, false, false, 64, 64, 0, false, false},
  {NULL, 0, 0, NULL, 0, false, false, false, 0, 0, 0, false, false}
 };
 
