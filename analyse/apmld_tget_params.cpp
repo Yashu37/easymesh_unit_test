@@ -1,7 +1,7 @@
 /*
  * HANDLER: apmld_tget_params
  *
- * Function copied verbatim (no fix applied yet) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
+ * Function copied (fixes 1-2 applied, start fix n / end fix n markers) from unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp
  * (develop @ 1ba9529), dm_easy_mesh_ctrl_t::apmld_tget_params. Local array: path[512] (snprintf bounded by
  * sizeof(path) - 1). The loop runs to dm->get_num_ap_mld() (m_num_ap_mld, unclamped) over
  * dm->m_ap_mld[EM_MAX_AP_MLD = 64]; dm and property are never checked.
@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <string>
+#include <algorithm>
 #include <type_traits>
 #include "apmld_tget_params.h"
 
@@ -48,7 +49,16 @@ bus_error_t dm_easy_mesh_ctrl_t::apmld_tget_params(dm_easy_mesh_t *dm, const cha
     bus_error_t rc = bus_error_success;
     dm_easy_mesh_ctrl_t *dm_ctrl = em_ctrl_t::get_em_ctrl_instance()->get_dm_ctrl();
 
-    for (unsigned int idx = 1; idx <= dm->get_num_ap_mld(); idx++) {
+/* start fix 1 */
+    if (!dm || !property) {
+        return bus_error_invalid_input;
+    }
+/* end fix 1 */
+
+/* start fix 2 */
+    unsigned int num_ap_mld = std::min(dm->get_num_ap_mld(), static_cast<unsigned int>(EM_MAX_AP_MLD));
+    for (unsigned int idx = 1; idx <= num_ap_mld; idx++) {
+/* end fix 2 */
         /* Get ap_mld dm object for numeric instance */
         dm_ap_mld_t *ap_mld = dm->get_ap_mld(idx - 1);
         if (ap_mld == NULL) {

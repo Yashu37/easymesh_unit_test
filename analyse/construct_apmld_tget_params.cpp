@@ -12,7 +12,7 @@
  *
  * The case marked [spec] is wrong behaviour (no abort): STAMLDNumberOfEntries is the constant 0 although the
  * data model holds STA MLDs for the AP MLD (the STAMLD sub-table that follows lists them).
- * Cases crash_* ABORT on the original function (run last and UNFORKED, FORK_CRASH=1 forks each):
+ * Cases clamp_* / rej_* ABORTED on the original function (now fixed by fixes 1-2):
  * m_num_ap_mld above 64 (loop runs past m_ap_mld[]) and NULL dm / property (never checked; the current
  * callers always pass them, so these are defensive).
  */
@@ -54,11 +54,11 @@ test_case_t suite[] = {
  T("ok_idx_matches_entry_order", "R.", 3, {{0x11,0},{0x12,0},{0x13,0}}, 0, 3, "3:MLDMACAddress=02:00:00:00:00:13\n", NULL),
  /* ---- [spec]: wrong behaviour, no abort (STAMLDNumberOfEntries is the constant 0) ---- */
  T("spec_stamld_count_hardcoded_zero [spec]", "R.", 1, {{0x11,0},{0,0},{0,0}}, 2, 1, "1:STAMLDNumberOfEntries=2\n", NULL),
- /* ---- CRASH cases on the original function (clamped / rejected after the fix) ---- */
- {"crash_num_mlds_65", "R.", 65, {{0x11,0},{0,0},{0,0}}, 0, 64, "64:MLDMACAddress=", "65:MLDMACAddress", false, false, 0, true},
- {"crash_num_mlds_1000", "R.", 1000, {{0x11,0},{0,0},{0,0}}, 0, 64, NULL, "65:MLDMACAddress", false, false, 0, true},
- {"crash_null_dm", "R.", 1, {{0x11,0},{0,0},{0,0}}, 0, 0, NULL, NULL, true, false, 2, true},
- {"crash_null_property", "R.", 1, {{0x11,0},{0,0},{0,0}}, 0, 0, NULL, NULL, false, true, 2, true},
+ /* ---- were CRASH cases on the original function (fixed) ---- */
+ {"clamp_num_mlds_65", "R.", 65, {{0x11,0},{0,0},{0,0}}, 0, 64, "64:MLDMACAddress=", "65:MLDMACAddress", false, false, 0, false},
+ {"clamp_num_mlds_1000", "R.", 1000, {{0x11,0},{0,0},{0,0}}, 0, 64, NULL, "65:MLDMACAddress", false, false, 0, false},
+ {"rej_null_dm", "R.", 1, {{0x11,0},{0,0},{0,0}}, 0, 0, NULL, NULL, true, false, 2, false},
+ {"rej_null_property", "R.", 1, {{0x11,0},{0,0},{0,0}}, 0, 0, NULL, NULL, false, true, 2, false},
 
  { NULL, NULL, 0, NOMLD, 0, 0, NULL, NULL, false, false, 0, false }  /* sentinel */
 };
