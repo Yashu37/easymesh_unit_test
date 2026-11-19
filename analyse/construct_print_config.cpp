@@ -4,9 +4,8 @@
  * One dm_easy_mesh_t per case on the heap between poisoned guards: SSID i "ssid<i>", BSS / radio MACs 02:00:00:00:00:xx, radio 0 gets the
  * channel scan capability: op_classes_num entries, entry k has op_class 115 + k and oc_num channels (entry 63 may be overridden with
  * last_oc_num), channel values by fill (0: 1..64, 1: 100 + i, 2: 36 + 4i). PASS = number of printed lines (4 + SSIDs + BSSs + 6 per radio
- * + op classes of radio 0) and, when requested, the channel list of the first op class. Cases named crash_* ABORT on the original code
- * (net SSID / BSS / radio / op class counts above the array sizes, an op class num above 64 on the last entry): they run last and
- * UNFORKED so a plain `make` stops with the report; FORK_CRASH=1 forks each one. [spec] cases: wrong behaviour, no abort.
+ * + op classes of radio 0) and, when requested, the channel list of the first op class. Cases named clamp_* ABORTED on the original code
+ * (net SSID / BSS / radio / op class counts above the array sizes, an op class num above 64 on the last entry): fixes 1-3 clamp them. [spec] cases: wrong behaviour, no abort.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,12 +27,12 @@ test_case_t suite[] = {
  {"ok_everything_at_max",                 5, 24, 3, 64, 64, 64, 0, -2, NULL, false},
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_64_three_digit_channels_list_must_not_be_truncated [spec]", 0, 0, 1, 1, 64, -1, 1, -2, "163 ]", false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_six_net_ssids",                  6, 0, 0, 0, 0, -1, 0, -2, NULL, true},
- {"crash_25_bss",                         0, 25, 0, 0, 0, -1, 0, -2, NULL, true},
- {"crash_four_radios",                    0, 0, 4, 0, 0, -1, 0, -2, NULL, true},
- {"crash_65_op_classes",                  0, 0, 1, 65, 3, -1, 2, -2, NULL, true},
- {"crash_last_op_class_num_255",          0, 0, 1, 64, 3, 255, 0, -2, NULL, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"clamp_six_net_ssids",                  6, 0, 0, 0, 0, -1, 0, -2, NULL, false},
+ {"clamp_25_bss",                         0, 25, 0, 0, 0, -1, 0, -2, NULL, false},
+ {"clamp_four_radios",                    0, 0, 4, 0, 0, -1, 0, -2, NULL, false},
+ {"clamp_65_op_classes",                  0, 0, 1, 65, 3, -1, 2, -2, NULL, false},
+ {"clamp_last_op_class_num_255",          0, 0, 1, 64, 3, 255, 0, -2, NULL, false},
  {NULL, 0, 0, 0, 0, 0, 0, 0, 0, NULL, false}
 };
 

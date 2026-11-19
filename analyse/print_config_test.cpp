@@ -27,7 +27,10 @@ static void poison(bool on)
 static int test_one(const test_case_t *tc)
 {
     poison(true); invoke(); poison(false);
-    size_t expect = 4 + tc->num_ssids + tc->num_bss + tc->num_radios * 6 + (tc->num_radios > 0 ? tc->op_classes_num : 0);
+    /* the counts are clamped to the array sizes by the fixed handler (the original aborted for the clamp_* cases) */
+    unsigned int ns = tc->num_ssids > EM_MAX_NET_SSIDS ? EM_MAX_NET_SSIDS : tc->num_ssids, nb = tc->num_bss > EM_MAX_BSSS ? EM_MAX_BSSS : tc->num_bss;
+    unsigned int nr = tc->num_radios > EM_MAX_BANDS ? EM_MAX_BANDS : tc->num_radios, no = tc->op_classes_num > EM_MAX_OPCLASS ? EM_MAX_OPCLASS : tc->op_classes_num;
+    size_t expect = 4 + ns + nb + nr * 6 + (nr > 0 ? no : 0);
     int ok = g_lines.size() == expect;
     const char *chl = NULL; std::string first;
     for (auto &l : g_lines) if (l.find("ch_scan op_class[0]") != std::string::npos) { first = l; chl = first.c_str(); break; }
