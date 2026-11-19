@@ -1,5 +1,5 @@
 /*
- * HANDLER: string_to_macbytes
+ * HANDLER: string_to_macbytes (fix 1 applied, start fix n / end fix n markers)
  *
  * Function copied verbatim from unified-wifi-mesh src/dm/dm_easy_mesh.cpp (develop @ 1ba9529),
  * dm_easy_mesh_t::string_to_macbytes. Local array: mac[6] (never initialised when sscanf matches fewer than 6 fields).
@@ -16,6 +16,11 @@ namespace stm {
 void dm_easy_mesh_t::string_to_macbytes(char *key, mac_address_t bmac)
 {
     unsigned char mac[6];
+/* start fix 1 */
+    if (key == NULL || bmac == NULL) {
+        return;
+    }
+/* end fix 1 */
     if(strlen(key) > MIN_MAC_LEN)
         sscanf(key, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
                 &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);

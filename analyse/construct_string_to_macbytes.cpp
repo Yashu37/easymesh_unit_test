@@ -7,8 +7,8 @@
  * The handler picks the format by length only (> 12 chars = colon format, else 12 hex digits) and copies its
  * UNINITIALISED mac[6] into bmac when sscanf matches fewer than 6 fields: those cases (marked [spec]) write stack garbage
  * (whatever is on the stack: 0x00 / partial values here) into bmac and fail, there is no abort.
- * Cases named crash_* ABORT on the original handler (NULL key -> strlen, NULL bmac -> store): they run last and UNFORKED so a
- * plain `make` stops with the ASan report; FORK_CRASH=1 forks each one.
+ * The rej_key_null / rej_bmac_null / rej_key_and_bmac_null cases ABORTED on the original handler (NULL key -> strlen, NULL bmac
+ * -> store); fix 1 makes the function return.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,10 +46,10 @@ test_case_t suite[] = {
  {"spec_colon_5_fields [spec]",        "02:00:00:00:00", false, false, UNCH, false},
  {"spec_colon_last_field_missing [spec]", "02:00:00:00:00:", false, false, UNCH, false},
  {"ok_leading_space_skipped_by_sscanf", " 02:00:00:00:00:aa", false, false, "02:00:00:00:00:aa", false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- {"crash_key_null",                    NULL, true,  false, UNCH, true},
- {"crash_bmac_null",                   "02:00:00:00:00:aa", false, true, NULL, true},
- {"crash_key_and_bmac_null",           NULL, true,  true,  NULL, true},
+ /* ---- were CRASH cases on the original handler (now return without touching bmac) ---- */
+ {"rej_key_null",                      NULL, true,  false, UNCH, false},
+ {"rej_bmac_null",                   "02:00:00:00:00:aa", false, true, NULL, false},
+ {"rej_key_and_bmac_null",           NULL, true,  true,  NULL, false},
  {NULL, NULL, false, false, NULL, false}
 };
 
