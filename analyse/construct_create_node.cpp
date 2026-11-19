@@ -4,8 +4,8 @@
  * ruid = {name "", mac 02:00:00:00:00:aa} lives in ruid_store between CND_GUARD poisoned bytes on each side (the handler
  * writes ruid->name and reads ruid->mac). Fields: null_ruid, is_al, init_rc, ctor_throws, name_found, preexisting,
  * expect (0 NULL / 1 new node / 2 the existing node), expect_map (entries afterwards), expect_key.
- * The case crash_* ABORTS on the original handler: the em_t constructor of the AL node throws std::runtime_error
- * (EC manager init failure) and nothing catches it. It runs last and UNFORKED; FORK_CRASH=1 forks it.
+ * The case rej_al_ctor_throws_returns_null ABORTED on the original handler (the em_t constructor of the AL node throws
+ * std::runtime_error and nothing caught it); fix 1 catches it and returns NULL.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,8 +28,8 @@ test_case_t suite[] = {
  {"rej_init_fails_al",                false, true,  -1, false, true,  false, 0, 0, NULL, false},
  {"rej_init_fails_does_not_replace_existing", false, false, -1, false, true, true, 2, 1, NULL, false},
  {"ok_ctor_throws_but_not_al",        false, false, 0,  true,  true,  false, 1, 1, "02:00:00:00:00:aa", false},
- /* ---- CRASH case on the original handler: runs last, unforked ---- */
- {"crash_al_ctor_throws_uncaught",    false, true,  0,  true,  true,  false, 0, 0, NULL, true},
+ /* ---- was a CRASH case on the original handler (now returns NULL) ---- */
+ {"rej_al_ctor_throws_returns_null",  false, true,  0,  true,  true,  false, 0, 0, NULL, false},
  {NULL, false, false, 0, false, false, false, 0, 0, NULL, false}
 };
 

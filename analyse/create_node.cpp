@@ -1,5 +1,5 @@
 /*
- * HANDLER: create_node
+ * HANDLER: create_node (fix 1 applied, start fix n / end fix n markers)
  *
  * Function copied from unified-wifi-mesh src/em/em_mgr.cpp (develop @ 1ba9529), em_mgr_t::create_node.
  * Local array: mac_str[32] (17 chars + "_al" + NUL fits). The key map is a vector instead of hash_map_t, em_t is a stand-in
@@ -52,7 +52,14 @@ em_t *em_mgr_t::create_node(em_interface_t *ruid, em_freq_band_t band, dm_easy_m
         return em;
     }
 
-    em = new em_t(ruid, band, dm, this, profile, type, is_al_mac);
+/* start fix 1 */
+    try {
+        em = new em_t(ruid, band, dm, this, profile, type, is_al_mac);
+    } catch (const std::exception &e) {
+        printf("%s:%d: failed to create node for key:%s: %s\n", __func__, __LINE__, mac_str, e.what());
+        return NULL;
+    }
+/* end fix 1 */
     em->set_is_dpp_onboarding(is_agent_dpp_onboarding());
     if (em->init() != 0) {
         delete em;
