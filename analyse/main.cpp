@@ -55,6 +55,7 @@ void run_all_tests_bss_sync_db(void);
 void run_all_tests_config_reset(void);
 void run_all_tests_print_config(void);
 void run_all_tests_radio_cap_update_db(void);
+void run_all_tests_hash_hex(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -625,6 +626,9 @@ int main() {
 	// run_all_tests_print_config();
 	// dm_radio_cap_list_t::update_db (unified-wifi-mesh src/dm/dm_radio_cap_list.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
-	run_all_tests_radio_cap_update_db();
+	// run_all_tests_radio_cap_update_db();
+	// em_crypto_t::hash_to_hex_string (unified-wifi-mesh src/em/crypto/em_crypto.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
+	run_all_tests_hash_hex();
 	return 0;
 }
