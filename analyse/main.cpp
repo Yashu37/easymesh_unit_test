@@ -59,6 +59,7 @@ void run_all_tests_hash_hex(void);
 void run_all_tests_wps_kdf(void);
 void run_all_tests_kdf_len(void);
 void run_all_tests_key_unwrap(void);
+void run_all_tests_ec_b64key(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -641,6 +642,9 @@ int main() {
 	// run_all_tests_kdf_len();
 	// em_crypto_t::aes_key_unwrap (unified-wifi-mesh src/em/crypto/em_crypto.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
-	run_all_tests_key_unwrap();
+	// run_all_tests_key_unwrap();
+	// em_crypto_t::ec_key_from_base64_der (unified-wifi-mesh src/em/crypto/em_crypto.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make stops with the report (FORK_CRASH=1 forks each).
+	run_all_tests_ec_b64key();
 	return 0;
 }
