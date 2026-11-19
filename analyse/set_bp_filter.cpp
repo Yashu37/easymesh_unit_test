@@ -1,5 +1,5 @@
 /*
- * HANDLER: set_bp_filter
+ * HANDLER: set_bp_filter (fix 1 applied, start fix n / end fix n markers)
  *
  * Function copied verbatim from unified-wifi-mesh src/em/em.cpp (develop @ 1ba9529), em_t::set_bp_filter.
  * Local data: struct packet_mreq mreq, static struct sock_filter bpfcode[4]. setsockopt(), if_nametoindex() and close() are
@@ -71,7 +71,9 @@ int em_t::set_bp_filter()
     mreq.mr_type = PACKET_MR_PROMISC;
     mreq.mr_ifindex = static_cast<int>(if_nametoindex(m_ruid.name));
     if (setsockopt(m_fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, reinterpret_cast<char *>(&mreq), sizeof(mreq))) {
-        printf("%s:%d: Error setting promisuous for interface:%s, err:%d\n", __func__, __LINE__, m_ruid.name, errno);
+        /* start fix 1 */
+        printf("%s:%d: Error setting promisuous for interface:%.*s, err:%d\n", __func__, __LINE__, static_cast<int>(sizeof(m_ruid.name)), m_ruid.name, errno);
+/* end fix 1 */
         close(m_fd);
         return -1;
     }

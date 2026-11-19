@@ -7,8 +7,8 @@
  * ifindex = what if_nametoindex() returns (0 = unknown interface). check_filter compares the attached program with the expected
  * ldh [12] / jeq #0x893a / ret #0xffffffff / ret #0 and checks the membership type (PACKET_MR_PROMISC).
  * [spec] cases: after close() on an error path m_fd still holds the closed descriptor, expected -1; no abort.
- * Cases named crash_* ABORT on the original handler: they run last and UNFORKED so a plain `make` stops with the ASan report;
- * FORK_CRASH=1 forks each one.
+ * The last two rej_* cases ABORTED on the original handler (printf %s of the unterminated name); fix 1 prints at most
+ * sizeof(name) characters.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,9 +36,9 @@ test_case_t suite[] = {
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_fd_reset_after_attach_failure [spec]",     "wlan0", 7, {-1, 0}, 3, -1, 1, 1, -1, -1, false, false},
  {"spec_fd_reset_after_membership_failure [spec]", "wlan0", 7, {0, -1}, 3, -1, 2, 1, 3, -1, false, false},
- /* ---- CRASH cases on the original handler: run last, unforked ---- */
- {"crash_name_not_terminated_membership_fails",   NULL, 7, {0, -1}, 3, -1, 2, 1, 3, -2, false, true},
- {"crash_name_not_terminated_unknown_interface",  NULL, 7, {0, 0},  0, -1, 2, 1, 0, -2, false, true},
+ /* ---- were CRASH cases on the original handler (the name is now printed with a length limit) ---- */
+ {"rej_name_not_terminated_membership_fails",   NULL, 7, {0, -1}, 3, -1, 2, 1, 3, -2, false, false},
+ {"rej_name_not_terminated_unknown_interface",  NULL, 7, {0, 0},  0, -1, 2, 1, 0, -2, false, false},
  {NULL, NULL, 0, {0, 0}, 0, 0, 0, 0, 0, 0, false, false}
 };
 
