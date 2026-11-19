@@ -5,7 +5,7 @@
  * 9 last_conn_time 50, 10 retrans 60, 11 signal -55, 12 rcpi 70, 13-20 util/pkts/bytes/errors (13 util_tx 1, 14 util_rx 2, 15 pkts_tx = case value,
  * 16 3, 17 4, 18 5, 19 6, 20 7), 21 frame_body_len, 22 frame body hex. The station handed to compare_db is built from the same values
  * (sta_matches) so a faithful compare returns true; sta_matches false changes its rcpi.
- * Cases ABORTED on the original code are named clamp_*: a MAC column of 18+ characters overflows mac[18], a frame body column of
+ * Cases that ABORTED on the original code are named clamp_* (fix 1 bounds the get_string copies): a MAC column of 18+ characters overflows mac[18], a frame body column of
  * 1024+ characters overflows frame_body[1024] (get_string has no size).
  * (A NULL frame body column leaves frame_body uninitialised: strlen() then reads stack garbage; ASan's fake stack hands out zeroed frames so
  * no abort could be reproduced here.) [spec] cases: wrong behaviour, no abort.
@@ -35,10 +35,10 @@ test_case_t suite[] = {
  {"ok_uppercase_hex_body", "aa:bb:cc:dd:ee:01", "0102AB", 1, true, 9, 0, true, false},
  {"spec_pkts_tx_1000_must_match [spec]", "aa:bb:cc:dd:ee:01", "0102ab", 1, true, 1000, 0, true, false},
  /* ---- were CRASH cases on the original code ---- */
- {"clamp_mac_18_chars",                  "aa:bb:cc:dd:ee:01x", "0102ab", 1, false, 9, 0, false, true},
- {"clamp_mac_200_chars",                 "#200", "0102ab", 1, false, 9, 0, false, true},
- {"clamp_frame_body_1024_chars",         "aa:bb:cc:dd:ee:01", "#1024", 1, false, 9, 0, false, true},
- {"clamp_frame_body_4000_chars",         "aa:bb:cc:dd:ee:01", "#4000", 1, false, 9, 0, false, true},
+ {"clamp_mac_18_chars",                  "aa:bb:cc:dd:ee:01x", "0102ab", 1, false, 9, 0, false, false},
+ {"clamp_mac_200_chars",                 "#200", "0102ab", 1, false, 9, 0, false, false},
+ {"clamp_frame_body_1024_chars",         "aa:bb:cc:dd:ee:01", "#1024", 1, false, 9, 0, false, false},
+ {"clamp_frame_body_4000_chars",         "aa:bb:cc:dd:ee:01", "#4000", 1, false, 9, 0, false, false},
  {NULL, NULL, NULL, 0, false, 0, 0, false, false}
 };
 
