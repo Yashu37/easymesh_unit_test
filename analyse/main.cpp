@@ -36,6 +36,7 @@ void run_all_tests_sta_get_inner(void);
 void run_all_tests_bss_get_inner(void);
 void run_all_tests_affsta_get_inner(void);
 void run_all_tests_create_node(void);
+void run_all_tests_string_to_macbytes(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -550,6 +551,9 @@ int main() {
 	// run_all_tests_affsta_get_inner();
 	// create_node (unified-wifi-mesh src/em/em_mgr.cpp). The crash_* case runs last and UNFORKED:
 	// a plain make prints the PASS/FAIL lines and stops at the terminate (FORK_CRASH=1 forks it).
-	run_all_tests_create_node();
+	// run_all_tests_create_node();
+	// string_to_macbytes (unified-wifi-mesh src/dm/dm_easy_mesh.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_string_to_macbytes();
 	return 0;
 }
