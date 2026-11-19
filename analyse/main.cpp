@@ -30,6 +30,7 @@ void run_all_tests_dev_test_decode(void);
 void run_all_tests_get_sta_ht_caps_str(void);
 void run_all_tests_ssid_tget_inner(void);
 void run_all_tests_stamld_tget_params(void);
+void run_all_tests_apmld_tget_params(void);
 int main() {
 	/* unbuffered stdout so per-test lines flush before any crash/abort */
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -524,6 +525,10 @@ int main() {
 
 	// stamld_tget_params (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
 	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
-	run_all_tests_stamld_tget_params();
+//	run_all_tests_stamld_tget_params();
+
+	// apmld_tget_params (unified-wifi-mesh src/ctrl/dm_easy_mesh_ctrl.cpp). The crash_* cases run last and
+	// UNFORKED: a plain make prints the PASS/FAIL lines and stops with the ASan report (FORK_CRASH=1 forks each).
+	run_all_tests_apmld_tget_params();
 	return 0;
 }
