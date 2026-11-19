@@ -1,5 +1,6 @@
 /*
- * HANDLER: dm_radio_cap_list_t::update_db
+ * HANDLER: dm_radio_cap_list_t::update_db (fixes 1-2 applied, start fix n / end fix n markers: reject NULL data, size wifi7_str for the
+ * whole 2 * sizeof(wifi7_cap) + 1 hex string)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): dm_radio_cap_list_t::update_db (src/dm/dm_radio_cap_list.cpp) and
  * dm_easy_mesh_t::macbytes_to_string (src/dm/dm_easy_mesh.cpp). Local arrays: mac_str[18], wifi7_str[256]. The radio cap info is the real
@@ -42,7 +43,14 @@ int dm_radio_cap_list_t::update_db(db_client_t& db_client, dm_orch_type_t op, vo
     em_radio_cap_info_t *info = static_cast<em_radio_cap_info_t *>(data);
     int ret = 0;
 
-    char wifi7_str[256] = {0};
+/* start fix 1 */
+    if (info == NULL) {
+        return -1;
+    }
+/* end fix 1 */
+/* start fix 2 */
+    char wifi7_str[sizeof(info->wifi7_cap) * 2 + 1] = {0};
+/* end fix 2 */
     size_t offset = 0;
 
     uint8_t *ptr = reinterpret_cast<uint8_t *> (&info->wifi7_cap);

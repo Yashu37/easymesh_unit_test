@@ -4,9 +4,8 @@
  * One radio cap info per case (heap, between poisoned guards): ruid 02:00:00:00:00:01, num_op_classes 7, wifi7_cap bytes by pattern
  * (0 all zero, 1 byte i = i % 251, 2 all 0xFF). sizeof(wifi7_cap) is 488, so the hex string handed to the DB must be 976 characters
  * and, for pattern 1, start with 00010203. PASS = return value, number of row calls and the length of the wifi7 string.
- * Every case that reaches the loop ABORTED on the original code (wifi7_str[256] holds only 255 characters; the loop keeps writing after
- * the buffer): they run last and UNFORKED so a plain `make` stops with the report; FORK_CRASH=1 forks each one. A NULL data pointer
- * was dereferenced as well.
+ * Every case that reaches the loop ABORTED on the original code (wifi7_str[256] holds only 255 characters; the loop kept writing after
+ * the buffer): fix 2 sizes the buffer for the whole string. A NULL data pointer was dereferenced (rej_*): fix 1 returns -1.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,13 +15,13 @@
 namespace rcu {
 /* {name, op, pattern, null_data, expect_ret, expect_calls, expect_len, crash} */
 test_case_t suite[] = {
- {"crash_insert_all_zero",             1, 0, false, 0, 1, 976, true},
- {"crash_insert_pattern",              1, 1, false, 0, 1, 976, true},
- {"crash_update_all_ff",               2, 2, false, 0, 1, 976, true},
- {"crash_delete_row",                  3, 1, false, 0, 1, -1, true},
- {"crash_unknown_op_no_row_call",      99, 1, false, 0, 0, -1, true},
- {"crash_none_op_no_row_call",         0, 0, false, 0, 0, -1, true},
- {"crash_null_data",                   1, 0, true, -1, 0, -1, true},
+ {"clamp_insert_all_zero",             1, 0, false, 0, 1, 976, false},
+ {"clamp_insert_pattern",              1, 1, false, 0, 1, 976, false},
+ {"clamp_update_all_ff",               2, 2, false, 0, 1, 976, false},
+ {"clamp_delete_row",                  3, 1, false, 0, 1, -1, false},
+ {"clamp_unknown_op_no_row_call",      99, 1, false, 0, 0, -1, false},
+ {"clamp_none_op_no_row_call",         0, 0, false, 0, 0, -1, false},
+ {"rej_null_data",                   1, 0, true, -1, 0, -1, false},
  {NULL, 0, 0, false, 0, 0, 0, false}
 };
 
