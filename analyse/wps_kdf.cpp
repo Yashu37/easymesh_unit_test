@@ -3,7 +3,8 @@
  *
  * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): em_crypto_t::wps_key_derivation_function, append_u32_net and
  * platform_hmac_hash (the real OpenSSL HMAC-SHA256 behind platform_hmac_SHA256), all in src/em/crypto/em_crypto.cpp. Local arrays:
- * i_buf[4], key_bits[4], addr[4], len[4], hash[32]. Every input buffer of the harness has exactly its length between poisoned guards.
+ * i_buf[4], key_bits[4], addr[4], len[4], hash[32] (fix 1 applied, start fix 1 / end fix 1 markers: reject a NULL label, a NULL result
+ * buffer and a NULL label prefix with a length; the res_len wrap failure is left original). Every input buffer of the harness has exactly its length between poisoned guards.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -133,6 +134,12 @@ uint8_t em_crypto_t:: wps_key_derivation_function(uint8_t *key, uint8_t *label_p
 {
     uint8_t i_buf[4];
     uint8_t key_bits[4];
+
+/* start fix 1 */
+    if (label == NULL || (res == NULL && res_len > 0) || (label_prefix == NULL && label_prefix_len > 0)) {
+        return 0;
+    }
+/* end fix 1 */
 
     uint8_t   *addr[4];
     size_t   len[4];

@@ -3,9 +3,8 @@
  *
  * key = 32 bytes (i*5+1), label_prefix = prefix_len bytes (i*3+7), label = the case string, result buffer = res_buf bytes; each one is
  * exactly its length between two poisoned 128 byte guards. PASS = return value and, when requested, the output equals an independently
- * computed WPS KDF (HMAC-SHA256 over i || prefix || label || res_len * 8, OpenSSL one-shot HMAC). Cases named crash_* ABORT on the
- * original code (NULL label, NULL result buffer, NULL prefix with a length): they run last and UNFORKED so a plain `make` stops with the
- * report; FORK_CRASH=1 forks each one. [spec] cases: wrong behaviour, no abort.
+ * computed WPS KDF (HMAC-SHA256 over i || prefix || label || res_len * 8, OpenSSL one-shot HMAC). Cases named rej_* ABORTED on the
+ * original code (NULL label, NULL result buffer, NULL prefix with a length): fix 1 returns 0. [spec] cases: wrong behaviour, no abort.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,10 +40,10 @@ test_case_t suite[] = {
  {"ok_null_key_rejected",              48, 48, "Label", 4, false, true, false, 0, false, false},
  /* ---- [spec]: wrong behaviour, no abort ---- */
  {"spec_res_len_near_uint_max_must_be_rejected [spec]", 0xFFFFFFF0u, 1, "Label", 4, false, false, false, 0, false, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_null_label",                  48, 48, NULL, 4, false, false, false, 0, false, true},
- {"crash_null_result_buffer",          48, 48, "Label", 4, false, false, true, 0, false, true},
- {"crash_null_prefix_with_length",     48, 48, "Label", 4, true, false, false, 0, false, true},
+ /* ---- were CRASH cases on the original code ---- */
+ {"rej_null_label",                  48, 48, NULL, 4, false, false, false, 0, false, false},
+ {"rej_null_result_buffer",          48, 48, "Label", 4, false, false, true, 0, false, false},
+ {"rej_null_prefix_with_length",     48, 48, "Label", 4, true, false, false, 0, false, false},
  {NULL, 0, 0, NULL, 0, false, false, false, 0, false, false}
 };
 
