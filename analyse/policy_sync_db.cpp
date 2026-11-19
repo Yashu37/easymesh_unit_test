@@ -1,5 +1,6 @@
 /*
- * HANDLER: dm_policy_list_t::sync_db
+ * HANDLER: dm_policy_list_t::sync_db (fixes 1-2 applied, start fix n / end fix n markers; fix 1 needs the bounded
+ * db_client_t::get_string(ctx, buf, col, size) overload, fix 2 is in get_strings_by_token)
  *
  * Functions copied verbatim from unified-wifi-mesh (develop @ 1ba9529): dm_policy_list_t::sync_db (src/dm/dm_policy_list.cpp)
  * with the helpers it calls: db_easy_mesh_t::get_strings_by_token (src/db/db_easy_mesh.cpp), dm_policy_t::parse_dev_radio_mac_from_key
@@ -85,7 +86,12 @@ int db_easy_mesh_t::get_strings_by_token(char *parent, int token, unsigned int a
     while (tmp != NULL) {
         if ((tmp = strchr(orig, token)) != NULL) {
             *tmp = 0;
-            assert (num < argc - 1 && "number of extracted values exceeds the limit");
+/* start fix 2 */
+            if (num >= argc - 1) {
+                /* more values than slots: keep the first argc values, ignore the rest instead of asserting */
+                break;
+            }
+/* end fix 2 */
             snprintf(argv[num], sizeof(em_short_string_t), "%.*s", max_len, orig);
             tmp++; num++;
             orig = tmp;
@@ -113,14 +119,18 @@ int dm_policy_list_t::sync_db(db_client_t& db_client, void *ctx)
         memset(&policy, 0, sizeof(em_policy_t));
         memset(&id, 0, sizeof(id));
 
-        db_client.get_string(ctx, str, 1);
+/* start fix 1 */
+        db_client.get_string(ctx, str, 1, sizeof(str));
+/* end fix 1 */
 		dm_policy_t::parse_dev_radio_mac_from_key(str, &id);
 		strncpy(policy.id.net_id, id.net_id, sizeof(policy.id.net_id));
 		memcpy(policy.id.dev_mac, id.dev_mac, sizeof(mac_address_t));
 		memcpy(policy.id.radio_mac, id.radio_mac, sizeof(mac_address_t));
         policy.id.type = static_cast<em_policy_id_type_t>(db_client.get_number(ctx, 2));
         policy.interval = static_cast<unsigned short int>(db_client.get_number(ctx, 3));
-        db_client.get_string(ctx, sta_mac_list_str, 4);
+/* start fix 1 */
+        db_client.get_string(ctx, sta_mac_list_str, 4, sizeof(sta_mac_list_str));
+/* end fix 1 */
 		for (i = 0; i < EM_MAX_STA_PER_STEER_POLICY; i++) {
             token_parts[i] = sta_mac_str[i];
         }
@@ -138,7 +148,9 @@ int dm_policy_list_t::sync_db(db_client_t& db_client, void *ctx)
 		policy.sta_traffic_stats = db_client.get_number(ctx, 10);
 		policy.sta_link_metric = db_client.get_number(ctx, 11);
 		policy.sta_status = db_client.get_number(ctx, 12);
-		db_client.get_string(ctx, policy.managed_sta_marker, 13);
+/* start fix 1 */
+		db_client.get_string(ctx, policy.managed_sta_marker, 13, sizeof(policy.managed_sta_marker));
+/* end fix 1 */
 		policy.independent_scan_report = db_client.get_number(ctx, 14);
 		policy.profile_1_sta_disallowed = db_client.get_number(ctx, 15);
 		policy.profile_2_sta_disallowed = db_client.get_number(ctx, 16);

@@ -7,9 +7,8 @@
  * sta_list shorthand: "@N" = N MACs aa:bb:cc:dd:ee:01.. separated by commas, "$N" = N compact MACs 0200000000nn, "#N" = N characters 'A' (no comma), "%N" = one token of N
  * characters. get_strings_by_token() copies the list into a 256 byte buffer, so colon MACs (18 characters each) are cut after about 14 entries.
  * Row 2 (nrows 2) repeats row 0 (variant 0), has a NULL STAList (variant 1) or a NULL ID (variant 2).
- * Each string cell lives between poisoned guards (runner). [spec] cases: no abort. Cases named crash_* ABORT on the original code
- * (assert in get_strings_by_token / stack overflow in get_string): they run last and UNFORKED so a plain `make` stops with the report;
- * FORK_CRASH=1 forks each one.
+ * Each string cell lives between poisoned guards (runner). [spec] cases: no abort. The clamp_* cases ABORTED on the original code
+ * (assert in get_strings_by_token / stack overflow in get_string): fix 1 bounds the get_string copies, fix 2 ignores entries beyond 16.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,11 +33,11 @@ test_case_t suite[] = {
  {"spec_16_colon_stas_cut_at_255_chars [spec]", "@16", 1, 0, 1, 16, "aa:bb:cc:dd:ee:01", -1, -1, false},
  {"spec_interval_must_be_ap_metrics_column [spec]", "aa:bb:cc:dd:ee:01", 1, 0, 1, 1, NULL, 5, -1, false},
  {"spec_null_sta_list_must_not_keep_previous_row [spec]", "aa:bb:cc:dd:ee:01,aa:bb:cc:dd:ee:02", 2, 1, 2, 2, NULL, -1, 0, false},
- /* ---- CRASH cases on the original code: run last, unforked ---- */
- {"crash_sta_list_17_entries_assert",    "$17", 1, 0, 1, 16, "02:00:00:00:00:01", -1, -1, true},
- {"crash_sta_list_40_entries_assert",    "$40", 1, 0, 1, 16, "02:00:00:00:00:01", -1, -1, true},
- {"crash_sta_list_1100_chars_overflow",  "#1100", 1, 0, 1, 1, NULL, -1, -1, true},
- {"crash_sta_list_2000_chars_overflow",  "#2000", 1, 0, 1, 1, NULL, -1, -1, true},
+ /* ---- were CRASH cases on the original code (list clamped to 16 entries, get_string bounded) ---- */
+ {"clamp_sta_list_17_entries",    "$17", 1, 0, 1, 16, "02:00:00:00:00:01", -1, -1, false},
+ {"clamp_sta_list_40_entries",    "$40", 1, 0, 1, 16, "02:00:00:00:00:01", -1, -1, false},
+ {"clamp_sta_list_1100_chars",  "#1100", 1, 0, 1, 1, NULL, -1, -1, false},
+ {"clamp_sta_list_2000_chars",  "#2000", 1, 0, 1, 1, NULL, -1, -1, false},
  {NULL, NULL, 0, 0, 0, 0, NULL, 0, 0, false}
 };
 
