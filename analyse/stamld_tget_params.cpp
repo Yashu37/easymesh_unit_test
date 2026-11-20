@@ -115,7 +115,9 @@ bus_error_t dm_easy_mesh_ctrl_t::stamld_tget_params(dm_easy_mesh_t *dm, const ch
 int invoke(const char *root, bool no_dm, bool no_ami, bool no_prop)
 {
     bus_data_prop_t *property = NULL;
-    return (int)g_ctrl.m_data_model.stamld_tget_params(no_dm ? NULL : g_dm, root, no_ami ? NULL : &g_ami, no_prop ? NULL : &property);
+    int rc = (int)g_ctrl.m_data_model.stamld_tget_params(no_dm ? NULL : g_dm, root, no_ami ? NULL : &g_ami, no_prop ? NULL : &property);
+    while (property) { bus_data_prop_t *n = property->next_data; if (property->value.data_type == bus_data_type_string) free(property->value.raw_data.bytes); free(property); property = n; }
+    return rc;
 }
 
 } /* namespace smt */

@@ -20,7 +20,7 @@ namespace smt {
 #define EM_MAX_ASSOC_STA_MLD 64
 #endif
 using ccs::bus_error_t; using ccs::bus_error_success; using ccs::bus_error_invalid_input;
-using ccs::bus_data_prop_t;
+using ccs::bus_data_prop_t; using ccs::bus_data_type_string;
 typedef unsigned char mac_address_t[6];
 typedef unsigned char mac_addr_t[6];
 
@@ -50,6 +50,8 @@ public:
     unsigned char after[SMT_GUARD];              /* members after m_assoc_sta_mld[] */
     sta_map_t *m_sta_map;
     unsigned int get_num_assoc_sta_mld() { return m_num_assoc_sta_mld; }
+    dm_easy_mesh_t() { memset((void *)this, 0, sizeof(*this)); }
+    void init() {}
 };
 void *hash_map_get_first(sta_map_t *m);
 void *hash_map_get_next(sta_map_t *m, void *cur);
@@ -63,16 +65,30 @@ extern int g_aff_calls;
 void rec(unsigned int idx, const char *name, const char *val);
 
 /* stand-ins for the controller classes (handler body is in stamld_tget_params.cpp) */
+inline void smt_append(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name)
+{
+    bus_data_prop_t *n = (bus_data_prop_t *)calloc(1, sizeof(bus_data_prop_t));
+    snprintf(n->name, sizeof(n->name), "%s%u.%s", root, idx, name);
+    n->name_len = (uint32_t)strlen(n->name);
+    if (!*prop) { *prop = n; return; }
+    bus_data_prop_t *l = *prop; while (l->next_data) l = l->next_data; l->next_data = n;
+}
+/* like tr_181_t::raw_data_set(const char * / mac_address_t): a string value is a malloc'ed copy owned by the node */
+inline void smt_set_string(bus_data_prop_t **prop, const char *s)
+{
+    bus_data_prop_t *l = *prop; while (l->next_data) l = l->next_data;
+    l->value.data_type = ccs::bus_data_type_string; l->value.raw_data.bytes = strdup(s); l->value.raw_data_len = (unsigned)strlen(s) + 1;
+}
 class dm_easy_mesh_ctrl_t {
 public:
     void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const char *v)
-    { (void)root; if (!*prop) *prop = &g_dummy_prop; rec(idx, name, v ? v : "(null)"); }
+    { smt_append(prop, root, idx, name); smt_set_string(prop, v ? v : "(null)"); rec(idx, name, v ? v : "(null)"); }
     void property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, const unsigned char *mac)
-    { char s[18]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); rec(idx, name, s); }
+    { char s[18]; smt_append(prop, root, idx, name); snprintf(s, sizeof(s), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]); smt_set_string(prop, s); rec(idx, name, s); }
     template <typename T>
     typename std::enable_if<std::is_arithmetic<T>::value || std::is_enum<T>::value>::type
     property_append_tail(bus_data_prop_t **prop, const char *root, unsigned int idx, const char *name, T v)
-    { char s[32]; (void)root; if (!*prop) *prop = &g_dummy_prop; snprintf(s, sizeof(s), "%lld", (long long)v); rec(idx, name, s); }
+    { char s[32]; smt_append(prop, root, idx, name); snprintf(s, sizeof(s), "%lld", (long long)v); rec(idx, name, s); }
     bus_error_t affsta_tget_params(dm_easy_mesh_t *dm, const char *root, em_assoc_sta_mld_info_t *smi, bus_data_prop_t **property);
     bus_error_t stamld_tget_params(dm_easy_mesh_t *dm, const char *root, em_ap_mld_info_t *ami, bus_data_prop_t **property);
 };
