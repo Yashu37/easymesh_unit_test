@@ -50,6 +50,10 @@ public:
     virtual ~em_mgr_t() {}
     virtual bool is_agent_dpp_onboarding() { return true; }
     bool has_node_(const char *k) { return map_get(k) != NULL; }
+    /* like em_mgr_t::delete_node(): remove the node (key without "_al") from the map and delete it */
+    void delete_node(em_interface_t *r)
+    {   char k[32]; dm_easy_mesh_t::macbytes_to_string(r->mac, k);
+        for (size_t i = 0; i < m_map.size(); i++) if (!strcmp(m_map[i].key, k)) { delete m_map[i].em; free(m_map[i].key); m_map.erase(m_map.begin() + i); return; } }
     em_t *map_get(const char *k) { for (auto &e : m_map) if (!strcmp(e.key, k)) return e.em; return NULL; }
     em_t *create_node(em_interface_t *ruid, em_freq_band_t band, dm_easy_mesh_t *dm, bool is_al_mac, em_profile_type_t profile, em_service_type_t type);
 };

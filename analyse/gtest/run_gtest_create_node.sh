@@ -12,7 +12,7 @@ sed -E \
 class CreateNodeTestMgr : public cnd::em_mgr_t { public: bool has_node(const char *k) { return has_node_(k); } };' \
  -e 's#/\* HARNESS_SETUP \*/#cnd::g_throw_on_null_dm = true;#' \
  -e 's/\bem_freq_band_24\b/1/g' -e 's/\bem_profile_type_1\b/1/g' -e 's/\bem_service_type_ctrl\b/0/g' \
- -e 's/\b(em_interface_t|em_t|em_mgr_t)\b/cnd::\1/g' \
+ -e 's/\b(em_interface_t|em_t|em_mgr_t|dm_easy_mesh_t)\b/cnd::\1/g' \
  gtest/test_l1_em_mgr_create_node.cpp > $out/test_shim.cpp
 for f in create_node construct_create_node create_node_test quick_stubs; do
   g++ $F -c $f.cpp -o $out/$f.o || exit 1
