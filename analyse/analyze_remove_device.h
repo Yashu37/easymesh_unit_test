@@ -16,6 +16,12 @@ namespace ard {
 #ifndef MIN_MAC_LEN
 #define MIN_MAC_LEN 12
 #endif
+#ifndef EM_MAX_CMD
+#define EM_MAX_CMD 16
+#endif
+#ifndef EM_PARSE_ERR_CONFIG
+#define EM_PARSE_ERR_CONFIG (-3)
+#endif
 typedef unsigned char mac_address_t[6];
 typedef char mac_addr_str_t[18];
 
@@ -45,7 +51,12 @@ public:
     dm_device_t *get_next_device(dm_device_t *dev);
     dm_easy_mesh_t *get_data_model(const char *net_id, const unsigned char *al_mac);
 };
+extern int g_ndev;
+extern dm_device_t g_devs[ARD_MAXDEV];
+extern dm_easy_mesh_t g_dms[ARD_MAXDEV];
 extern int g_cmds;
+extern int g_live;                 /* commands created and not yet deleted (leak check) */
+extern int g_chain;                /* commands per device (base em_cmd_t::clone_for_next chains the orchestration steps) */
 extern char g_sum[2048];
 class em_cmd_t {
 public:
@@ -54,17 +65,45 @@ public:
 };
 class em_cmd_remove_device_t : public em_cmd_t {
 public:
+    int pos;
+    unsigned char mac[6];
     em_cmd_remove_device_t(em_cmd_params_t param, dm_easy_mesh_t &dm)
-    {   (void)param; g_cmds++;
+    {   (void)param; g_cmds++; g_live++; pos = 0; memcpy(mac, dm.mac, 6);
         char s[24]; dm_easy_mesh_t::macbytes_to_string(dm.mac, s);
         size_t l = strlen(g_sum); snprintf(g_sum + l, sizeof(g_sum) - l, "%s;", s); }
+    ~em_cmd_remove_device_t() { g_live--; }
+    em_cmd_t *clone_for_next()
+    {   if (pos + 1 >= g_chain) return NULL;
+        em_cmd_remove_device_t *c = new em_cmd_remove_device_t(*this);
+        c->pos = pos + 1; g_cmds++; g_live++; return c; }
 };
 class dm_easy_mesh_ctrl_t {
 public:
     dm_easy_mesh_list_t m_data_model_list;
     int analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pcmd[]);
+    dm_device_t *get_first_device() { return m_data_model_list.get_first_device(); }
+    dm_device_t *get_next_device(dm_device_t *dev) { return m_data_model_list.get_next_device(dev); }
 };
 extern dm_easy_mesh_ctrl_t g_ctrl_obj;
+
+/* stand-ins used by gtest/test_l1_analyze_remove_device.cpp (written for the official tree's em_ctrl_t) */
+typedef enum { em_profile_type_1 = 1 } em_profile_type_t;
+typedef struct { char name[32]; unsigned char mac[6]; } em_interface_t;
+class em_ctrl_t {
+public:
+    int init(const char *path) { (void)path; g_ndev = 0; memset(g_devs, 0, sizeof(g_devs)); memset(g_dms, 0, sizeof(g_dms)); return 0; }
+    void orch_init() {}
+    dm_easy_mesh_ctrl_t *get_dm_ctrl() { return &g_ctrl_obj; }
+    dm_easy_mesh_t *create_data_model(const char *net_id, const em_interface_t *intf, em_profile_type_t profile)
+    {   (void)profile;
+        if (g_ndev >= ARD_MAXDEV) return NULL;
+        int i = g_ndev++;
+        memcpy(g_devs[i].m_device_info.intf.mac, intf->mac, 6);
+        snprintf(g_devs[i].m_device_info.id.net_id, sizeof(g_devs[i].m_device_info.id.net_id), "%s", net_id);
+        memcpy(g_dms[i].mac, intf->mac, 6);
+        g_dms[i].present = true;
+        return &g_dms[i]; }
+};
 
 typedef struct {
     const char *test_name;
@@ -75,15 +114,13 @@ typedef struct {
     const char *has;       /* substring of the recorded device list that must appear */
     const char *not_has;   /* must NOT appear */
     bool crash;
+    int chain;             /* commands per device, 0 = 1 */
 } test_case_t;
 
 extern test_case_t suite[];
 extern char evt_buf[ARD_EVT_SZ];
 extern void *pcmd_buf[ARD_MAXCMD + ARD_PCMD_EXTRA];
 extern int g_num;
-extern int g_ndev;
-extern dm_device_t g_devs[ARD_MAXDEV];
-extern dm_easy_mesh_t g_dms[ARD_MAXDEV];
 void construct_input(const test_case_t *tc);
 int invoke(void);
 void teardown(void);

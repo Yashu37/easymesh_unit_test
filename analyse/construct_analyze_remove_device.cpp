@@ -71,19 +71,24 @@ test_case_t suite[] = {
  {"rej_devicelist_not_array [spec]", W "5" T, 0, 3, 0, NULL, NULL, false},
  {"rej_id_trailing_text [spec]", W "[" D(MAC1 ":99") "]" T, 0, 2, 0, NULL, NULL, false},
  /* ---- CRASH cases on the original handler (rejected / bounded after the fix) ---- */
- {"rej_devicelist_33_ids", NULL, 1, 3, 0, NULL, NULL, false},
- {"rej_devicelist_40_ids", NULL, 3, 3, 0, NULL, NULL, false},
- {"rej_devicelist_object", W "{\"ID\":\"" MAC1 "\"}" T, 0, 3, 0, NULL, NULL, false},
- {"rej_id_missing", W "[{}]" T, 0, 3, 0, NULL, NULL, false},
- {"rej_id_number", W "[{\"ID\":5}]" T, 0, 3, 0, NULL, NULL, false},
- {"rej_id_null", W "[{\"ID\":null}]" T, 0, 3, 0, NULL, NULL, false},
- {"rej_id_missing_second", W "[" D(MAC1) ",{\"name\":\"x\"}]" T, 0, 3, 0, NULL, NULL, false},
- {"clamp_16_devices_to_delete", W "[]" T, 0, 16, 15, NULL, NULL, false},
- {"clamp_17_devices_to_delete", W "[]" T, 0, 17, 15, NULL, NULL, false},
- {"clamp_32_devices_to_delete", W "[]" T, 0, 32, 15, NULL, NULL, false},
- {"clamp_33_devices_to_delete", W "[]" T, 0, 33, 15, NULL, NULL, false},
- {"clamp_40_devices_to_delete", W "[]" T, 0, 40, 15, NULL, NULL, false},
+ {"rej_devicelist_33_ids", NULL, 1, 3, -3, NULL, NULL, false},
+ {"rej_devicelist_40_ids", NULL, 3, 3, -3, NULL, NULL, false},
+ {"rej_devicelist_object", W "{\"ID\":\"" MAC1 "\"}" T, 0, 3, -3, NULL, NULL, false},
+ {"rej_id_missing", W "[{}]" T, 0, 3, -3, NULL, NULL, false},
+ {"rej_id_number", W "[{\"ID\":5}]" T, 0, 3, -3, NULL, NULL, false},
+ {"rej_id_null", W "[{\"ID\":null}]" T, 0, 3, -3, NULL, NULL, false},
+ {"rej_id_missing_second", W "[" D(MAC1) ",{\"name\":\"x\"}]" T, 0, 3, -3, NULL, NULL, false},
+  {"rej_17_devices_to_delete", W "[]" T, 0, 17, -3, NULL, NULL, false},
+ {"rej_32_devices_to_delete", W "[]" T, 0, 32, -3, NULL, NULL, false},
+ {"rej_33_devices_to_delete", W "[]" T, 0, 33, -3, NULL, NULL, false},
+ {"rej_40_devices_to_delete", W "[]" T, 0, 40, -3, NULL, NULL, false},
 
+ /* ---- capacity: EM_MAX_CMD = 16 commands; over-capacity requests are rejected whole (EM_PARSE_ERR_CONFIG), nothing leaks ---- */
+ OKC("ok_16_devices_removed", W "[]" T, 16, 16, "02:00:00:00:00:10;", NULL),
+ {"ok_5_devices_3_cmds_each", W "[]" T, 0, 5, 15, "02:00:00:00:00:05;", NULL, false, 3},
+ {"ok_4_devices_4_cmds_each", W "[]" T, 0, 4, 16, "02:00:00:00:00:04;", NULL, false, 4},
+ {"rej_6_devices_3_cmds_each", W "[]" T, 0, 6, -3, NULL, NULL, false, 3},
+ {"rej_5_devices_4_cmds_each", W "[]" T, 0, 5, -3, NULL, NULL, false, 4},
  { NULL, NULL, 0, 0, 0, NULL, NULL, false }  /* sentinel */
 };
 
@@ -113,6 +118,8 @@ void construct_input(const test_case_t *tc)
         g_dms[i].present = true;
     }
     g_num = 0;
+    g_live = 0;
+    g_chain = tc->chain ? tc->chain : 1;
 }
 
 void teardown(void) {}

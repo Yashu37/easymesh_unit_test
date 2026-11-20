@@ -24,6 +24,8 @@ namespace ard {
 int g_num = 0;
 char g_sum[2048];
 int g_cmds = 0;
+int g_live = 0;
+int g_chain = 1;
 int g_ndev = 0;
 dm_easy_mesh_ctrl_t g_ctrl_obj;
 dm_device_t g_devs[ARD_MAXDEV];
@@ -76,6 +78,8 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
 	mac_addr_str_t	mac_str;
 	dm_easy_mesh_t *dm = NULL;
 	em_cmd_t *tmp_cmd;
+/* UPDATED FIX (PR #916 review, comment: over-capacity) - STEP 3: new local variable */
+	em_cmd_t *next_cmd;
 	em_long_string_t wfa;	
 
     subdoc = &evt->u.subdoc;
@@ -109,7 +113,8 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
 	if (cJSON_GetArraySize(dev_list_obj) > 32) {
         printf("%s:%d: DeviceList has more than 32 devices\n", __func__, __LINE__);
     	cJSON_Delete(obj);
-        return 0;
+        /* UPDATED FIX (PR #916 review, comment: return code) - was "return 0;" */
+        return EM_PARSE_ERR_CONFIG;
 	}
 /* end fix 1 */
 	for (i = 0; i < cJSON_GetArraySize(dev_list_obj); i++) {
@@ -119,7 +124,8 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
 		if (tmp == NULL) {
             printf("%s:%d: DeviceList entry %d has no ID string\n", __func__, __LINE__, i);
     		cJSON_Delete(obj);
-            return 0;
+            /* UPDATED FIX (PR #916 review, comment: return code) - was "return 0;" */
+            return EM_PARSE_ERR_CONFIG;
 		}
 /* end fix 2 */
 		dm_easy_mesh_t::string_to_macbytes(tmp, dev_mac_to_keep[i]);
@@ -142,8 +148,10 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
 			keep = false;
 		} else {
 /* start fix 3 */
+			/* UPDATED FIX (PR #916 review, comment: over-capacity) - STEP 4: reject instead of "break" */
 			if (num_devs_to_delete >= 32) {
-                break;
+                printf("%s:%d: more than 32 devices to delete\n", __func__, __LINE__);
+                return EM_PARSE_ERR_CONFIG;
 			}
 /* end fix 3 */
 			devices_to_delete[num_devs_to_delete] = device;
@@ -159,8 +167,9 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
 		dm = m_data_model_list.get_data_model(device->m_device_info.id.net_id, device->m_device_info.intf.mac);
 		if (dm != NULL) {
 /* start fix 4 */
-            if (num >= EM_MAX_CMD - 1) {
-                break;
+            /* UPDATED FIX (PR #916 review, comment: over-capacity) - STEP 5: was "if (num >= EM_MAX_CMD - 1) break;" */
+            if (num >= EM_MAX_CMD) {
+                goto over_capacity;
             }
 /* end fix 4 */
     		pcmd[num] = new em_cmd_remove_device_t(evt->params, *dm);
@@ -168,7 +177,13 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
     		num++;
 
 /* start fix 4 */
-    		while ((num < EM_MAX_CMD) && ((pcmd[num] = tmp_cmd->clone_for_next()) != NULL)) {
+    		/* UPDATED FIX (PR #916 review, comment: over-capacity) - STEP 5: was "while ((num < EM_MAX_CMD) && ((pcmd[num] = tmp_cmd->clone_for_next()) != NULL))" */
+    		while ((next_cmd = tmp_cmd->clone_for_next()) != NULL) {
+        		if (num >= EM_MAX_CMD) {
+            		delete next_cmd;
+            		goto over_capacity;
+        		}
+        		pcmd[num] = next_cmd;
 /* end fix 4 */
         		tmp_cmd = pcmd[num];
         		num++;
@@ -177,6 +192,16 @@ int dm_easy_mesh_ctrl_t::analyze_remove_device(em_bus_event_t *evt, em_cmd_t *pc
 	}
 
     return num;
+/* start fix 4 */
+/* UPDATED FIX (PR #916 review, comment: over-capacity) - STEP 6: new cleanup label, rejects the whole request */
+over_capacity:
+    printf("%s:%d: removal needs more than %d commands\n", __func__, __LINE__, EM_MAX_CMD);
+    for (i = 0; i < num; i++) {
+        delete pcmd[i];
+        pcmd[i] = NULL;
+    }
+    return EM_PARSE_ERR_CONFIG;
+/* end fix 4 */
 }
 
 int invoke(void)

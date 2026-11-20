@@ -50,7 +50,7 @@ static int call_once(const test_case_t *tc)
 int test_one(const test_case_t *tc)
 {
     call_once(tc);
-    int ok = (g_num == tc->expect_num);
+    int ok = (g_num == tc->expect_num) && (g_live == 0);   /* every command built was either returned and deleted, or deleted by the handler */
     if (tc->has) ok = ok && g_num >= 1 && strstr(g_sum, tc->has) != NULL;
     if (tc->not_has) ok = ok && strstr(g_sum, tc->not_has) == NULL;
     printf("    ret=%d (expect %d) has=%s sum=%.120s\n", g_num, tc->expect_num,
