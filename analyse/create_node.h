@@ -26,6 +26,7 @@ public:
 };
 
 extern int g_init_rc;        /* what em_t::init() returns */
+extern bool g_throw_on_null_dm;   /* like the real em_t: the AL node throws when its data model is NULL (initialize_ec_manager() fails) */
 extern bool g_ctor_throws;   /* em_t constructor throws std::runtime_error (EC manager init failure of the AL node) */
 extern bool g_name_found;    /* name_from_mac_address() finds an interface */
 extern int g_ctor_calls, g_init_calls;
@@ -34,8 +35,8 @@ class em_mgr_t;
 class em_t {
 public:
     em_interface_t ruid; bool is_al; bool dpp;
-    em_t(em_interface_t *r, em_freq_band_t, dm_easy_mesh_t *, em_mgr_t *, em_profile_type_t, em_service_type_t, bool al)
-    { g_ctor_calls++; if (al && g_ctor_throws) throw std::runtime_error("Failed to initialize EC manager"); memcpy(&ruid, r, sizeof(ruid)); is_al = al; dpp = false; }
+    em_t(em_interface_t *r, em_freq_band_t, dm_easy_mesh_t *dm_, em_mgr_t *, em_profile_type_t, em_service_type_t, bool al)
+    { g_ctor_calls++; if (al && (g_ctor_throws || (g_throw_on_null_dm && !dm_))) throw std::runtime_error("Failed to initialize EC manager"); memcpy(&ruid, r, sizeof(ruid)); is_al = al; dpp = false; }
     void set_is_dpp_onboarding(bool b) { dpp = b; }
     int init() { g_init_calls++; return g_init_rc; }
 };
@@ -46,7 +47,9 @@ public:
     pthread_mutex_t m_mutex;
     std::vector<map_ent_t> m_map;
     em_mgr_t() { pthread_mutex_init(&m_mutex, NULL); }
+    virtual ~em_mgr_t() {}
     virtual bool is_agent_dpp_onboarding() { return true; }
+    bool has_node_(const char *k) { return map_get(k) != NULL; }
     em_t *map_get(const char *k) { for (auto &e : m_map) if (!strcmp(e.key, k)) return e.em; return NULL; }
     em_t *create_node(em_interface_t *ruid, em_freq_band_t band, dm_easy_mesh_t *dm, bool is_al_mac, em_profile_type_t profile, em_service_type_t type);
 };

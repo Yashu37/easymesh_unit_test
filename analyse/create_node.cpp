@@ -12,7 +12,7 @@
 #include "create_node.h"
 
 namespace cnd {
-int g_init_rc = 0; bool g_ctor_throws = false; bool g_name_found = true; int g_ctor_calls = 0, g_init_calls = 0;
+int g_init_rc = 0; bool g_throw_on_null_dm = false; bool g_ctor_throws = false; bool g_name_found = true; int g_ctor_calls = 0, g_init_calls = 0;
 
 int dm_easy_mesh_t::name_from_mac_address(const mac_address_t *mac, char *ifname)
 { (void)mac; if (!g_name_found) return -1; snprintf(ifname, 16, "wlan0"); return 0; }
