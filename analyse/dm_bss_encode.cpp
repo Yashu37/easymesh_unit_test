@@ -90,14 +90,18 @@ void dm_bss_t::encode(cJSON *obj, bool summary)
     unsigned int num_fronthaul_akms = m_bss_info.num_fronthaul_akms > EM_MAX_AKMS ? EM_MAX_AKMS : m_bss_info.num_fronthaul_akms;
     unsigned int num_backhaul_akms = m_bss_info.num_backhaul_akms > EM_MAX_AKMS ? EM_MAX_AKMS : m_bss_info.num_backhaul_akms;
 /* end fix 1 */
+/* start fix 1 */
     for (i = 0; i < num_fronthaul_akms; i++) {
+/* end fix 1 */
         cJSON_AddItemToArray(fronthaul_akmsArray, cJSON_CreateString(m_bss_info.fronthaul_akm[i]));
     }
     // Add the array to the object
     cJSON_AddItemToObject(obj, "FronthaulAKMsAllowed", fronthaul_akmsArray);
 
     cJSON *backhaul_akmsArray = cJSON_CreateArray();
+/* start fix 1 */
     for (i = 0; i < num_backhaul_akms; i++) {
+/* end fix 1 */
         cJSON_AddItemToArray(backhaul_akmsArray, cJSON_CreateString(m_bss_info.backhaul_akm[i]));
     }
 
@@ -108,10 +112,14 @@ void dm_bss_t::encode(cJSON *obj, bool summary)
 /* start fix 2 */
     size_t vendor_elements_len = m_bss_info.vendor_elements_len > sizeof(m_bss_info.vendor_elements) ? sizeof(m_bss_info.vendor_elements) : m_bss_info.vendor_elements_len;
 /* end fix 2 */
+/* start fix 2 */
     char vendor_ies[2 * vendor_elements_len + 1] = {0};
     if (vendor_elements_len > 0) {
+/* end fix 2 */
         memset(vendor_ies, 0, sizeof(vendor_ies));
+/* start fix 2 */
         for (unsigned int i = 0; i < vendor_elements_len; i++) {
+/* end fix 2 */
             unsigned int offset = i * 2;
             snprintf(vendor_ies + offset, sizeof(vendor_ies) - offset, "%02x", m_bss_info.vendor_elements[i]);
         }

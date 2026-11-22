@@ -46,6 +46,8 @@ public:
     em_bss_info_t m_bss_info;
     unsigned char after_info[DBE_GUARD];      /* members behind m_bss_info */
     void encode(cJSON *obj, bool summary);
+    int init() { memset(&m_bss_info, 0, sizeof(em_bss_info_t)); return 0; }
+    em_bss_info_t *get_bss_info() { return &m_bss_info; }
 };
 
 typedef struct {
