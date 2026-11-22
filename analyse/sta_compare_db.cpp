@@ -6,8 +6,8 @@
  * dm_easy_mesh_t::unhex / string_to_macbytes (src/dm/dm_easy_mesh.cpp). The frame body is a std::vector and is length checked
  * before it is read, so the old frame_body[1024] overflow is gone upstream. What is left is the local array mac[18] (mac_addr_str_t):
  * get_string(ctx, mac, 1..3) copies the whole column into it with no size.
- *   fix 1: skip the row when a MAC column (1-3) is not shorter than mac[] (get_string_length()); db_client_t is not changed and the
- *          get_string lines stay original (a shorter column would still be rejected by string_to_macbytes() leaving mac[] uninitialised).
+ *   fix 1: skip the row when a MAC column (1-3) is not shorter than mac[] (get_string_length()), clear mac before each get_string and skip
+ *          the row when get_string returns NULL (SQL NULL); db_client_t is not changed.
  * The DB is scripted: db_client_t::get_string copies the column's strlen + 1 bytes into the caller's buffer like the real
  * db_client_local_t::get_string (sqlite3_column_bytes + 1, no size) and leaves the buffer alone for a NULL column;
  * get_string_length returns the column length (0 for NULL); every cell sits between poisoned guards.
@@ -141,14 +141,28 @@ bool dm_sta_list_t::compare_db(db_client_t& db_client, const dm_sta_t& sta)
             (db_client.get_string_length(ctx, 3) >= sizeof(mac))) {
             continue;
         }
+        // A SQL NULL column passes the length check (0) but get_string() then leaves mac alone: clear it first and skip the row
+        memset(mac, 0, sizeof(mac));
+        if (db_client.get_string(ctx, mac, 1) == NULL) {
+            continue;
+        }
 /* end fix 1 */
-        db_client.get_string(ctx, mac, 1);
         dm_easy_mesh_t::string_to_macbytes(mac, info.id);
 
-        db_client.get_string(ctx, mac, 2);
+/* start fix 1 */
+        memset(mac, 0, sizeof(mac));
+        if (db_client.get_string(ctx, mac, 2) == NULL) {
+            continue;
+        }
+/* end fix 1 */
         dm_easy_mesh_t::string_to_macbytes(mac, info.bssid);
 
-        db_client.get_string(ctx, mac, 3);
+/* start fix 1 */
+        memset(mac, 0, sizeof(mac));
+        if (db_client.get_string(ctx, mac, 3) == NULL) {
+            continue;
+        }
+/* end fix 1 */
         dm_easy_mesh_t::string_to_macbytes(mac, info.radiomac);
 
         info.associated = db_client.get_number(ctx, 4);

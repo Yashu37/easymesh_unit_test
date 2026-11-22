@@ -16,7 +16,7 @@
 #include "sta_compare_db.h"
 
 namespace scd {
-/* {name, mac, fb, nrows, sta_matches, pkts_tx, variant, expect_ret, crash, big_col, skip_row} */
+/* {name, mac, fb, nrows, sta_matches, pkts_tx, variant, expect_ret, crash, big_col, skip_row, null_col} */
 test_case_t suite[] = {
  {"ok_no_rows",                          "aa:bb:cc:dd:ee:01", "0102ab", 0, true, 9, 0, false, false},
  {"ok_matching_row_returns_true",        "aa:bb:cc:dd:ee:01", "0102ab", 1, true, 9, 0, true, false},
@@ -47,6 +47,10 @@ test_case_t suite[] = {
  {"skip_row_radio_mac_200_chars",        "aa:bb:cc:dd:ee:01", "0102ab", 1, true, 9, 0, false, false, 3, true},
  {"ok_oversized_first_row_second_matches", "aa:bb:cc:dd:ee:01x", "0102ab", 2, true, 9, 0, true, false},
  {"ok_oversized_bssid_first_row_second_matches", "aa:bb:cc:dd:ee:01", "0102ab", 2, true, 9, 0, true, false, 2},
+ /* ---- SQL NULL MAC column: the row is skipped, a stale mac[] must not be used (the station carries the stale MAC) ---- */
+ {"skip_row_null_bssid_not_stale_mac",   "aa:bb:cc:dd:ee:01", "0102ab", 1, true, 9, 0, false, false, 0, false, 2},
+ {"skip_row_null_radio_mac_not_stale_mac", "aa:bb:cc:dd:ee:01", "0102ab", 1, true, 9, 0, false, false, 0, false, 3},
+ {"ok_null_bssid_first_row_second_matches", "aa:bb:cc:dd:ee:01", "0102ab", 2, true, 9, 0, true, false, 0, false, 2},
  {NULL, NULL, NULL, 0, false, 0, 0, false, false}
 };
 
@@ -61,6 +65,7 @@ static void fill_row(row_t *r, const test_case_t *tc, int idx)
         else set_str(&r->c[0], tc->mac);
     }
     set_str(&r->c[1], "aa:bb:cc:dd:ee:02"); set_str(&r->c[2], "aa:bb:cc:dd:ee:03");
+    if (idx == 0 && tc->null_col >= 2) r->c[tc->null_col - 1].kind = 0;
     if (idx == 0 && tc->big_col >= 2) { char b[256]; memset(b, 'b', 200); b[200] = 0; set_str(&r->c[tc->big_col - 1], b); }
     set_num(&r->c[3], 1); set_num(&r->c[4], 10); set_num(&r->c[5], 20); set_num(&r->c[6], 30); set_num(&r->c[7], 40);
     set_num(&r->c[8], 50); set_num(&r->c[9], 60); set_num(&r->c[10], -55); set_num(&r->c[11], 70);
@@ -87,7 +92,8 @@ static void build_sta(const test_case_t *tc)
         for (size_t i = 0; i < n; i++) { unsigned v = 0; char h[3] = { tc->fb[2*i], tc->fb[2*i+1], 0 }; sscanf(h, "%x", &v); g_sta_body[i] = (unsigned char)v; }
         if (n > 0) s->frame_body = g_sta_body;
     }
-    if (tc->mac && tc->mac[0] == 'a' && strlen(tc->mac) == 12) { }
+    if (tc->null_col == 2 && tc->nrows == 1) memcpy(s->bssid, m1, 6);        /* what a stale mac[] would give: the previous column's MAC */
+    if (tc->null_col == 3 && tc->nrows == 1) memcpy(s->radiomac, m2, 6);
 }
 void construct_input(const test_case_t *tc)
 {

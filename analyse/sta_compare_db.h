@@ -66,6 +66,7 @@ typedef struct {
     bool crash;
     int big_col;            /* 2 / 3: the BSSID / radio MAC column of the first row is 200 characters (column 1 is set by `mac`) */
     bool skip_row;          /* single-row case that must be skipped: no get_string() call at all */
+    int null_col;           /* 2 / 3: the BSSID / radio MAC column of the first row is SQL NULL; the station then carries the MAC that a stale mac[] would hold */
 } test_case_t;
 extern test_case_t suite[];
 extern dm_sta_t g_sta;
