@@ -2,9 +2,8 @@
  * TEST RUNNER: sta_compare_db_test
  *
  * Poisoned around the call: for every scripted cell the SCD_GUARD bytes before and after its string buffer and the buffer tail past
- * the string's NUL, so get_string()/strlen()/unhex() reading outside the cell is reported. The handler's mac[18] and frame_body[1024]
- * locals are covered by ASan redzones: a MAC / frame body column longer than the buffer, or strlen() over an uninitialised
- * buffer, is reported. PASS = compare_db returns the expected bool. clamp_* cases ABORTED on the original code: they run last and
+ * the string's NUL, so get_string()/strlen()/unhex() reading outside the cell is reported. The handler's mac[18] local is covered by
+ * ASan redzones: a MAC column longer than the buffer is reported. PASS = compare_db returns the expected bool. clamp_* cases ABORTED on the original code: they run last and
  * UNFORKED so a plain `make` stops with the report; FORK_CRASH=1 forks each one.
  */
 #include <stdio.h>
@@ -28,7 +27,8 @@ static void poison(bool on)
 static int test_one(const test_case_t *tc)
 {
     poison(true); bool r = invoke(tc); poison(false);
-    printf("    returned %d (expect %d)\n", (int)r, (int)tc->expect_ret); fflush(stdout);
+    printf("    returned %d (expect %d), get_string calls %d\n", (int)r, (int)tc->expect_ret, g_gs_calls); fflush(stdout);
+    if (tc->skip_row && g_gs_calls != 0) { printf("    the row was not skipped (get_string was called)\n"); return 0; }
     return r == tc->expect_ret;
 }
 static int test_crash_fork(const test_case_t *tc)
