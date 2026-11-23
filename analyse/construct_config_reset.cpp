@@ -49,7 +49,7 @@ void construct_input(const test_case_t *tc)
     if (tc->name_mode == 1) memset(d->m_interfaces[0].name, 'N', sizeof(d->m_interfaces[0].name));
     if (tc->name_mode == 2) memset(d->m_interfaces, 'A', sizeof(d->m_interfaces));
     snprintf(d->m_network.id, sizeof(d->m_network.id), "net1");
-    for (int i = 0; i < EM_MAX_NET_SSIDS; i++) snprintf(d->m_network_ssid[i].ssid, sizeof(d->m_network_ssid[i].ssid), "ssid%d", i);
+    for (int i = 0; i < EM_MAX_NET_SSIDS; i++) snprintf(d->m_network_ssid[i].m_network_ssid_info.ssid, sizeof(d->m_network_ssid[i].m_network_ssid_info.ssid), "ssid%d", i);
 }
 void teardown(void) { free(g_box); g_box = NULL; }
 } /* namespace ecr */

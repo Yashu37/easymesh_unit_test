@@ -22,7 +22,8 @@ typedef struct { em_interface_name_t name; mac_address_t mac; em_media_type_t me
 typedef struct { int name; em_subdoc_data_buff_t buff; } __attribute__((__packed__)) em_subdoc_info_t;
 /* stand-ins for the network / network SSID objects: encode() writes the member the real one would read (a short string) */
 class dm_network_t { public: char id[32]; void encode(cJSON *obj) { cJSON_AddStringToObject(obj, "ID", id); } };
-class dm_network_ssid_t { public: char ssid[32]; void encode(cJSON *obj) { cJSON_AddStringToObject(obj, "SSID", ssid); } };
+class dm_network_ssid_t { public: struct { char ssid[32]; } m_network_ssid_info; decltype(m_network_ssid_info) *get_network_ssid_info() { return &m_network_ssid_info; }
+    void encode(cJSON *obj) { cJSON_AddStringToObject(obj, "SSID", m_network_ssid_info.ssid); } };
 
 /* dm_easy_mesh_t cut down to the members encode_config_reset uses; after_interfaces / after_ssids stand for the members that follow the
  * arrays in the real class (poisoned by the runner) */
