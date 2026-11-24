@@ -6,14 +6,16 @@
  * src/wifi_hal_nl80211_utils.c:5872; for_each_mld_link is hostapd's (hostapd.h:959, CONFIG_IEEE80211BE) over the
  * verbatim dl_list macros; get_interface_by_vap_index, ieee802_11_set_beacon and wifi_hal_get_interface_name are stubs
  * (construct file) that look up the runner's interfaces, record the link ids and fail on request.  HOSTAPD_VERSION is
- * 211 (the function body is compiled out below that).  The prints are the real macros over the log sink.  The function
+ * 211 by default (the MLD beacon loop is compiled out below that; the argument checks are not).  The prints are the real macros over the log sink.  The function
  * is renamed hwr_platform_create_vap (other platforms define the same name).
  */
 #include "hwr_pcv.h"
 #include <stdio.h>
 
 
+#ifndef HOSTAPD_VERSION
 #define HOSTAPD_VERSION 211
+#endif
 #define wifi_hal_error_print(format, ...)  hwr_print(1, format, ##__VA_ARGS__)
 #define for_each_mld_link(partner, self) \
 	dl_list_for_each(partner, &self->mld->links, struct hostapd_data, link)
@@ -46,12 +48,8 @@ bool wifi_hal_is_mld_enabled(wifi_interface_info_t *interface)
 extern "C" {
 int platform_create_vap(wifi_radio_index_t index, wifi_vap_info_map_t *map)
 {
-#if (HOSTAPD_VERSION >= 211)
-    wifi_vap_info_t *vap;
-    wifi_interface_info_t *interface;
-    struct hostapd_data *hapd, *link_bss;
-
-    /* FIX 1: map == NULL was dereferenced (map->num_vaps) - platform_pre_create_vap checks it, this function did not. */
+    /* FIX 1: map == NULL was dereferenced (map->num_vaps) - platform_pre_create_vap checks it, this function did not.
+     * The checks are outside the HOSTAPD_VERSION guard: hostapd 2.9 / 2.10 builds must reject these inputs too. */
     if (map == NULL) {
         wifi_hal_error_print("%s:%d: wifi_vap_info_map_t *map is NULL\n", __func__, __LINE__);
         return -1;
@@ -62,6 +60,11 @@ int platform_create_vap(wifi_radio_index_t index, wifi_vap_info_map_t *map)
         wifi_hal_error_print("%s:%d: invalid num_vaps %u\n", __func__, __LINE__, map->num_vaps);
         return -1;
     }
+
+#if (HOSTAPD_VERSION >= 211)
+    wifi_vap_info_t *vap;
+    wifi_interface_info_t *interface;
+    struct hostapd_data *hapd, *link_bss;
 
     for (unsigned int i = 0; i < map->num_vaps; i++) {
         vap = &map->vap_array[i];
