@@ -2,7 +2,7 @@
  * HANDLER: dm_easy_mesh_t::print_config (fixes 1-3 applied, start fix n / end fix n markers: clamp the net SSID / BSS / radio counts,
  * the op class count and the per op class channel count to their array sizes; the truncation failure is left original)
  *
- * Copied verbatim from unified-wifi-mesh (develop @ 1ba9529): dm_easy_mesh_t::print_config (src/dm/dm_easy_mesh.cpp). Local arrays: the
+ * Copied verbatim from unified-wifi-mesh (develop @ aee6c47): dm_easy_mesh_t::print_config (src/dm/dm_easy_mesh.cpp). Local arrays: the
  * ch_buf[256] of the channel scan loop. The dm_easy_mesh_t stand-in has the members the function reads (net SSIDs, BSSs, radios, radio
  * caps with the real em_channel_scan_cap_radio_t); em_printfout() records every line it prints. The object lives on the heap between
  * poisoned guards.
@@ -37,8 +37,8 @@ void dm_easy_mesh_t::print_config()
     unsigned int num_net_ssids = m_num_net_ssids > EM_MAX_NET_SSIDS ? EM_MAX_NET_SSIDS : m_num_net_ssids;
     unsigned int num_bss = m_num_bss > EM_MAX_BSSS ? EM_MAX_BSSS : m_num_bss;
     unsigned int num_radios = m_num_radios > EM_MAX_BANDS ? EM_MAX_BANDS : m_num_radios;
-/* end fix 1 */
     for (i = 0; i < num_net_ssids; i++) {
+/* end fix 1 */
         em_printfout("Data Model SSID[%d]: %s\n", i, m_network_ssid[i].m_network_ssid_info.ssid);
     }
 
@@ -50,18 +50,24 @@ void dm_easy_mesh_t::print_config()
     }
 
     em_printfout("No of BSS=%d No of Radios=%d", m_num_bss, m_num_radios);
+/* start fix 1 */
     for (i = 0; i < num_bss; i++) {
+/* end fix 1 */
         em_printfout("Radio Mac : %s and BSSID : %s", util::mac_to_string(get_bss(i)->get_bss_info()->ruid.mac).c_str(),
             util::mac_to_string(get_bss(i)->get_bss_info()->bssid.mac).c_str());
     }
 
+/* start fix 1 */
     for (i = 0;i < num_radios; i++) {
+/* end fix 1 */
         transmit_power_limit = m_radio[i].get_radio_info()->transmit_power_limit;
         em_printfout("Radio Mac: %s, Band: %d, TransmitPowerLimit: %d", util::mac_to_string(m_radio[i].get_radio_info()->intf.mac).c_str(),
             m_radio[i].get_radio_info()->band, transmit_power_limit);
     }
 
+/* start fix 1 */
     for(i = 0; i < num_radios; i++) {
+/* end fix 1 */
         em_printfout("Cap Radio[%d]: %s, num_role:%d and su_beam:%d",  i, util::mac_to_string(m_radio_cap[i].get_radio_cap_info()->ruid.mac).c_str(),
             m_radio_cap[i].get_radio_cap_info()->wifi6_cap.num_role,
             m_radio_cap[i].get_radio_cap_info()->wifi6_cap.roles[0].role_tail.su_beam_former);
@@ -127,15 +133,15 @@ void dm_easy_mesh_t::print_config()
         );
 /* start fix 2 */
         size_t op_classes_num = m_radio_cap[i].get_radio_cap_info()->ch_scan.op_classes_num > EM_MAX_OPCLASS ? EM_MAX_OPCLASS : m_radio_cap[i].get_radio_cap_info()->ch_scan.op_classes_num;
-/* end fix 2 */
         for (size_t k = 0; k < op_classes_num; k++) {
+/* end fix 2 */
             const em_scan_cap_op_class_info_t *oc = &m_radio_cap[i].get_radio_cap_info()->ch_scan.op_classes[k];
             char ch_buf[256] = {0};
             int  ch_buf_pos  = 0;
 /* start fix 3 */
             unsigned char oc_num = oc->num > EM_MAX_CHANNELS_IN_LIST ? EM_MAX_CHANNELS_IN_LIST : oc->num;
-/* end fix 3 */
             for (unsigned char ci = 0; ci < oc_num && ch_buf_pos < static_cast<int>(sizeof(ch_buf)) - 5; ci++) {
+/* end fix 3 */
                 ch_buf_pos += snprintf(ch_buf + ch_buf_pos, sizeof(ch_buf) - static_cast<size_t>(ch_buf_pos),
                                        "%d ", oc->channels.channel[ci]);
             }

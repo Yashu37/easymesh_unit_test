@@ -69,6 +69,8 @@ public:
     const char *get_manufacturer() { return "mfr"; } const char *get_manufacturer_model() { return "model"; } const char *get_software_version() { return "1.0"; }
     dm_bss_t *get_bss(unsigned int i) { return &m_bss[i]; }
     void print_config();
+    void init() {}      /* stand-ins: the harness object is zero initialised, the real one is initialised by init() */
+    void deinit() {}
 };
 typedef struct { unsigned char before[PCF_GUARD]; dm_easy_mesh_t dm; unsigned char after[PCF_GUARD]; } box_t;
 
