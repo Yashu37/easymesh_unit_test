@@ -137,8 +137,7 @@ void dm_easy_mesh_t::print_config()
             char ch_buf[256] = {0};
             int  ch_buf_pos  = 0;
 /* start fix 3 */
-            unsigned char oc_num = oc->num > EM_MAX_CHANNELS_IN_LIST ? EM_MAX_CHANNELS_IN_LIST : oc->num;
-            for (unsigned char ci = 0; ci < oc_num && ch_buf_pos < static_cast<int>(sizeof(ch_buf)) - 5; ci++) {
+            for (unsigned char ci = 0; ci < oc->num && (ci < EM_MAX_CHANNELS_IN_LIST) && ch_buf_pos < static_cast<int>(sizeof(ch_buf)) - 5; ci++) {
 /* end fix 3 */
                 ch_buf_pos += snprintf(ch_buf + ch_buf_pos, sizeof(ch_buf) - static_cast<size_t>(ch_buf_pos),
                                        "%d ", oc->channels.channel[ci]);
