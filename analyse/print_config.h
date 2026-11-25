@@ -68,6 +68,12 @@ public:
     unsigned char *get_agent_al_interface_mac() { static unsigned char m[6]; return m; }
     const char *get_manufacturer() { return "mfr"; } const char *get_manufacturer_model() { return "model"; } const char *get_software_version() { return "1.0"; }
     dm_bss_t *get_bss(unsigned int i) { return &m_bss[i]; }
+    /* inc/dm_easy_mesh.h: the getters (the project reads the counts through them) */
+/* start fix 1 */
+    unsigned int get_num_network_ssid() { return (m_num_net_ssids > EM_MAX_NET_SSIDS) ? EM_MAX_NET_SSIDS : m_num_net_ssids; }
+    unsigned int get_num_bss() { return (m_num_bss > EM_MAX_BSSS) ? EM_MAX_BSSS : m_num_bss; }
+/* end fix 1 */
+    unsigned int get_num_radios() { return (m_num_radios > EM_MAX_BANDS) ? EM_MAX_BANDS : m_num_radios; }   /* already clamped in develop */
     void print_config();
     void init() {}      /* stand-ins: the harness object is zero initialised, the real one is initialised by init() */
     void deinit() {}

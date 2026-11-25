@@ -1,6 +1,8 @@
 /*
- * HANDLER: dm_easy_mesh_t::print_config (fixes 1-3 applied, start fix n / end fix n markers: clamp the net SSID / BSS / radio counts,
- * the op class count and the per op class channel count to their array sizes; the truncation failure is left original)
+ * HANDLER: dm_easy_mesh_t::print_config (fixes 1-3 applied, start fix n / end fix n markers: the net SSID / BSS / radio counts are read
+ * through the get_num_network_ssid() / get_num_bss() / get_num_radios() getters, which clamp them to the array sizes (the two getters
+ * are fixed in print_config.h like inc/dm_easy_mesh.h); the op class count and the per op class channel count are clamped to their
+ * array sizes here; the truncation failure is left original)
  *
  * Copied verbatim from unified-wifi-mesh (develop @ aee6c47): dm_easy_mesh_t::print_config (src/dm/dm_easy_mesh.cpp). Local arrays: the
  * ch_buf[256] of the channel scan loop. The dm_easy_mesh_t stand-in has the members the function reads (net SSIDs, BSSs, radios, radio
@@ -34,9 +36,9 @@ void dm_easy_mesh_t::print_config()
             get_manufacturer(), get_manufacturer_model(), get_software_version());
 
 /* start fix 1 */
-    unsigned int num_net_ssids = m_num_net_ssids > EM_MAX_NET_SSIDS ? EM_MAX_NET_SSIDS : m_num_net_ssids;
-    unsigned int num_bss = m_num_bss > EM_MAX_BSSS ? EM_MAX_BSSS : m_num_bss;
-    unsigned int num_radios = m_num_radios > EM_MAX_BANDS ? EM_MAX_BANDS : m_num_radios;
+    unsigned int num_net_ssids = get_num_network_ssid();
+    unsigned int num_bss = get_num_bss();
+    unsigned int num_radios = get_num_radios();
     for (i = 0; i < num_net_ssids; i++) {
 /* end fix 1 */
         em_printfout("Data Model SSID[%d]: %s\n", i, m_network_ssid[i].m_network_ssid_info.ssid);
