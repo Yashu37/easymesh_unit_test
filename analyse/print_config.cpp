@@ -36,10 +36,7 @@ void dm_easy_mesh_t::print_config()
             get_manufacturer(), get_manufacturer_model(), get_software_version());
 
 /* start fix 1 */
-    unsigned int num_net_ssids = get_num_network_ssid();
-    unsigned int num_bss = get_num_bss();
-    unsigned int num_radios = get_num_radios();
-    for (i = 0; i < num_net_ssids; i++) {
+    for (i = 0; i < get_num_network_ssid(); i++) {
 /* end fix 1 */
         em_printfout("Data Model SSID[%d]: %s\n", i, m_network_ssid[i].m_network_ssid_info.ssid);
     }
@@ -53,14 +50,14 @@ void dm_easy_mesh_t::print_config()
 
     em_printfout("No of BSS=%d No of Radios=%d", m_num_bss, m_num_radios);
 /* start fix 1 */
-    for (i = 0; i < num_bss; i++) {
+    for (i = 0; i < get_num_bss(); i++) {
 /* end fix 1 */
         em_printfout("Radio Mac : %s and BSSID : %s", util::mac_to_string(get_bss(i)->get_bss_info()->ruid.mac).c_str(),
             util::mac_to_string(get_bss(i)->get_bss_info()->bssid.mac).c_str());
     }
 
 /* start fix 1 */
-    for (i = 0;i < num_radios; i++) {
+    for (i = 0; i < get_num_radios(); i++) {
 /* end fix 1 */
         transmit_power_limit = m_radio[i].get_radio_info()->transmit_power_limit;
         em_printfout("Radio Mac: %s, Band: %d, TransmitPowerLimit: %d", util::mac_to_string(m_radio[i].get_radio_info()->intf.mac).c_str(),
@@ -68,7 +65,7 @@ void dm_easy_mesh_t::print_config()
     }
 
 /* start fix 1 */
-    for(i = 0; i < num_radios; i++) {
+    for (i = 0; i < get_num_radios(); i++) {
 /* end fix 1 */
         em_printfout("Cap Radio[%d]: %s, num_role:%d and su_beam:%d",  i, util::mac_to_string(m_radio_cap[i].get_radio_cap_info()->ruid.mac).c_str(),
             m_radio_cap[i].get_radio_cap_info()->wifi6_cap.num_role,
